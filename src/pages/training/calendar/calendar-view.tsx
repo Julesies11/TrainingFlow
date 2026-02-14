@@ -15,17 +15,20 @@ import {
   useUpdateLibraryWorkout,
   useDeleteLibraryWorkout,
   useDeleteGoal,
+  useSportTypes,
+  useUserSportSettings,
 } from '@/hooks/use-training-data';
-import { Workout, SportType, EventGoal, LibraryWorkout } from '@/types/training';
+import { Workout, EventGoal, LibraryWorkout } from '@/types/training';
 import {
   formatDateToLocalISO,
   getMonday,
   formatMinsShort,
   getContrastColor,
-  getWorkoutPace,
   MONTH_NAMES,
   DAY_HEADERS,
 } from '@/services/training/calendar.utils';
+import { getEffortColor, buildSportMap, buildUserSettingsMap } from '@/services/training/effort-colors';
+import { calculatePace } from '@/services/training/pace-utils';
 import { WorkoutDialog } from './components/workout-dialog';
 import { GoalDialog } from './components/goal-dialog';
 import { LibraryDrawer } from './components/library-drawer';
@@ -35,6 +38,8 @@ export function CalendarView() {
   const { data: goals = [] } = useGoals();
   const { data: profile } = useProfile();
   const { data: library = [] } = useLibrary();
+  const { data: sportTypes = [] } = useSportTypes();
+  const { data: userSportSettings = [] } = useUserSportSettings();
 
   const updateWorkout = useUpdateWorkout();
   const createWorkout = useCreateWorkout();
@@ -72,7 +77,8 @@ export function CalendarView() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const scrollAccumulator = useRef<number>(0);
 
-  const intensitySettings = profile?.intensity_settings;
+  const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
+  const userSettingsMap = useMemo(() => buildUserSettingsMap(userSportSettings), [userSportSettings]);
 
   // Grid data
   const gridData = useMemo(() => {
@@ -268,15 +274,7 @@ export function CalendarView() {
 
   // Week summary
   const calculateWeekSummary = (week: Date[]) => {
-    const sportTotals: Record<
-      SportType,
-      { distance: number; duration: number }
-    > = {
-      Swim: { distance: 0, duration: 0 },
-      Bike: { distance: 0, duration: 0 },
-      Run: { distance: 0, duration: 0 },
-      Strength: { distance: 0, duration: 0 },
-    };
+    const sportTotals: Record<string, { distance: number; duration: number }> = {};
     const weekTotals = { distance: 0, duration: 0 };
     week.forEach((date) => {
       const dateStr = formatDateToLocalISO(date);
@@ -289,10 +287,13 @@ export function CalendarView() {
           const dist = w.isCompleted
             ? w.actualDistanceKilometers || 0
             : w.plannedDistanceKilometers || 0;
-          sportTotals[w.sport].duration += dur;
-          sportTotals[w.sport].distance += dist;
+          const stId = w.sportTypeId || 'unknown';
+          if (!sportTotals[stId]) sportTotals[stId] = { distance: 0, duration: 0 };
+          sportTotals[stId].duration += dur;
+          sportTotals[stId].distance += dist;
           weekTotals.duration += dur;
-          if (w.sport !== 'Strength') weekTotals.distance += dist;
+          const st = sportMap.get(stId);
+          if (st?.paceRelevant) weekTotals.distance += dist;
         });
     });
     return { sportTotals, weekTotals };
@@ -546,20 +547,15 @@ export function CalendarView() {
                                 {/* Workouts */}
                                 {dayWorkouts.map((w, wIdx) => {
                                   const itemIndex = dayGoals.length + wIdx;
-                                  const bg =
-                                    intensitySettings?.[w.sport]?.[
-                                      w.effortLevel || 1
-                                    ]?.hexColor || '#3b82f6';
+                                  const wSt = sportMap.get(w.sportTypeId);
+                                  const bg = getEffortColor(wSt, w.effortLevel || 1, userSettingsMap.get(w.sportTypeId));
                                   const dur = w.isCompleted
                                     ? w.actualDurationMinutes || 0
                                     : w.plannedDurationMinutes || 0;
                                   const dist = w.isCompleted
                                     ? w.actualDistanceKilometers || 0
                                     : w.plannedDistanceKilometers || 0;
-                                  const pace =
-                                    dur > 0 && dist > 0 && w.sport !== 'Strength'
-                                      ? getWorkoutPace(w.sport, dur, dist)
-                                      : '';
+                                  const pace = calculatePace(wSt?.name || '', dur, dist);
                                   return (
                                     <React.Fragment key={w.id}>
                                       {dragOverInfo?.date === dateStr && isDraggingId && dragOverInfo.index === itemIndex && (
@@ -588,16 +584,15 @@ export function CalendarView() {
                                         )}
                                         <div className="pointer-events-none flex flex-col gap-0.5 leading-none">
                                           <div className="truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
-                                            {w.sport}
-                                            {w.workoutType ? ` · ${w.workoutType}` : ''}
+                                            {w.sportName || wSt?.name || 'Unknown'}
                                           </div>
                                           <div className="truncate text-[9px] lg:text-xs">
                                             {w.title || 'Untitled'}
                                           </div>
                                           <div className="truncate text-[8px] opacity-70 lg:text-[10px]">
                                             {formatMinsShort(dur)}
-                                            {dist > 0 && w.sport !== 'Strength'
-                                              ? ` · ${dist}km`
+                                            {dist > 0 && wSt?.paceRelevant
+                                              ? ` · ${dist}${wSt.distanceUnit || 'km'}`
                                               : ''}
                                             {pace ? ` · ${pace}` : ''}
                                           </div>
@@ -645,38 +640,28 @@ export function CalendarView() {
                               {formatMinsShort(weekTotals.duration)}
                             </div>
                             <div className="border-primary/10 space-y-2.5 border-t pt-3">
-                              {(
-                                [
-                                  'Swim',
-                                  'Bike',
-                                  'Run',
-                                  'Strength',
-                                ] as SportType[]
-                              ).map((s) => {
-                                const sTotal = sportTotals[s];
+                              {Object.entries(sportTotals).map(([stId, sTotal]) => {
                                 if (sTotal.duration === 0) return null;
-                                const sportColor =
-                                  intensitySettings?.[s]?.[2]?.hexColor;
+                                const st = sportMap.get(stId);
+                                const sportColor = getEffortColor(st, 2, userSettingsMap.get(stId));
                                 return (
-                                  <div key={s} className="flex flex-col">
+                                  <div key={stId} className="flex flex-col">
                                     <div className="flex items-center gap-1.5">
-                                      {sportColor && (
-                                        <span
-                                          className="h-2 w-2 shrink-0 rounded-full"
-                                          style={{ backgroundColor: sportColor }}
-                                        />
-                                      )}
+                                      <span
+                                        className="h-2 w-2 shrink-0 rounded-full"
+                                        style={{ backgroundColor: sportColor }}
+                                      />
                                       <span className="text-muted-foreground text-[10px] font-black lowercase">
-                                        {s}
+                                        {st?.name || 'Unknown'}
                                       </span>
                                     </div>
                                     <div className="flex flex-col gap-0.5 pl-3.5">
                                       <span className="text-[10px] font-black leading-none">
                                         {formatMinsShort(sTotal.duration)}
                                       </span>
-                                      {sTotal.distance > 0 && s !== 'Strength' && (
+                                      {sTotal.distance > 0 && st?.paceRelevant && (
                                         <span className="text-muted-foreground text-[9px] leading-none">
-                                          {sTotal.distance.toFixed(1)}km
+                                          {sTotal.distance.toFixed(1)}{st.distanceUnit || 'km'}
                                         </span>
                                       )}
                                     </div>
@@ -700,7 +685,8 @@ export function CalendarView() {
             onClose={() => setShowLibrary(false)}
             library={library}
             selectedDate={selectedDate}
-            intensitySettings={intensitySettings}
+            sportTypes={sportTypes}
+            userSettingsMap={userSettingsMap}
             onSelectTemplate={(template) => {
               setWorkoutToEdit({
                 ...template,
@@ -726,8 +712,8 @@ export function CalendarView() {
         {workoutToEdit && (
           <WorkoutDialog
             workout={workoutToEdit}
-            intensitySettings={intensitySettings}
-            workoutTypeOptions={profile?.workout_type_options}
+            sportTypes={sportTypes}
+            userSettingsMap={userSettingsMap}
             existingWorkouts={workouts}
             onSave={handleSaveWorkout}
             onSaveBulk={handleSaveBulk}

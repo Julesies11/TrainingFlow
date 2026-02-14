@@ -3,6 +3,8 @@ import { RequireAuth } from '@/auth/require-auth';
 import { ErrorRouting } from '@/errors/error-routing';
 import { Demo1Layout } from '@/layouts/demo1/layout';
 import { CalendarView } from '@/pages/training/calendar';
+import { LibraryPage } from '@/pages/training/library';
+import { SportTypesPage } from '@/pages/account/sport-types';
 import { Navigate, Route, Routes } from 'react-router';
 
 function PlaceholderPage({ title }: { title: string }) {
@@ -27,10 +29,7 @@ export function AppRoutingSetup() {
         <Route element={<Demo1Layout />}>
           <Route path="/" element={<Navigate to="/training/calendar" replace />} />
           <Route path="/training/calendar" element={<CalendarView />} />
-          <Route
-            path="/training/library"
-            element={<PlaceholderPage title="workout library" />}
-          />
+          <Route path="/training/library" element={<LibraryPage />} />
           <Route
             path="/training/goals"
             element={<PlaceholderPage title="goals & events" />}
@@ -47,6 +46,7 @@ export function AppRoutingSetup() {
             path="/account/settings"
             element={<PlaceholderPage title="settings" />}
           />
+          <Route path="/account/sport-types" element={<SportTypesPage />} />
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorRouting />} />

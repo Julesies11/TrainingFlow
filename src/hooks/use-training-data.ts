@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { workoutsApi, libraryApi, goalsApi, profileApi } from '@/services/api/training';
+import { workoutsApi, libraryApi, goalsApi, profileApi, sportTypesApi, userSportSettingsApi } from '@/services/api/training';
 import { useSupabaseUserId } from './use-supabase-user';
 import { Workout, LibraryWorkout, EventGoal, UserProfile } from '@/types/training';
 
@@ -9,6 +9,8 @@ const KEYS = {
   library: (uid: string) => ['library', uid] as const,
   goals: (uid: string) => ['goals', uid] as const,
   profile: (uid: string) => ['profile', uid] as const,
+  sportTypes: ['sportTypes'] as const,
+  userSportSettings: (uid: string) => ['userSportSettings', uid] as const,
 };
 
 // ─── Profile ─────────────────────────────────────────────────
@@ -30,6 +32,51 @@ export function useUpdateProfile() {
       profileApi.update(userId!, updates),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.profile(userId!) });
+    },
+  });
+}
+
+// ─── Sport Types (read-only system config) ──────────────────
+export function useSportTypes() {
+  const userId = useSupabaseUserId();
+  return useQuery({
+    queryKey: KEYS.sportTypes,
+    queryFn: () => sportTypesApi.getAll(),
+    enabled: !!userId,
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
+// ─── User Sport Settings (color overrides) ──────────────────
+export function useUserSportSettings() {
+  const userId = useSupabaseUserId();
+  return useQuery({
+    queryKey: KEYS.userSportSettings(userId ?? ''),
+    queryFn: () => userSportSettingsApi.getAll(userId!),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpsertUserSportSettings() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (args: {
+      sportTypeId: string;
+      settings: {
+        effort1Hex?: string;
+        effort2Hex?: string;
+        effort3Hex?: string;
+        effort4Hex?: string;
+        effort1Label?: string;
+        effort2Label?: string;
+        effort3Label?: string;
+        effort4Label?: string;
+      };
+    }) => userSportSettingsApi.upsert(userId!, args.sportTypeId, args.settings),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.userSportSettings(userId!) });
     },
   });
 }

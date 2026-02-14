@@ -1,5 +1,3 @@
-import { SportType } from './sports.types';
-
 export interface Interval {
   id: string;
   type: 'Warm-up' | 'Main Set' | 'Cool-down' | 'Recovery';
@@ -20,8 +18,8 @@ export interface RecurrenceRule {
 export interface Workout {
   id: string;
   date: string;
-  sport: SportType;
-  workoutType?: string;
+  sportTypeId: string;
+  sportName?: string;
   title: string;
   description: string;
   plannedDurationMinutes: number;
@@ -42,6 +40,14 @@ export interface Workout {
   recurrenceRule?: RecurrenceRule;
 }
 
-export interface LibraryWorkout extends Omit<Workout, 'date' | 'isCompleted' | 'actualDurationMinutes' | 'actualDistanceKilometers' | 'avgHR' | 'avgPower' | 'actualTSS' | 'order' | 'recurrenceId' | 'recurrenceRule'> {
-  date?: string;
+export interface LibraryWorkout {
+  id: string;
+  sportTypeId: string;
+  sportName?: string;
+  title: string;
+  description?: string;
+  plannedDurationMinutes: number;
+  plannedDistanceKilometers: number;
+  effortLevel: number;
+  isKeyWorkout: boolean;
 }

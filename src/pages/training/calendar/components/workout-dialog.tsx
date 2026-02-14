@@ -12,22 +12,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import {
-  Workout,
-  SportType,
-  IntensitySettings,
-  WorkoutTypeOptions,
-} from '@/types/training';
+import { Workout, SportTypeRecord, UserSportSettings } from '@/types/training';
 import {
   formatDateToLocalISO,
-  getWorkoutPace,
   getContrastColor,
 } from '@/services/training/calendar.utils';
+import { getEffortColor, getEffortLabel } from '@/services/training/effort-colors';
+import { calculatePace } from '@/services/training/pace-utils';
 
 interface WorkoutDialogProps {
   workout: Partial<Workout>;
-  intensitySettings?: IntensitySettings;
-  workoutTypeOptions?: WorkoutTypeOptions;
+  sportTypes: SportTypeRecord[];
+  userSettingsMap: Map<string, UserSportSettings>;
   existingWorkouts: Workout[];
   onSave: (w: Partial<Workout>) => void;
   onSaveBulk?: (ws: Partial<Workout>[]) => void;
@@ -35,12 +31,10 @@ interface WorkoutDialogProps {
   onCancel: () => void;
 }
 
-const SPORTS: SportType[] = ['Swim', 'Bike', 'Run', 'Strength'];
-
 export function WorkoutDialog({
   workout: initialWorkout,
-  intensitySettings,
-  workoutTypeOptions,
+  sportTypes,
+  userSettingsMap,
   existingWorkouts,
   onSave,
   onSaveBulk,
@@ -52,8 +46,7 @@ export function WorkoutDialog({
   const [workout, setWorkout] = useState<Partial<Workout>>(() => ({
     id: initialWorkout.id,
     date: initialWorkout.date || formatDateToLocalISO(new Date()),
-    sport: initialWorkout.sport || 'Bike',
-    workoutType: initialWorkout.workoutType || '',
+    sportTypeId: initialWorkout.sportTypeId || sportTypes[0]?.id || '',
     title: initialWorkout.title || '',
     description: initialWorkout.description || '',
     plannedDurationMinutes: initialWorkout.plannedDurationMinutes ?? 60,
@@ -76,25 +69,23 @@ export function WorkoutDialog({
     endValue: number | string;
   }>({ endType: 'count', endValue: 6 });
 
-  const effortOptions = useMemo(() => {
-    return intensitySettings?.[workout.sport as SportType] || {};
-  }, [workout.sport, intensitySettings]);
+  const selectedSport = useMemo(() => {
+    return sportTypes.find((st) => st.id === workout.sportTypeId);
+  }, [workout.sportTypeId, sportTypes]);
+
+  const userSettings = userSettingsMap.get(workout.sportTypeId || '');
 
   const calculatedPace = useMemo(() => {
     const dur = workout.plannedDurationMinutes || 0;
     const dist = workout.plannedDistanceKilometers || 0;
-    if (dur > 0 && dist > 0 && workout.sport !== 'Strength') {
-      return getWorkoutPace(workout.sport as SportType, dur, dist);
-    }
-    return '';
+    return calculatePace(selectedSport?.name || '', dur, dist);
   }, [
     workout.plannedDurationMinutes,
     workout.plannedDistanceKilometers,
-    workout.sport,
+    selectedSport,
   ]);
 
-  const headerColor =
-    effortOptions[workout.effortLevel || 1]?.hexColor || '#3b82f6';
+  const headerColor = getEffortColor(selectedSport, workout.effortLevel || 1, userSettings);
 
   const handleSave = () => {
     if (isRecurring && !workout.recurrenceId) {
@@ -168,19 +159,19 @@ export function WorkoutDialog({
                   <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
                     sport & effort level
                   </Label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {SPORTS.map((s) => (
+                  <div className="flex flex-wrap gap-2">
+                    {sportTypes.map((st) => (
                       <Button
-                        key={s}
+                        key={st.id}
                         type="button"
-                        variant={workout.sport === s ? 'primary' : 'outline'}
+                        variant={workout.sportTypeId === st.id ? 'primary' : 'outline'}
                         size="sm"
                         onClick={() =>
-                          setWorkout({ ...workout, sport: s })
+                          setWorkout({ ...workout, sportTypeId: st.id })
                         }
                         className="text-[9px] font-black lowercase"
                       >
-                        {s}
+                        {st.name}
                       </Button>
                     ))}
                   </div>
@@ -203,12 +194,11 @@ export function WorkoutDialog({
                         <div
                           className="h-2 w-full rounded-full"
                           style={{
-                            backgroundColor:
-                              effortOptions[level]?.hexColor || '#ccc',
+                            backgroundColor: getEffortColor(selectedSport, level, userSettings),
                           }}
                         />
-                        <span className="text-[9px] font-black lowercase tracking-tighter">
-                          level {level}
+                        <span className="text-[8px] font-black lowercase tracking-tighter">
+                          {getEffortLabel(selectedSport, level, userSettings)}
                         </span>
                       </button>
                     ))}
@@ -272,10 +262,10 @@ export function WorkoutDialog({
                       }
                     />
                   </div>
-                  {workout.sport !== 'Strength' && (
+                  {selectedSport?.paceRelevant && (
                     <div>
                       <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                        distance (km)
+                        distance ({selectedSport.distanceUnit || 'km'})
                       </Label>
                       <Input
                         type="number"

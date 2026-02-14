@@ -6,13 +6,13 @@ function mapDbWorkout(w: any): Workout {
   return {
     id: w.id,
     date: w.date,
-    sport: w.sport,
-    workoutType: w.workout_type,
+    sportTypeId: w.sport_type_id,
+    sportName: w.sport_types?.name ?? undefined,
     title: w.title,
     description: w.description,
     plannedDurationMinutes: w.planned_duration_minutes || 0,
     plannedDistanceKilometers: w.planned_distance_km || 0,
-    effortLevel: w.intensity_level || 1,
+    effortLevel: w.effort_level || 1,
     isKeyWorkout: w.is_key_workout || false,
     isCompleted: w.is_completed || false,
     actualDurationMinutes: w.actual_duration_minutes,
@@ -30,13 +30,12 @@ function toDbPayload(w: Partial<Workout>, userId: string) {
   return {
     user_id: userId,
     date: w.date,
-    sport: w.sport,
-    workout_type: w.workoutType,
+    sport_type_id: w.sportTypeId,
     title: w.title,
     description: w.description,
     planned_duration_minutes: w.plannedDurationMinutes,
     planned_distance_km: w.plannedDistanceKilometers,
-    intensity_level: w.effortLevel,
+    effort_level: w.effortLevel,
     is_key_workout: w.isKeyWorkout,
     is_completed: w.isCompleted,
     actual_duration_minutes: w.actualDurationMinutes,
@@ -54,7 +53,7 @@ export const workoutsApi = {
   async getAll(userId: string): Promise<Workout[]> {
     const { data, error } = await supabase
       .from('workouts')
-      .select('*')
+      .select('*, sport_types(name)')
       .eq('user_id', userId)
       .order('date', { ascending: false });
 
@@ -85,8 +84,8 @@ export const workoutsApi = {
   },
 
   async update(workout: Workout, userId: string): Promise<Workout> {
-    const { id, ...rest } = toDbPayload(workout, userId);
-    void id; // unused destructure
+    const { user_id, ...rest } = toDbPayload(workout, userId);
+    void user_id;
     const { data, error } = await supabase
       .from('workouts')
       .update(rest)

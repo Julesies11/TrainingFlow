@@ -1,10 +1,31 @@
 export type SportType = 'Swim' | 'Bike' | 'Run' | 'Strength';
 
-export interface EffortSetting {
-  label: string;
-  hexColor: string;
+export interface SportTypeRecord {
+  id: string;
+  name: string;
+  description?: string;
+  paceRelevant: boolean;
+  paceUnit?: string;
+  distanceUnit?: string;
+  effort1Label?: string;
+  effort1Hex?: string;
+  effort2Label?: string;
+  effort2Hex?: string;
+  effort3Label?: string;
+  effort3Hex?: string;
+  effort4Label?: string;
+  effort4Hex?: string;
 }
 
-export type IntensitySettings = Record<SportType, Record<number, EffortSetting>>;
-
-export type WorkoutTypeOptions = Record<SportType, string[]>;
+export interface UserSportSettings {
+  id: string;
+  sportTypeId: string;
+  effort1Hex?: string;
+  effort2Hex?: string;
+  effort3Hex?: string;
+  effort4Hex?: string;
+  effort1Label?: string;
+  effort2Label?: string;
+  effort3Label?: string;
+  effort4Label?: string;
+}

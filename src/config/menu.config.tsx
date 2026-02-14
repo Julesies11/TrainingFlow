@@ -26,6 +26,7 @@ export const MENU_SIDEBAR: MenuConfig = [
     icon: UserCircle,
     children: [
       { title: 'Profile', path: '/account/profile' },
+      { title: 'Sport Types', path: '/account/sport-types' },
       { title: 'Settings', path: '/account/settings' },
     ],
   },

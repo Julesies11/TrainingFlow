@@ -1,14 +1,17 @@
+import { useMemo } from 'react';
 import { X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LibraryWorkout, IntensitySettings } from '@/types/training';
+import { LibraryWorkout, SportTypeRecord, UserSportSettings } from '@/types/training';
 import { getContrastColor } from '@/services/training/calendar.utils';
+import { getEffortColor, buildSportMap } from '@/services/training/effort-colors';
 
 interface LibraryDrawerProps {
   open: boolean;
   onClose: () => void;
   library: LibraryWorkout[];
   selectedDate: string;
-  intensitySettings?: IntensitySettings;
+  sportTypes: SportTypeRecord[];
+  userSettingsMap: Map<string, UserSportSettings>;
   onSelectTemplate: (template: LibraryWorkout) => void;
   onAddTemplate: (template: LibraryWorkout) => void;
   onCreateLibrary: (w: Partial<LibraryWorkout>) => void;
@@ -21,10 +24,13 @@ export function LibraryDrawer({
   onClose,
   library,
   selectedDate,
-  intensitySettings,
+  sportTypes,
+  userSettingsMap,
   onSelectTemplate,
   onAddTemplate,
 }: LibraryDrawerProps) {
+  const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
+
   return (
     <div
       className={`bg-card fixed inset-y-0 right-0 z-[100] flex w-full transform flex-col border-l shadow-2xl transition-transform duration-300 lg:w-[450px] ${open ? 'translate-x-0' : 'translate-x-full'}`}
@@ -51,9 +57,8 @@ export function LibraryDrawer({
         ) : (
           <div className="space-y-2">
             {library.map((template) => {
-              const bg =
-                intensitySettings?.[template.sport]?.[template.effortLevel || 1]
-                  ?.hexColor || '#3b82f6';
+              const st = sportMap.get(template.sportTypeId);
+              const bg = getEffortColor(st, template.effortLevel || 1, userSettingsMap.get(template.sportTypeId));
               return (
                 <div
                   key={template.id}
@@ -65,19 +70,15 @@ export function LibraryDrawer({
                     className="w-full p-3 pr-14 text-left"
                   >
                     <div className="text-[8px] font-black uppercase opacity-70">
-                      {template.sport}
-                      {template.workoutType
-                        ? ` · ${template.workoutType}`
-                        : ''}
+                      {template.sportName || st?.name || 'Unknown'}
                     </div>
                     <div className="truncate text-sm font-semibold">
                       {template.title || 'Untitled'}
                     </div>
                     <div className="mt-1 text-[10px] opacity-70">
                       {template.plannedDurationMinutes}m
-                      {template.plannedDistanceKilometers > 0 &&
-                      template.sport !== 'Strength'
-                        ? ` · ${template.plannedDistanceKilometers}km`
+                      {template.plannedDistanceKilometers > 0 && st?.paceRelevant
+                        ? ` · ${template.plannedDistanceKilometers}${st.distanceUnit || 'km'}`
                         : ''}
                     </div>
                   </button>

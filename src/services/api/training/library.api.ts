@@ -5,15 +5,14 @@ import { LibraryWorkout } from '@/types/training';
 function mapDbLibrary(l: any): LibraryWorkout {
   return {
     id: l.id,
-    sport: l.sport,
-    workoutType: l.workout_type,
+    sportTypeId: l.sport_type_id || '',
+    sportName: l.sport_types?.name || '',
     title: l.title,
-    description: l.description,
+    description: l.description || '',
     plannedDurationMinutes: l.planned_duration_minutes || 0,
     plannedDistanceKilometers: l.planned_distance_km || 0,
-    effortLevel: l.intensity_level || 1,
+    effortLevel: l.effort_level || 1,
     isKeyWorkout: l.is_key_workout || false,
-    intervals: l.intervals || [],
   };
 }
 
@@ -21,7 +20,7 @@ export const libraryApi = {
   async getAll(userId: string): Promise<LibraryWorkout[]> {
     const { data, error } = await supabase
       .from('library_workouts')
-      .select('*')
+      .select('*, sport_types(name)')
       .eq('user_id', userId);
 
     if (error) throw error;
@@ -33,17 +32,15 @@ export const libraryApi = {
       .from('library_workouts')
       .insert({
         user_id: userId,
-        sport: workout.sport,
-        workout_type: workout.workoutType,
+        sport_type_id: workout.sportTypeId,
         title: workout.title,
         description: workout.description,
         planned_duration_minutes: workout.plannedDurationMinutes,
         planned_distance_km: workout.plannedDistanceKilometers,
-        intensity_level: workout.effortLevel,
+        effort_level: workout.effortLevel,
         is_key_workout: workout.isKeyWorkout,
-        intervals: workout.intervals,
       })
-      .select()
+      .select('*, sport_types(name)')
       .single();
 
     if (error) throw error;
@@ -54,19 +51,17 @@ export const libraryApi = {
     const { data, error } = await supabase
       .from('library_workouts')
       .update({
-        sport: workout.sport,
-        workout_type: workout.workoutType,
+        sport_type_id: workout.sportTypeId,
         title: workout.title,
         description: workout.description,
         planned_duration_minutes: workout.plannedDurationMinutes,
         planned_distance_km: workout.plannedDistanceKilometers,
-        intensity_level: workout.effortLevel,
+        effort_level: workout.effortLevel,
         is_key_workout: workout.isKeyWorkout,
-        intervals: workout.intervals,
       })
       .eq('id', workout.id)
       .eq('user_id', userId)
-      .select()
+      .select('*, sport_types(name)')
       .single();
 
     if (error) throw error;
