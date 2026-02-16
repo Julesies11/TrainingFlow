@@ -174,7 +174,6 @@ export function VolumeChart({
     },
     yaxis: {
       min: 0,
-      forceNiceScale: true,
       labels: {
         style: {
           colors: 'var(--color-muted-foreground)',
@@ -199,10 +198,21 @@ export function VolumeChart({
       intersect: true,
       custom: function({ series, seriesIndex, dataPointIndex, w }) {
         const value = series[seriesIndex][dataPointIndex];
-        if (value === null) return '';
+        if (value === null || value === undefined) return '';
         
         const label = w.globals.labels[dataPointIndex];
-        const seriesName = seriesIndex === 0 ? 'Completed' : 'Planned';
+        const dataPoint = chartData[dataPointIndex];
+        
+        // Determine the correct label based on the data point's timing
+        let seriesName;
+        if (dataPoint.isCurrent) {
+          seriesName = 'Current Week';
+        } else if (dataPoint.past !== null) {
+          seriesName = 'Past';
+        } else {
+          seriesName = 'Future';
+        }
+        
         const unit = metric === 'duration' ? 'h' : 'km';
         
         return `<div class="apexcharts-tooltip-custom" style="padding: 8px 12px; background: var(--color-popover); border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">

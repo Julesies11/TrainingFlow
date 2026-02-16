@@ -640,32 +640,73 @@ export function CalendarView() {
                                           <Star className="absolute top-0.5 right-0.5 h-2.5 w-2.5 fill-white/90 text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] lg:h-3 lg:w-3" />
                                         )}
                                         <div className="pointer-events-none flex flex-col gap-0.5 leading-none">
-                                          <div className="flex items-center gap-1 truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
-                                            {(() => {
-                                              const sportName = w.sportName || wSt?.name || 'Unknown';
-                                              const IconComponent = 
-                                                sportName === 'Swim' ? Waves :
-                                                sportName === 'Bike' ? Bike :
-                                                sportName === 'Run' ? PersonStanding :
-                                                sportName === 'Strength' ? Dumbbell : null;
-                                              return (
-                                                <>
-                                                  {IconComponent && <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />}
-                                                  <span className="truncate">{sportName}</span>
-                                                </>
-                                              );
-                                            })()}
-                                          </div>
-                                          <div className="truncate text-[9px] lg:text-xs">
-                                            {w.title || 'Untitled'}
-                                          </div>
-                                          <div className="truncate text-[8px] opacity-70 lg:text-[10px]">
-                                            {formatMinsShort(dur)}
-                                            {dist > 0 && wSt?.paceRelevant
-                                              ? ` · ${dist}${wSt.distanceUnit || 'km'}`
-                                              : ''}
-                                            {pace ? ` · ${pace}` : ''}
-                                          </div>
+                                          {viewMode === 'summary' ? (
+                                            // Stats view: icon + sport type on top, stacked metrics below
+                                            <>
+                                              <div className="flex items-center gap-1 truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
+                                                {(() => {
+                                                  const sportName = w.sportName || wSt?.name || 'Unknown';
+                                                  const IconComponent = 
+                                                    sportName === 'Swim' ? Waves :
+                                                    sportName === 'Bike' ? Bike :
+                                                    sportName === 'Run' ? PersonStanding :
+                                                    sportName === 'Strength' ? Dumbbell : null;
+                                                  return (
+                                                    <>
+                                                      {IconComponent && <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />}
+                                                      <span className="truncate">{sportName}</span>
+                                                    </>
+                                                  );
+                                                })()}
+                                              </div>
+                                              {/* Duration */}
+                                              <div className="text-[9px] lg:text-xs">
+                                                {formatMinsShort(dur)}
+                                              </div>
+                                              {/* Distance */}
+                                              {dist > 0 && wSt?.paceRelevant && (
+                                                <div className="text-[8px] opacity-70 lg:text-[10px]">
+                                                  {dist}{wSt.distanceUnit || 'km'}
+                                                </div>
+                                              )}
+                                              {/* Pace */}
+                                              {pace && (
+                                                <div className="text-[8px] opacity-70 lg:text-[10px]">
+                                                  {pace}
+                                                </div>
+                                              )}
+                                            </>
+                                          ) : (
+                                            // Calendar view: icon + sport, title, and inline metrics
+                                            <>
+                                              <div className="flex items-center gap-1 truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
+                                                {(() => {
+                                                  const sportName = w.sportName || wSt?.name || 'Unknown';
+                                                  const IconComponent = 
+                                                    sportName === 'Swim' ? Waves :
+                                                    sportName === 'Bike' ? Bike :
+                                                    sportName === 'Run' ? PersonStanding :
+                                                    sportName === 'Strength' ? Dumbbell : null;
+                                                  return (
+                                                    <>
+                                                      {IconComponent && <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />}
+                                                      <span className="truncate">{sportName}</span>
+                                                    </>
+                                                  );
+                                                })()}
+                                              </div>
+                                              <div className="truncate text-[9px] lg:text-xs">
+                                                {w.title || 'Untitled'}
+                                              </div>
+                                              <div className="truncate text-[8px] opacity-70 lg:text-[10px]">
+                                                {formatMinsShort(dur)}
+                                                {dist > 0 && wSt?.paceRelevant
+                                                  ? ` · ${dist}${wSt.distanceUnit || 'km'}`
+                                                  : ''}
+                                                {pace ? ` · ${pace}` : ''}
+                                              </div>
+                                            </>
+                                          )}
                                         </div>
                                       </div>
                                     </React.Fragment>
