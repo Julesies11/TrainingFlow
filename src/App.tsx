@@ -1,5 +1,4 @@
 import { AppRouting } from '@/routing/app-routing';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { LoadingBarContainer } from 'react-top-loading-bar';
 import { Toaster } from '@/components/ui/sonner';
@@ -14,11 +13,8 @@ import { TooltipsProvider } from './providers/tooltips-provider';
 const { BASE_URL } = import.meta.env;
 
 export function App() {
-  const queryClient = new QueryClient();
-
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+    <AuthProvider>
         <SettingsProvider>
           <ThemeProvider>
             <I18nProvider>
@@ -38,6 +34,5 @@ export function App() {
           </ThemeProvider>
         </SettingsProvider>
       </AuthProvider>
-    </QueryClientProvider>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Plus, Calendar, Trophy, Target, Trash2, Pencil, Flag } from 'lucide-react';
+import { Plus, Calendar, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   useEvents,
@@ -11,8 +11,10 @@ import {
 } from '@/hooks/use-training-data';
 import { Event } from '@/types/training';
 import { EventDialog } from './components/event-dialog';
-import { format, parseISO, isBefore, differenceInDays } from 'date-fns';
+import { format, parseISO, isBefore } from 'date-fns';
 import { getEffortColor, buildUserSettingsMap, buildSportMap } from '@/services/training/effort-colors';
+import { getPriorityColor, getTypeIcon, getDaysUntil } from '../_shared/utils/event-helpers';
+import { DeleteConfirmOverlay } from '../_shared/components/delete-confirm-overlay';
 
 export function EventsPage() {
   const { data: events = [], isLoading } = useEvents();
@@ -29,8 +31,11 @@ export function EventsPage() {
   const userSettingsMap = useMemo(() => buildUserSettingsMap(userSettings), [userSettings]);
   const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
 
   const { upcoming, past } = useMemo(() => {
     const upcoming: Event[] = [];
@@ -74,37 +79,6 @@ export function EventsPage() {
     });
   };
 
-  const getPriorityColor = (priority: 'A' | 'B' | 'C') => {
-    switch (priority) {
-      case 'A':
-        return 'bg-red-500/10 text-red-500 border-red-500/20';
-      case 'B':
-        return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'C':
-        return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
-    }
-  };
-
-  const getTypeIcon = (type: 'Race' | 'Goal' | 'Test') => {
-    switch (type) {
-      case 'Race':
-        return <Flag className="h-4 w-4" />;
-      case 'Goal':
-        return <Target className="h-4 w-4" />;
-      case 'Test':
-        return <Trophy className="h-4 w-4" />;
-    }
-  };
-
-  const getDaysUntil = (dateStr: string) => {
-    const eventDate = parseISO(dateStr);
-    const days = differenceInDays(eventDate, today);
-    if (days === 0) return 'Today';
-    if (days === 1) return 'Tomorrow';
-    if (days < 0) return `${Math.abs(days)} days ago`;
-    return `${days} days`;
-  };
-
   const getEventTotals = (event: Event) => {
     if (!event.segments || event.segments.length === 0) {
       return { duration: 0, distance: 0, count: 0 };
@@ -139,28 +113,11 @@ export function EventsPage() {
         className="bg-card group relative overflow-hidden rounded-2xl border shadow-sm transition-all hover:shadow-md"
       >
         {deleteConfirmId === event.id && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-            <div className="space-y-3 text-center">
-              <p className="text-sm font-semibold text-white">Delete this event?</p>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setDeleteConfirmId(null)}
-                  className="bg-white"
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => handleDelete(event.id)}
-                  className="bg-red-500 text-white hover:bg-red-600"
-                >
-                  Delete
-                </Button>
-              </div>
-            </div>
-          </div>
+          <DeleteConfirmOverlay
+            message="Delete this event?"
+            onConfirm={() => handleDelete(event.id)}
+            onCancel={() => setDeleteConfirmId(null)}
+          />
         )}
 
         <div className="p-5">
@@ -181,7 +138,12 @@ export function EventsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <div className="text-muted-foreground">{getTypeIcon(event.type)}</div>
+                    <div className="text-muted-foreground">
+                      {(() => {
+                        const Icon = getTypeIcon(event.type);
+                        return <Icon className="h-4 w-4" />;
+                      })()}
+                    </div>
                     <h3 className="text-lg font-black tracking-tight">{event.title}</h3>
                   </div>
                   <p className="text-muted-foreground mt-1 text-xs font-semibold">

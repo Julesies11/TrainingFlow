@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, BookOpen, Plus, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Plus, Star, Waves, Bike, PersonStanding, Dumbbell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   useWorkouts,
@@ -112,6 +112,7 @@ export function CalendarView() {
       setIsTransitioning(true);
       setIsAnimating(true);
       setSlideOffset(dir === 'up' ? 60 : -60);
+      // Reduced animation time from 200ms to 180ms for snappier feel
       setTimeout(() => {
         setBaseDate((prev) => {
           const d = new Date(prev);
@@ -120,8 +121,11 @@ export function CalendarView() {
         });
         setIsAnimating(false);
         setSlideOffset(0);
-        requestAnimationFrame(() => setIsTransitioning(false));
-      }, 200);
+        // Use double RAF for smoother state updates
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => setIsTransitioning(false));
+        });
+      }, 180);
     },
     [isTransitioning, isAnimating],
   );
@@ -159,10 +163,17 @@ export function CalendarView() {
     const handleWheel = (e: WheelEvent) => {
       if (workoutToEdit || eventWithSegmentsToEdit || showLibrary || isTransitioning)
         return;
+      
+      // Prevent default scroll behavior for smoother week transitions
+      e.preventDefault();
+      
       const now = Date.now();
-      if (now - lastScrollTime.current < 450) return;
+      // Reduced debounce from 450ms to 300ms for more responsive feel
+      if (now - lastScrollTime.current < 300) return;
+      
       scrollAccumulator.current += e.deltaY;
-      if (Math.abs(scrollAccumulator.current) > 30) {
+      // Increased threshold from 30 to 80 to require more deliberate scroll
+      if (Math.abs(scrollAccumulator.current) > 80) {
         stepWeek(scrollAccumulator.current > 0 ? 'down' : 'up');
         lastScrollTime.current = now;
         scrollAccumulator.current = 0;
@@ -191,7 +202,8 @@ export function CalendarView() {
 
     const el = calendarRef.current;
     if (el) {
-      el.addEventListener('wheel', handleWheel, { passive: true });
+      // Use passive: false for wheel to allow preventDefault for smooth scrolling
+      el.addEventListener('wheel', handleWheel, { passive: false });
       el.addEventListener('touchstart', handleTouchStart, { passive: true });
       el.addEventListener('touchend', handleTouchEnd, { passive: true });
     }
@@ -472,6 +484,7 @@ export function CalendarView() {
                     calculateWeekSummary(week);
                   return (
                     <div key={wIdx} className="flex flex-col lg:contents">
+                      {/* Week grid */}
                       <div
                         className={`grid min-h-[120px] border-b lg:min-h-[160px] ${gridColsClass}`}
                       >
@@ -627,8 +640,21 @@ export function CalendarView() {
                                           <Star className="absolute top-0.5 right-0.5 h-2.5 w-2.5 fill-white/90 text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] lg:h-3 lg:w-3" />
                                         )}
                                         <div className="pointer-events-none flex flex-col gap-0.5 leading-none">
-                                          <div className="truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
-                                            {w.sportName || wSt?.name || 'Unknown'}
+                                          <div className="flex items-center gap-1 truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
+                                            {(() => {
+                                              const sportName = w.sportName || wSt?.name || 'Unknown';
+                                              const IconComponent = 
+                                                sportName === 'Swim' ? Waves :
+                                                sportName === 'Bike' ? Bike :
+                                                sportName === 'Run' ? PersonStanding :
+                                                sportName === 'Strength' ? Dumbbell : null;
+                                              return (
+                                                <>
+                                                  {IconComponent && <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />}
+                                                  <span className="truncate">{sportName}</span>
+                                                </>
+                                              );
+                                            })()}
                                           </div>
                                           <div className="truncate text-[9px] lg:text-xs">
                                             {w.title || 'Untitled'}
@@ -677,7 +703,7 @@ export function CalendarView() {
                           );
                         })}
 
-                        {/* Week summary column */}
+                        {/* Week summary column - desktop only */}
                         {viewMode === 'summary' && (
                           <div className="bg-primary/5 hidden flex-col gap-3 border-l p-3 lg:flex">
                             <div className="text-primary text-xl font-black leading-none">
@@ -716,6 +742,44 @@ export function CalendarView() {
                           </div>
                         )}
                       </div>
+
+                      {/* Week summary row - mobile only */}
+                      {viewMode === 'summary' && (
+                        <div className="bg-primary/5 border-b p-3 lg:hidden">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">Week Total</span>
+                            <span className="text-primary text-base font-black">
+                              {formatMinsShort(weekTotals.duration)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-3">
+                            {Object.entries(sportTotals).map(([stId, sTotal]) => {
+                              if (sTotal.duration === 0) return null;
+                              const st = sportMap.get(stId);
+                              const sportColor = getEffortColor(st, 2, userSettingsMap.get(stId));
+                              return (
+                                <div key={stId} className="flex items-center gap-2">
+                                  <span
+                                    className="h-2 w-2 shrink-0 rounded-full"
+                                    style={{ backgroundColor: sportColor }}
+                                  />
+                                  <span className="text-[10px] font-black lowercase">
+                                    {st?.name || 'Unknown'}
+                                  </span>
+                                  <span className="text-[10px] font-black">
+                                    {formatMinsShort(sTotal.duration)}
+                                  </span>
+                                  {sTotal.distance > 0 && st?.paceRelevant && (
+                                    <span className="text-muted-foreground text-[9px]">
+                                      {sTotal.distance.toFixed(1)}{st.distanceUnit || 'km'}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

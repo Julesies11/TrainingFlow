@@ -4,30 +4,24 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useProfile, useUpdateProfile } from '@/hooks/use-training-data';
-import { useSupabaseUserId } from '@/hooks/use-supabase-user';
-import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/auth/context/auth-context';
 import { useTheme } from 'next-themes';
 import { toAbsoluteUrl } from '@/lib/helpers';
 
 export function ProfilePage() {
-  const userId = useSupabaseUserId();
+  const { user, resetPassword } = useAuth();
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
   const { theme, setTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [userEmail, setUserEmail] = useState<string>('');
   const [avatarUrl, setAvatarUrl] = useState<string>('');
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserEmail(data.user?.email || '');
-    });
-  }, []);
+  const userEmail = user?.email || '';
 
   useEffect(() => {
     if (profile) {
@@ -89,8 +83,7 @@ export function ProfilePage() {
     setMessage(null);
 
     try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
+      await resetPassword(newPassword, confirmPassword);
       setMessage({ type: 'success', text: 'Password updated successfully.' });
       setNewPassword('');
       setConfirmPassword('');

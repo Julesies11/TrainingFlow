@@ -1,13 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { workoutsApi, libraryApi, goalsApi, eventsApi, profileApi, sportTypesApi, userSportSettingsApi } from '@/services/api/training';
+import { workoutsApi, libraryApi, eventsApi, profileApi, sportTypesApi, userSportSettingsApi } from '@/services/api/training';
 import { useSupabaseUserId } from './use-supabase-user';
-import { Workout, LibraryWorkout, EventGoal, Event, UserProfile, SportTypeRecord } from '@/types/training';
+import { Workout, LibraryWorkout, Event, UserProfile, SportTypeRecord } from '@/types/training';
 
 // ─── Query Keys ──────────────────────────────────────────────
 const KEYS = {
   workouts: (uid: string) => ['workouts', uid] as const,
   library: (uid: string) => ['library', uid] as const,
-  goals: (uid: string) => ['goals', uid] as const,
   events: (uid: string) => ['events', uid] as const,
   profile: (uid: string) => ['profile', uid] as const,
   sportTypes: ['sportTypes'] as const,
@@ -244,59 +243,6 @@ export function useDeleteLibraryWorkout() {
   });
 }
 
-// ─── Goals ───────────────────────────────────────────────────
-export function useGoals() {
-  const userId = useSupabaseUserId();
-  return useQuery({
-    queryKey: KEYS.goals(userId ?? ''),
-    queryFn: () => goalsApi.getAll(userId!),
-    enabled: !!userId,
-  });
-}
-
-export function useCreateGoal() {
-  const userId = useSupabaseUserId();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (goal: Partial<EventGoal>) => goalsApi.create(goal, userId!),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: KEYS.goals(userId!) });
-    },
-  });
-}
-
-export function useUpdateGoal() {
-  const userId = useSupabaseUserId();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (goal: EventGoal) => goalsApi.update(goal, userId!),
-    onMutate: async (updated) => {
-      await qc.cancelQueries({ queryKey: KEYS.goals(userId!) });
-      const prev = qc.getQueryData<EventGoal[]>(KEYS.goals(userId!));
-      qc.setQueryData<EventGoal[]>(KEYS.goals(userId!), (old) =>
-        old?.map((g) => (g.id === updated.id ? updated : g)),
-      );
-      return { prev };
-    },
-    onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(KEYS.goals(userId!), ctx.prev);
-    },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: KEYS.goals(userId!) });
-    },
-  });
-}
-
-export function useDeleteGoal() {
-  const userId = useSupabaseUserId();
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => goalsApi.remove(id, userId!),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: KEYS.goals(userId!) });
-    },
-  });
-}
 
 // ─── Events ──────────────────────────────────────────────────
 export function useEvents() {

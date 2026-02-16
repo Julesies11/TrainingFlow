@@ -71,7 +71,11 @@ export function VolumeChart({
 
       let val = bucketWorkouts.reduce((sum, w) => {
         if (metric === 'distance') {
-          const dist = w.isCompleted ? (w.actualDistanceKilometers || 0) : (w.plannedDistanceKilometers || 0);
+          let dist = w.isCompleted ? (w.actualDistanceKilometers || 0) : (w.plannedDistanceKilometers || 0);
+          // Convert swim distances from meters to kilometers
+          if (w.sportName === 'Swim') {
+            dist = dist / 1000;
+          }
           return sum + dist;
         }
         if (metric === 'duration') {
@@ -88,7 +92,12 @@ export function VolumeChart({
             const sportMatch = sport === 'All' || seg.sportName === sport;
             if (sportMatch) {
               if (metric === 'distance') {
-                val += seg.plannedDistanceKilometers || 0;
+                let segDist = seg.plannedDistanceKilometers || 0;
+                // Convert swim distances from meters to kilometers
+                if (seg.sportName === 'Swim') {
+                  segDist = segDist / 1000;
+                }
+                val += segDist;
               } else if (metric === 'duration') {
                 val += seg.plannedDurationMinutes || 0;
               }
@@ -164,6 +173,8 @@ export function VolumeChart({
       },
     },
     yaxis: {
+      min: 0,
+      forceNiceScale: true,
       labels: {
         style: {
           colors: 'var(--color-muted-foreground)',
@@ -184,11 +195,20 @@ export function VolumeChart({
     },
     tooltip: {
       enabled: true,
-      y: {
-        formatter: (value: number) => {
-          if (metric === 'duration') return `${value}h`;
-          return `${value}km`;
-        },
+      shared: false,
+      intersect: true,
+      custom: function({ series, seriesIndex, dataPointIndex, w }) {
+        const value = series[seriesIndex][dataPointIndex];
+        if (value === null) return '';
+        
+        const label = w.globals.labels[dataPointIndex];
+        const seriesName = seriesIndex === 0 ? 'Completed' : 'Planned';
+        const unit = metric === 'duration' ? 'h' : 'km';
+        
+        return `<div class="apexcharts-tooltip-custom" style="padding: 8px 12px; background: var(--color-popover); border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+          <div style="font-size: 11px; font-weight: 700; color: var(--color-muted-foreground); text-transform: lowercase; margin-bottom: 4px;">${label}</div>
+          <div style="font-size: 13px; font-weight: 800; color: var(--color-foreground);">${seriesName}: ${value}${unit}</div>
+        </div>`;
       },
     },
     markers: {
