@@ -31,4 +31,68 @@ export const sportTypesApi = {
     if (error) throw error;
     return (data || []).map(mapDbSportType);
   },
+
+  async create(st: Partial<SportTypeRecord>, userId: string): Promise<SportTypeRecord> {
+    const { data, error } = await supabase
+      .from('sport_types')
+      .insert({
+        name: st.name,
+        description: st.description || null,
+        pace_relevant: st.paceRelevant ?? false,
+        pace_unit: st.paceUnit || null,
+        distance_unit: st.distanceUnit || null,
+        effort1_label: st.effort1Label || null,
+        effort1_hex: st.effort1Hex || null,
+        effort2_label: st.effort2Label || null,
+        effort2_hex: st.effort2Hex || null,
+        effort3_label: st.effort3Label || null,
+        effort3_hex: st.effort3Hex || null,
+        effort4_label: st.effort4Label || null,
+        effort4_hex: st.effort4Hex || null,
+        created_by: userId,
+        modified_by: userId,
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return mapDbSportType(data);
+  },
+
+  async update(st: SportTypeRecord, userId: string): Promise<SportTypeRecord> {
+    const { data, error } = await supabase
+      .from('sport_types')
+      .update({
+        name: st.name,
+        description: st.description || null,
+        pace_relevant: st.paceRelevant ?? false,
+        pace_unit: st.paceUnit || null,
+        distance_unit: st.distanceUnit || null,
+        effort1_label: st.effort1Label || null,
+        effort1_hex: st.effort1Hex || null,
+        effort2_label: st.effort2Label || null,
+        effort2_hex: st.effort2Hex || null,
+        effort3_label: st.effort3Label || null,
+        effort3_hex: st.effort3Hex || null,
+        effort4_label: st.effort4Label || null,
+        effort4_hex: st.effort4Hex || null,
+        modified_by: userId,
+        modified_at: new Date().toISOString(),
+      })
+      .eq('id', st.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return mapDbSportType(data);
+  },
+
+  async remove(id: string): Promise<void> {
+    const { error } = await supabase
+      .from('sport_types')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+  },
 };

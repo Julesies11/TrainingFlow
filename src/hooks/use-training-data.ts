@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { workoutsApi, libraryApi, goalsApi, profileApi, sportTypesApi, userSportSettingsApi } from '@/services/api/training';
+import { workoutsApi, libraryApi, goalsApi, eventsApi, profileApi, sportTypesApi, userSportSettingsApi } from '@/services/api/training';
 import { useSupabaseUserId } from './use-supabase-user';
-import { Workout, LibraryWorkout, EventGoal, UserProfile } from '@/types/training';
+import { Workout, LibraryWorkout, EventGoal, Event, UserProfile, SportTypeRecord } from '@/types/training';
 
 // ─── Query Keys ──────────────────────────────────────────────
 const KEYS = {
   workouts: (uid: string) => ['workouts', uid] as const,
   library: (uid: string) => ['library', uid] as const,
   goals: (uid: string) => ['goals', uid] as const,
+  events: (uid: string) => ['events', uid] as const,
   profile: (uid: string) => ['profile', uid] as const,
   sportTypes: ['sportTypes'] as const,
   userSportSettings: (uid: string) => ['userSportSettings', uid] as const,
@@ -77,6 +78,41 @@ export function useUpsertUserSportSettings() {
     }) => userSportSettingsApi.upsert(userId!, args.sportTypeId, args.settings),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.userSportSettings(userId!) });
+    },
+  });
+}
+
+// ─── Admin Sport Types (system CRUD) ─────────────────────────
+export function useCreateSportType() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (st: Partial<SportTypeRecord>) =>
+      sportTypesApi.create(st, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.sportTypes });
+    },
+  });
+}
+
+export function useUpdateSportType() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (st: SportTypeRecord) =>
+      sportTypesApi.update(st, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.sportTypes });
+    },
+  });
+}
+
+export function useDeleteSportType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => sportTypesApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.sportTypes });
     },
   });
 }
@@ -258,6 +294,60 @@ export function useDeleteGoal() {
     mutationFn: (id: string) => goalsApi.remove(id, userId!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.goals(userId!) });
+    },
+  });
+}
+
+// ─── Events ──────────────────────────────────────────────────
+export function useEvents() {
+  const userId = useSupabaseUserId();
+  return useQuery({
+    queryKey: KEYS.events(userId ?? ''),
+    queryFn: () => eventsApi.getAll(userId!),
+    enabled: !!userId,
+  });
+}
+
+export function useCreateEvent() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (event: Partial<Event>) => eventsApi.create(event, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.events(userId!) });
+    },
+  });
+}
+
+export function useUpdateEvent() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (event: Event) => eventsApi.update(event, userId!),
+    onMutate: async (updated) => {
+      await qc.cancelQueries({ queryKey: KEYS.events(userId!) });
+      const prev = qc.getQueryData<Event[]>(KEYS.events(userId!));
+      qc.setQueryData<Event[]>(KEYS.events(userId!), (old) =>
+        old?.map((e) => (e.id === updated.id ? updated : e)),
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(KEYS.events(userId!), ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: KEYS.events(userId!) });
+    },
+  });
+}
+
+export function useDeleteEvent() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => eventsApi.remove(id, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.events(userId!) });
     },
   });
 }

@@ -12,7 +12,7 @@ export const MENU_SIDEBAR: MenuConfig = [
     children: [
       { title: 'Calendar', path: '/training/calendar' },
       { title: 'Workout Library', path: '/training/library' },
-      { title: 'Goals & Events', path: '/training/goals' },
+      { title: 'Events', path: '/training/events' },
     ],
   },
   {
@@ -37,7 +37,7 @@ export const MENU_SIDEBAR_COMPACT: MenuConfig = MENU_SIDEBAR;
 export const MENU_MEGA: MenuConfig = [
   { title: 'Calendar', path: '/training/calendar' },
   { title: 'Library', path: '/training/library' },
-  { title: 'Goals', path: '/training/goals' },
+  { title: 'Events', path: '/training/events' },
   { title: 'Dashboard', path: '/dashboard' },
 ];
 export const MENU_MEGA_MOBILE: MenuConfig = MENU_MEGA;

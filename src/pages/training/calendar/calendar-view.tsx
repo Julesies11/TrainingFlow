@@ -9,6 +9,9 @@ import {
   useDeleteWorkout,
   useGoals,
   useUpdateGoal,
+  useEvents,
+  useUpdateEvent,
+  useDeleteEvent,
   useProfile,
   useLibrary,
   useCreateLibraryWorkout,
@@ -18,7 +21,7 @@ import {
   useSportTypes,
   useUserSportSettings,
 } from '@/hooks/use-training-data';
-import { Workout, EventGoal, LibraryWorkout } from '@/types/training';
+import { Workout, EventGoal, Event, LibraryWorkout } from '@/types/training';
 import {
   formatDateToLocalISO,
   getMonday,
@@ -31,11 +34,13 @@ import { getEffortColor, buildSportMap, buildUserSettingsMap } from '@/services/
 import { calculatePace } from '@/services/training/pace-utils';
 import { WorkoutDialog } from './components/workout-dialog';
 import { GoalDialog } from './components/goal-dialog';
+import { EventDialog } from './components/event-dialog';
 import { LibraryDrawer } from './components/library-drawer';
 
 export function CalendarView() {
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
   const { data: goals = [] } = useGoals();
+  const { data: events = [] } = useEvents();
   const { data: profile } = useProfile();
   const { data: library = [] } = useLibrary();
   const { data: sportTypes = [] } = useSportTypes();
@@ -47,6 +52,8 @@ export function CalendarView() {
   const deleteWorkout = useDeleteWorkout();
   const updateGoal = useUpdateGoal();
   const deleteGoal = useDeleteGoal();
+  const updateEvent = useUpdateEvent();
+  const deleteEvent = useDeleteEvent();
   const createLibrary = useCreateLibraryWorkout();
   const updateLibrary = useUpdateLibraryWorkout();
   const deleteLibrary = useDeleteLibraryWorkout();
@@ -63,6 +70,7 @@ export function CalendarView() {
     null,
   );
   const [eventToEdit, setEventToEdit] = useState<EventGoal | null>(null);
+  const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] = useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
 
   // Animation state
@@ -158,7 +166,7 @@ export function CalendarView() {
   // Scroll & touch listeners
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (workoutToEdit || eventToEdit || showLibrary || isTransitioning)
+      if (workoutToEdit || eventToEdit || eventWithSegmentsToEdit || showLibrary || isTransitioning)
         return;
       const now = Date.now();
       if (now - lastScrollTime.current < 450) return;
@@ -179,6 +187,7 @@ export function CalendarView() {
         touchStartY.current === null ||
         workoutToEdit ||
         eventToEdit ||
+        eventWithSegmentsToEdit ||
         showLibrary ||
         isTransitioning
       )
@@ -203,7 +212,7 @@ export function CalendarView() {
         el.removeEventListener('touchend', handleTouchEnd);
       }
     };
-  }, [workoutToEdit, eventToEdit, showLibrary, isTransitioning, stepWeek]);
+  }, [workoutToEdit, eventToEdit, eventWithSegmentsToEdit, showLibrary, isTransitioning, stepWeek]);
 
   // Drag & drop
   const [dragOverInfo, setDragOverInfo] = useState<{ date: string; index: number } | null>(null);
@@ -278,6 +287,8 @@ export function CalendarView() {
     const weekTotals = { distance: 0, duration: 0 };
     week.forEach((date) => {
       const dateStr = formatDateToLocalISO(date);
+      
+      // Add workout totals
       workouts
         .filter((w) => w.date === dateStr)
         .forEach((w) => {
@@ -294,6 +305,25 @@ export function CalendarView() {
           weekTotals.duration += dur;
           const st = sportMap.get(stId);
           if (st?.paceRelevant) weekTotals.distance += dist;
+        });
+      
+      // Add event segment totals
+      events
+        .filter((e) => e.date === dateStr)
+        .forEach((e) => {
+          if (e.segments && e.segments.length > 0) {
+            e.segments.forEach((seg) => {
+              const dur = seg.plannedDurationMinutes || 0;
+              const dist = seg.plannedDistanceKilometers || 0;
+              const stId = seg.sportTypeId || 'unknown';
+              if (!sportTotals[stId]) sportTotals[stId] = { distance: 0, duration: 0 };
+              sportTotals[stId].duration += dur;
+              sportTotals[stId].distance += dist;
+              weekTotals.duration += dur;
+              const st = sportMap.get(stId);
+              if (st?.paceRelevant) weekTotals.distance += dist;
+            });
+          }
         });
     });
     return { sportTotals, weekTotals };
@@ -472,6 +502,9 @@ export function CalendarView() {
                           const dayGoals = goals.filter(
                             (g) => g.date === dateStr,
                           );
+                          const dayEvents = events.filter(
+                            (e) => e.date === dateStr,
+                          );
                           const isToday =
                             formatDateToLocalISO(new Date()) === dateStr;
                           const isSelected = selectedDate === dateStr;
@@ -544,17 +577,83 @@ export function CalendarView() {
                                   </React.Fragment>
                                 ))}
 
+                                {/* Events with segments */}
+                                {dayEvents.map((event, eIdx) => {
+                                  const itemIndex = dayGoals.length + eIdx;
+                                  const hasSegments = event.segments && event.segments.length > 0;
+                                  
+                                  return (
+                                    <React.Fragment key={event.id}>
+                                      {dragOverInfo?.date === dateStr && isDraggingId && dragOverInfo.index === itemIndex && (
+                                        <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
+                                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                          <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                        </div>
+                                      )}
+                                      <div
+                                        data-drop-item
+                                        draggable="true"
+                                        onDragStart={(e) => {
+                                          e.dataTransfer.setData('eventId', event.id);
+                                          setIsDraggingId(event.id);
+                                        }}
+                                        onDragEnd={handleDragEnd}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setEventWithSegmentsToEdit(event);
+                                        }}
+                                        className={`cursor-grab overflow-hidden rounded-lg border border-indigo-400/30 bg-indigo-600 shadow-md transition-all hover:brightness-110 active:cursor-grabbing ${isDraggingId === event.id ? 'opacity-20 grayscale' : ''}`}
+                                      >
+                                        <div className="flex items-center gap-1.5 px-2 py-1">
+                                          <span
+                                            className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[5px] lg:h-4 lg:w-4 lg:text-[7px] ${event.priority === 'A' ? 'bg-red-500' : event.priority === 'B' ? 'bg-amber-400' : 'bg-blue-400'}`}
+                                          >
+                                            {event.priority}
+                                          </span>
+                                          <span className="truncate text-[6px] font-black uppercase tracking-tight text-white lg:text-[8px]">
+                                            {event.title}
+                                          </span>
+                                          {hasSegments && (
+                                            <span className="bg-white/20 ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[6px] font-bold text-white">
+                                              {event.segments!.length}
+                                            </span>
+                                          )}
+                                        </div>
+                                        {hasSegments && (
+                                          <div className="flex h-1">
+                                            {event.segments!.map((seg, segIdx) => {
+                                              const sport = sportMap.get(seg.sportTypeId);
+                                              const userSettingsForSport = userSettingsMap.get(seg.sportTypeId);
+                                              const color = getEffortColor(sport, seg.effortLevel, userSettingsForSport);
+                                              return (
+                                                <div
+                                                  key={segIdx}
+                                                  className="flex-1"
+                                                  style={{ backgroundColor: color }}
+                                                />
+                                              );
+                                            })}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </React.Fragment>
+                                  );
+                                })}
+
                                 {/* Workouts */}
                                 {dayWorkouts.map((w, wIdx) => {
-                                  const itemIndex = dayGoals.length + wIdx;
+                                  const itemIndex = dayGoals.length + dayEvents.length + wIdx;
                                   const wSt = sportMap.get(w.sportTypeId);
                                   const bg = getEffortColor(wSt, w.effortLevel || 1, userSettingsMap.get(w.sportTypeId));
                                   const dur = w.isCompleted
                                     ? w.actualDurationMinutes || 0
                                     : w.plannedDurationMinutes || 0;
-                                  const dist = w.isCompleted
+                                  const distKm = w.isCompleted
                                     ? w.actualDistanceKilometers || 0
                                     : w.plannedDistanceKilometers || 0;
+                                  // Convert km to meters for swimming
+                                  const dist = wSt?.name === 'Swim' ? distKm * 1000 : distKm;
                                   const pace = calculatePace(wSt?.name || '', dur, dist);
                                   return (
                                     <React.Fragment key={w.id}>
@@ -747,6 +846,24 @@ export function CalendarView() {
               setEventToEdit(null);
             }}
             onCancel={() => setEventToEdit(null)}
+          />
+        )}
+
+        {/* Event Dialog with Segments */}
+        {eventWithSegmentsToEdit && (
+          <EventDialog
+            event={eventWithSegmentsToEdit}
+            sportTypes={sportTypes}
+            userSettings={userSportSettings}
+            onSave={(e: Event) => {
+              updateEvent.mutate(e);
+              setEventWithSegmentsToEdit(null);
+            }}
+            onDelete={(id: string) => {
+              deleteEvent.mutate(id);
+              setEventWithSegmentsToEdit(null);
+            }}
+            onCancel={() => setEventWithSegmentsToEdit(null)}
           />
         )}
       </div>
