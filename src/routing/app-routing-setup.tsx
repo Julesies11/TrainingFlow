@@ -31,7 +31,7 @@ export function AppRoutingSetup() {
     <Routes>
       <Route element={<RequireAuth />}>
         <Route element={<Demo1Layout />}>
-          <Route path="/" element={<Navigate to="/training/calendar" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/training/calendar" element={<CalendarView />} />
           <Route path="/training/library" element={<LibraryPage />} />
           <Route path="/training/events" element={<EventsPage />} />

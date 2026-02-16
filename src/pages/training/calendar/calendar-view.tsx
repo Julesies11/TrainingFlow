@@ -7,8 +7,6 @@ import {
   useCreateWorkout,
   useCreateWorkoutsBulk,
   useDeleteWorkout,
-  useGoals,
-  useUpdateGoal,
   useEvents,
   useUpdateEvent,
   useDeleteEvent,
@@ -17,11 +15,10 @@ import {
   useCreateLibraryWorkout,
   useUpdateLibraryWorkout,
   useDeleteLibraryWorkout,
-  useDeleteGoal,
   useSportTypes,
   useUserSportSettings,
 } from '@/hooks/use-training-data';
-import { Workout, EventGoal, Event, LibraryWorkout } from '@/types/training';
+import { Workout, Event, LibraryWorkout } from '@/types/training';
 import {
   formatDateToLocalISO,
   getMonday,
@@ -33,15 +30,12 @@ import {
 import { getEffortColor, buildSportMap, buildUserSettingsMap } from '@/services/training/effort-colors';
 import { calculatePace } from '@/services/training/pace-utils';
 import { WorkoutDialog } from './components/workout-dialog';
-import { GoalDialog } from './components/goal-dialog';
 import { EventDialog } from './components/event-dialog';
 import { LibraryDrawer } from './components/library-drawer';
 
 export function CalendarView() {
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
-  const { data: goals = [] } = useGoals();
   const { data: events = [] } = useEvents();
-  const { data: profile } = useProfile();
   const { data: library = [] } = useLibrary();
   const { data: sportTypes = [] } = useSportTypes();
   const { data: userSportSettings = [] } = useUserSportSettings();
@@ -50,8 +44,6 @@ export function CalendarView() {
   const createWorkout = useCreateWorkout();
   const createWorkoutsBulk = useCreateWorkoutsBulk();
   const deleteWorkout = useDeleteWorkout();
-  const updateGoal = useUpdateGoal();
-  const deleteGoal = useDeleteGoal();
   const updateEvent = useUpdateEvent();
   const deleteEvent = useDeleteEvent();
   const createLibrary = useCreateLibraryWorkout();
@@ -69,7 +61,6 @@ export function CalendarView() {
   const [workoutToEdit, setWorkoutToEdit] = useState<Partial<Workout> | null>(
     null,
   );
-  const [eventToEdit, setEventToEdit] = useState<EventGoal | null>(null);
   const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] = useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
 
@@ -166,7 +157,7 @@ export function CalendarView() {
   // Scroll & touch listeners
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
-      if (workoutToEdit || eventToEdit || eventWithSegmentsToEdit || showLibrary || isTransitioning)
+      if (workoutToEdit || eventWithSegmentsToEdit || showLibrary || isTransitioning)
         return;
       const now = Date.now();
       if (now - lastScrollTime.current < 450) return;
@@ -186,7 +177,6 @@ export function CalendarView() {
       if (
         touchStartY.current === null ||
         workoutToEdit ||
-        eventToEdit ||
         eventWithSegmentsToEdit ||
         showLibrary ||
         isTransitioning
@@ -212,7 +202,7 @@ export function CalendarView() {
         el.removeEventListener('touchend', handleTouchEnd);
       }
     };
-  }, [workoutToEdit, eventToEdit, eventWithSegmentsToEdit, showLibrary, isTransitioning, stepWeek]);
+  }, [workoutToEdit, eventWithSegmentsToEdit, showLibrary, isTransitioning, stepWeek]);
 
   // Drag & drop
   const [dragOverInfo, setDragOverInfo] = useState<{ date: string; index: number } | null>(null);
@@ -220,11 +210,9 @@ export function CalendarView() {
 
   const handleDragStart = (
     e: React.DragEvent,
-    item: Workout | EventGoal,
-    isGoal = false,
+    item: Workout,
   ) => {
     e.dataTransfer.setData('text/plain', item.id);
-    e.dataTransfer.setData('isGoal', isGoal.toString());
     e.dataTransfer.effectAllowed = 'move';
     setIsDraggingId(item.id);
   };
@@ -268,15 +256,10 @@ export function CalendarView() {
   const handleDrop = (e: React.DragEvent, dateStr: string) => {
     e.preventDefault();
     const itemId = e.dataTransfer.getData('text/plain');
-    const isGoal = e.dataTransfer.getData('isGoal') === 'true';
 
-    if (isGoal) {
-      const goal = goals.find((g) => g.id === itemId);
-      if (goal) updateGoal.mutate({ ...goal, date: dateStr });
-    } else {
-      const workout = workouts.find((w) => w.id === itemId);
-      if (workout)
-        updateWorkout.mutate({ ...workout, date: dateStr, order: Date.now() });
+    const workout = workouts.find((w) => w.id === itemId);
+    if (workout) {
+      updateWorkout.mutate({ ...workout, date: dateStr, order: Date.now() });
     }
     handleDragEnd();
   };
@@ -499,9 +482,6 @@ export function CalendarView() {
                             .sort(
                               (a, b) => (a.order ?? 0) - (b.order ?? 0),
                             );
-                          const dayGoals = goals.filter(
-                            (g) => g.date === dateStr,
-                          );
                           const dayEvents = events.filter(
                             (e) => e.date === dateStr,
                           );
@@ -517,7 +497,7 @@ export function CalendarView() {
                               key={dIdx}
                               onClick={() => setSelectedDate(dateStr)}
                               onDragOver={(e) =>
-                                handleDragOverCell(e, dateStr, dayWorkouts.length + dayGoals.length)
+                                handleDragOverCell(e, dateStr, dayWorkouts.length + dayEvents.length)
                               }
                               onDragLeave={() => setDragOverInfo(null)}
                               onDrop={(e) => handleDrop(e, dateStr)}
@@ -542,44 +522,9 @@ export function CalendarView() {
                                 className="relative flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pb-6 [scrollbar-width:none]"
                                 data-drop-container
                               >
-                                {/* Goals */}
-                                {dayGoals.map((goal, gIdx) => (
-                                  <React.Fragment key={goal.id}>
-                                    {dragOverInfo?.date === dateStr && isDraggingId && dragOverInfo.index === gIdx && (
-                                      <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
-                                        <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                        <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                        <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                      </div>
-                                    )}
-                                    <div
-                                      data-drop-item
-                                      draggable="true"
-                                      onDragStart={(e) =>
-                                        handleDragStart(e, goal, true)
-                                      }
-                                      onDragEnd={handleDragEnd}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEventToEdit(goal);
-                                      }}
-                                      className={`flex cursor-grab items-center gap-1.5 overflow-hidden rounded-lg border border-indigo-400/30 bg-indigo-600 px-2 py-1 text-[6px] font-black uppercase tracking-tight text-white shadow-md transition-all hover:brightness-110 active:cursor-grabbing lg:text-[8px] ${isDraggingId === goal.id ? 'opacity-20 grayscale' : ''}`}
-                                    >
-                                      <span
-                                        className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[5px] lg:h-4 lg:w-4 lg:text-[7px] ${goal.priority === 'A' ? 'bg-red-500' : goal.priority === 'B' ? 'bg-amber-400' : 'bg-blue-400'}`}
-                                      >
-                                        {goal.priority}
-                                      </span>
-                                      <span className="truncate">
-                                        {goal.title}
-                                      </span>
-                                    </div>
-                                  </React.Fragment>
-                                ))}
-
                                 {/* Events with segments */}
                                 {dayEvents.map((event, eIdx) => {
-                                  const itemIndex = dayGoals.length + eIdx;
+                                  const itemIndex = eIdx;
                                   const hasSegments = event.segments && event.segments.length > 0;
                                   
                                   return (
@@ -643,7 +588,7 @@ export function CalendarView() {
 
                                 {/* Workouts */}
                                 {dayWorkouts.map((w, wIdx) => {
-                                  const itemIndex = dayGoals.length + dayEvents.length + wIdx;
+                                  const itemIndex = dayEvents.length + wIdx;
                                   const wSt = sportMap.get(w.sportTypeId);
                                   const bg = getEffortColor(wSt, w.effortLevel || 1, userSettingsMap.get(w.sportTypeId));
                                   const dur = w.isCompleted
@@ -702,7 +647,7 @@ export function CalendarView() {
                                 })}
 
                                 {/* Drop zone indicator - after last item */}
-                                {dragOverInfo?.date === dateStr && isDraggingId && dragOverInfo.index >= (dayGoals.length + dayWorkouts.length) && (
+                                {dragOverInfo?.date === dateStr && isDraggingId && dragOverInfo.index >= (dayEvents.length + dayWorkouts.length) && (
                                   <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
                                     <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
                                     <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
@@ -832,22 +777,6 @@ export function CalendarView() {
         >
           <Plus className="h-6 w-6" />
         </Button>
-
-        {/* Goal Dialog */}
-        {eventToEdit && (
-          <GoalDialog
-            goal={eventToEdit}
-            onSave={(g: EventGoal) => {
-              updateGoal.mutate(g);
-              setEventToEdit(null);
-            }}
-            onDelete={(id: string) => {
-              deleteGoal.mutate(id);
-              setEventToEdit(null);
-            }}
-            onCancel={() => setEventToEdit(null)}
-          />
-        )}
 
         {/* Event Dialog with Segments */}
         {eventWithSegmentsToEdit && (

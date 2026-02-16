@@ -182,7 +182,7 @@ export function EventsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <div className="text-muted-foreground">{getTypeIcon(event.type)}</div>
-                    <h3 className="text-lg font-black lowercase tracking-tight">{event.title}</h3>
+                    <h3 className="text-lg font-black tracking-tight">{event.title}</h3>
                   </div>
                   <p className="text-muted-foreground mt-1 text-xs font-semibold">
                     {getDaysUntil(event.date)}

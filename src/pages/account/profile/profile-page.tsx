@@ -1,22 +1,27 @@
-import { useState, useEffect } from 'react';
-import { User, Dumbbell, Heart, Weight, Save } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Camera, Moon, Sun, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useProfile, useUpdateProfile } from '@/hooks/use-training-data';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';
 import { supabase } from '@/lib/supabase';
+import { useTheme } from 'next-themes';
+import { toAbsoluteUrl } from '@/lib/helpers';
 
 export function ProfilePage() {
   const userId = useSupabaseUserId();
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
+  const { theme, setTheme } = useTheme();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [userEmail, setUserEmail] = useState<string>('');
-  const [ftp, setFtp] = useState<number>(200);
-  const [thresholdHr, setThresholdHr] = useState<number>(170);
-  const [weight, setWeight] = useState<number>(70);
-  const [hasChanges, setHasChanges] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string>('');
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [confirmPassword, setConfirmPassword] = useState<string>('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -26,34 +31,75 @@ export function ProfilePage() {
 
   useEffect(() => {
     if (profile) {
-      setFtp(profile.ftp);
-      setThresholdHr(profile.threshold_hr);
-      setWeight(profile.weight);
-      setHasChanges(false);
+      setAvatarUrl(profile.avatar_url || '');
     }
   }, [profile]);
 
-  const handleSave = () => {
-    if (!userId) return;
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        setMessage({ type: 'error', text: 'Image must be under 2MB.' });
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        setAvatarUrl(base64String);
+        updateProfile.mutate(
+          { avatar_url: base64String },
+          {
+            onSuccess: () => {
+              setMessage({ type: 'success', text: 'Profile picture updated.' });
+              setTimeout(() => setMessage(null), 3000);
+            },
+          }
+        );
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeAvatar = () => {
+    setAvatarUrl('');
     updateProfile.mutate(
-      {
-        ftp,
-        threshold_hr: thresholdHr,
-        weight,
-      },
+      { avatar_url: '' },
       {
         onSuccess: () => {
-          setHasChanges(false);
+          setMessage({ type: 'success', text: 'Profile picture removed.' });
+          setTimeout(() => setMessage(null), 3000);
         },
       }
     );
   };
 
-  const handleChange = (field: 'ftp' | 'hr' | 'weight', value: number) => {
-    setHasChanges(true);
-    if (field === 'ftp') setFtp(value);
-    if (field === 'hr') setThresholdHr(value);
-    if (field === 'weight') setWeight(value);
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: 'error', text: 'Passwords do not match.' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setMessage({ type: 'error', text: 'Password must be at least 6 characters.' });
+      return;
+    }
+
+    setPasswordLoading(true);
+    setMessage(null);
+
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setMessage({ type: 'success', text: 'Password updated successfully.' });
+      setNewPassword('');
+      setConfirmPassword('');
+      setTimeout(() => setMessage(null), 3000);
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Failed to update password.' });
+    } finally {
+      setPasswordLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -65,223 +111,171 @@ export function ProfilePage() {
   }
 
   return (
-    <div className="container-fixed py-8">
-      <div className="mx-auto max-w-4xl">
+    <div className="container-fixed py-6">
+      <div className="mx-auto max-w-2xl space-y-6 pb-12">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-black lowercase tracking-tight">
-            profile
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage your account and training settings
+        <header>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight lowercase">athlete profile</h2>
+          <p className="text-muted-foreground font-medium text-sm md:text-base lowercase">
+            manage your account and security settings.
           </p>
-        </div>
+        </header>
 
-        <div className="space-y-6">
-          {/* Account Info */}
-          <div className="bg-card overflow-hidden rounded-2xl border shadow-sm">
-            <div className="border-b bg-muted/30 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                <h2 className="text-lg font-black lowercase tracking-tight">
-                  account information
-                </h2>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                    email
-                  </Label>
-                  <Input
-                    type="email"
-                    value={userEmail}
-                    disabled
-                    className="bg-muted cursor-not-allowed"
-                  />
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    Email cannot be changed
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                    user id
-                  </Label>
-                  <Input
-                    type="text"
-                    value={userId || ''}
-                    disabled
-                    className="bg-muted cursor-not-allowed font-mono text-xs"
-                  />
-                </div>
-              </div>
-            </div>
+        {/* Message */}
+        {message && (
+          <div
+            className={`p-4 rounded-2xl border text-xs font-black uppercase tracking-widest animate-in fade-in slide-in-from-top-2 ${
+              message.type === 'success'
+                ? 'bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-800 text-green-600 dark:text-green-400'
+                : 'bg-red-50 dark:bg-red-900/20 border-red-100 dark:border-red-800 text-red-600 dark:text-red-400'
+            }`}
+          >
+            {message.text}
           </div>
+        )}
 
-          {/* Training Settings */}
-          <div className="bg-card overflow-hidden rounded-2xl border shadow-sm">
-            <div className="border-b bg-muted/30 px-6 py-4">
-              <div className="flex items-center gap-2">
-                <Dumbbell className="h-5 w-5" />
-                <h2 className="text-lg font-black lowercase tracking-tight">
-                  training metrics
-                </h2>
-              </div>
-            </div>
-            <div className="p-6">
-              <div className="grid gap-6 md:grid-cols-3">
-                {/* FTP */}
-                <div className="bg-muted/50 space-y-3 rounded-xl border p-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-lg">
-                      <Dumbbell className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
-                        FTP (watts)
-                      </Label>
-                      <p className="text-muted-foreground text-[10px]">
-                        Functional Threshold Power
-                      </p>
-                    </div>
-                  </div>
-                  <Input
-                    type="number"
-                    value={ftp}
-                    onChange={(e) => handleChange('ftp', Number(e.target.value))}
-                    min={0}
-                    className="text-center text-2xl font-black"
-                  />
-                </div>
-
-                {/* Threshold HR */}
-                <div className="bg-muted/50 space-y-3 rounded-xl border p-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-red-500/10 flex h-10 w-10 items-center justify-center rounded-lg text-red-500">
-                      <Heart className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
-                        Threshold HR
-                      </Label>
-                      <p className="text-muted-foreground text-[10px]">
-                        Lactate Threshold Heart Rate
-                      </p>
-                    </div>
-                  </div>
-                  <Input
-                    type="number"
-                    value={thresholdHr}
-                    onChange={(e) => handleChange('hr', Number(e.target.value))}
-                    min={0}
-                    max={220}
-                    className="text-center text-2xl font-black"
-                  />
-                </div>
-
-                {/* Weight */}
-                <div className="bg-muted/50 space-y-3 rounded-xl border p-4">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-blue-500/10 flex h-10 w-10 items-center justify-center rounded-lg text-blue-500">
-                      <Weight className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
-                        Weight (kg)
-                      </Label>
-                      <p className="text-muted-foreground text-[10px]">
-                        Body weight
-                      </p>
-                    </div>
-                  </div>
-                  <Input
-                    type="number"
-                    value={weight}
-                    onChange={(e) => handleChange('weight', Number(e.target.value))}
-                    min={0}
-                    step={0.1}
-                    className="text-center text-2xl font-black"
-                  />
-                </div>
-              </div>
-
-              {/* Save button */}
-              {hasChanges && (
-                <div className="mt-6 flex justify-end">
-                  <Button
-                    onClick={handleSave}
-                    disabled={updateProfile.isPending}
-                    className="gap-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
-                  </Button>
+        {/* Profile Identity Card */}
+        <div className="p-6 md:p-8 bg-card rounded-2xl shadow-sm border">
+          <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
+            <div className="relative group">
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="Profile"
+                  className="w-32 h-32 rounded-2xl object-cover border-4 border-muted shadow-xl"
+                />
+              ) : (
+                <div className="w-32 h-32 bg-primary rounded-2xl flex items-center justify-center text-white text-5xl font-black shadow-xl shadow-primary/20">
+                  {userEmail?.[0]?.toUpperCase() || 'A'}
                 </div>
               )}
-            </div>
-          </div>
 
-          {/* Training Zones Info */}
-          <div className="bg-card overflow-hidden rounded-2xl border shadow-sm">
-            <div className="border-b bg-muted/30 px-6 py-4">
-              <h2 className="text-lg font-black lowercase tracking-tight">
-                calculated training zones
-              </h2>
-            </div>
-            <div className="p-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* Power Zones */}
-                <div>
-                  <h3 className="text-muted-foreground mb-3 text-xs font-black uppercase tracking-widest">
-                    Power Zones (based on FTP: {ftp}W)
-                  </h3>
-                  <div className="space-y-2">
-                    {[
-                      { zone: 'Z1 Active Recovery', pct: '< 55%', watts: `< ${Math.round(ftp * 0.55)}W` },
-                      { zone: 'Z2 Endurance', pct: '56-75%', watts: `${Math.round(ftp * 0.56)}-${Math.round(ftp * 0.75)}W` },
-                      { zone: 'Z3 Tempo', pct: '76-90%', watts: `${Math.round(ftp * 0.76)}-${Math.round(ftp * 0.90)}W` },
-                      { zone: 'Z4 Threshold', pct: '91-105%', watts: `${Math.round(ftp * 0.91)}-${Math.round(ftp * 1.05)}W` },
-                      { zone: 'Z5 VO2 Max', pct: '106-120%', watts: `${Math.round(ftp * 1.06)}-${Math.round(ftp * 1.20)}W` },
-                      { zone: 'Z6 Anaerobic', pct: '> 120%', watts: `> ${Math.round(ftp * 1.20)}W` },
-                    ].map((z, i) => (
-                      <div key={i} className="bg-muted/50 flex items-center justify-between rounded-lg px-3 py-2">
-                        <span className="text-sm font-semibold">{z.zone}</span>
-                        <div className="text-muted-foreground flex gap-3 text-xs">
-                          <span>{z.pct}</span>
-                          <span className="font-mono">{z.watts}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-2xl backdrop-blur-sm">
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-3 bg-white text-primary rounded-full shadow-lg active:scale-90 transition-transform"
+                >
+                  <Camera className="w-6 h-6" />
+                </button>
+              </div>
 
-                {/* HR Zones */}
-                <div>
-                  <h3 className="text-muted-foreground mb-3 text-xs font-black uppercase tracking-widest">
-                    Heart Rate Zones (based on LTHR: {thresholdHr} bpm)
-                  </h3>
-                  <div className="space-y-2">
-                    {[
-                      { zone: 'Z1 Active Recovery', pct: '< 81%', hr: `< ${Math.round(thresholdHr * 0.81)} bpm` },
-                      { zone: 'Z2 Endurance', pct: '81-89%', hr: `${Math.round(thresholdHr * 0.81)}-${Math.round(thresholdHr * 0.89)} bpm` },
-                      { zone: 'Z3 Tempo', pct: '90-93%', hr: `${Math.round(thresholdHr * 0.90)}-${Math.round(thresholdHr * 0.93)} bpm` },
-                      { zone: 'Z4 Threshold', pct: '94-100%', hr: `${Math.round(thresholdHr * 0.94)}-${thresholdHr} bpm` },
-                      { zone: 'Z5 VO2 Max', pct: '> 100%', hr: `> ${thresholdHr} bpm` },
-                    ].map((z, i) => (
-                      <div key={i} className="bg-muted/50 flex items-center justify-between rounded-lg px-3 py-2">
-                        <span className="text-sm font-semibold">{z.zone}</span>
-                        <div className="text-muted-foreground flex gap-3 text-xs">
-                          <span>{z.pct}</span>
-                          <span className="font-mono">{z.hr}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleAvatarChange}
+              />
+            </div>
+
+            <div className="flex-1 text-center md:text-left space-y-4">
+              <div>
+                <span className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] block mb-1">
+                  authenticated athlete
+                </span>
+                <h3 className="text-xl md:text-2xl font-black tracking-tight lowercase">{userEmail}</h3>
+              </div>
+
+              <div className="flex flex-wrap justify-center md:justify-start gap-2">
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  size="sm"
+                  className="text-[10px] font-black uppercase tracking-widest"
+                >
+                  change photo
+                </Button>
+                {avatarUrl && (
+                  <Button
+                    onClick={removeAvatar}
+                    size="sm"
+                    variant="outline"
+                    className="text-[10px] font-black uppercase tracking-widest text-red-600 hover:text-red-700"
+                  >
+                    remove
+                  </Button>
+                )}
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Appearance Card */}
+        <div className="p-6 md:p-8 bg-card rounded-2xl shadow-sm border">
+          <h3 className="text-lg md:text-xl font-black tracking-tight mb-6 flex items-center gap-2 lowercase">
+            {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            appearance
+          </h3>
+
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Choose your preferred theme for the application.
+            </p>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => setTheme('light')}
+                variant={theme === 'light' ? 'default' : 'outline'}
+                className="flex-1 gap-2"
+              >
+                <Sun className="w-4 h-4" />
+                Light
+              </Button>
+              <Button
+                onClick={() => setTheme('dark')}
+                variant={theme === 'dark' ? 'default' : 'outline'}
+                className="flex-1 gap-2"
+              >
+                <Moon className="w-4 h-4" />
+                Dark
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Security Card */}
+        <div className="p-6 md:p-8 bg-card rounded-2xl shadow-sm border">
+          <h3 className="text-lg md:text-xl font-black tracking-tight mb-6 flex items-center gap-2 lowercase">
+            <Lock className="w-5 h-5" />
+            security & password
+          </h3>
+
+          <form onSubmit={handleUpdatePassword} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 ml-1">
+                  new password
+                </Label>
+                <Input
+                  type="password"
+                  required
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="font-bold"
+                />
+              </div>
+              <div>
+                <Label className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2 ml-1">
+                  confirm password
+                </Label>
+                <Input
+                  type="password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="font-bold"
+                />
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={passwordLoading}
+              className="w-full md:w-auto text-[11px] font-black uppercase tracking-[0.2em]"
+            >
+              {passwordLoading ? 'syncing...' : 'update athlete credentials'}
+            </Button>
+          </form>
         </div>
       </div>
     </div>
