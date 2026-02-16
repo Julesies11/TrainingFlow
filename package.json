@@ -53,7 +53,6 @@
     "react-inlinesvg": "^4.2.0",
     "react-intl": "^7.1.11",
     "react-leaflet": "^5.0.0",
-    "react-query": "^3.39.3",
     "react-resizable-panels": "^3.0.5",
     "react-router": "^7.10.1",
     "react-router-dom": "^7.10.1",
