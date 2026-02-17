@@ -20,7 +20,8 @@ export function useProfile() {
     queryKey: KEYS.profile(userId ?? ''),
     queryFn: () => profileApi.get(userId!),
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    refetchOnMount: true,
   });
 }
 

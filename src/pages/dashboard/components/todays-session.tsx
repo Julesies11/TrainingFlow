@@ -1,5 +1,5 @@
 import { Calendar, Pencil, Trash2 } from 'lucide-react';
-import { Workout, SportType, UserSportSetting } from '@/types/training';
+import { Workout, SportTypeRecord, UserSportSettings } from '@/types/training';
 import { getEffortColor } from '@/services/training/effort-colors';
 import { Button } from '@/components/ui/button';
 
@@ -16,8 +16,8 @@ const formatMins = (totalMins: number) => {
 
 interface TodaysSessionProps {
   workout: Workout | undefined;
-  sportMap: Map<string, SportType>;
-  settingsMap: Map<string, UserSportSetting>;
+  sportMap: Map<string, SportTypeRecord>;
+  settingsMap: Map<string, UserSportSettings>;
   onEdit?: (workout: Workout) => void;
   onDelete?: (workout: Workout) => void;
 }

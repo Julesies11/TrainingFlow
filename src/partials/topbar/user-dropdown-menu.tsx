@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { useAuth } from '@/auth/context/auth-context';
+import { useProfile } from '@/hooks/use-training-data';
 import {
   Moon,
   UserCircle,
@@ -8,7 +9,6 @@ import {
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Link } from 'react-router';
-import { toAbsoluteUrl } from '@/lib/helpers';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -24,6 +24,7 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
   const { logout, user } = useAuth();
   const { theme, setTheme } = useTheme();
   const isDeveloper = useIsDeveloper();
+  const { data: profile } = useProfile();
 
   const displayName =
     user?.fullname ||
@@ -32,7 +33,6 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
       : user?.username || 'User');
 
   const displayEmail = user?.email || '';
-  const displayAvatar = toAbsoluteUrl('/media/avatars/300-2.png');
 
   const handleThemeToggle = (checked: boolean) => {
     setTheme(checked ? 'dark' : 'light');
@@ -44,11 +44,17 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
       <DropdownMenuContent className="w-64" side="bottom" align="end">
         {/* Header */}
         <div className="flex items-center gap-2 p-3">
-          <img
-            className="size-9 rounded-full border-2 border-green-500"
-            src={displayAvatar}
-            alt="User avatar"
-          />
+          {profile?.avatar_url ? (
+            <img
+              className="size-9 rounded-full border-2 border-green-500 object-cover"
+              src={profile.avatar_url}
+              alt="User avatar"
+            />
+          ) : (
+            <div className="size-9 rounded-full border-2 border-green-500 bg-primary flex items-center justify-center text-white text-sm font-black">
+              {displayEmail?.[0]?.toUpperCase() || 'U'}
+            </div>
+          )}
           <div className="flex flex-col">
             <span className="text-sm text-mono font-semibold">
               {displayName}

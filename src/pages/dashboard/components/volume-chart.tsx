@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { ApexOptions } from 'apexcharts';
 import ApexChart from 'react-apexcharts';
-import { parseISO, format } from 'date-fns';
+import { parseISO } from 'date-fns';
 import { Workout, Event } from '@/types/training';
 
 type ProgressMetric = 'distance' | 'duration';
@@ -71,11 +71,7 @@ export function VolumeChart({
 
       let val = bucketWorkouts.reduce((sum, w) => {
         if (metric === 'distance') {
-          let dist = w.isCompleted ? (w.actualDistanceKilometers || 0) : (w.plannedDistanceKilometers || 0);
-          // Convert swim distances from meters to kilometers
-          if (w.sportName === 'Swim') {
-            dist = dist / 1000;
-          }
+          const dist = w.isCompleted ? (w.actualDistanceKilometers || 0) : (w.plannedDistanceKilometers || 0);
           return sum + dist;
         }
         if (metric === 'duration') {
@@ -92,12 +88,7 @@ export function VolumeChart({
             const sportMatch = sport === 'All' || seg.sportName === sport;
             if (sportMatch) {
               if (metric === 'distance') {
-                let segDist = seg.plannedDistanceKilometers || 0;
-                // Convert swim distances from meters to kilometers
-                if (seg.sportName === 'Swim') {
-                  segDist = segDist / 1000;
-                }
-                val += segDist;
+                val += seg.plannedDistanceKilometers || 0;
               } else if (metric === 'duration') {
                 val += seg.plannedDurationMinutes || 0;
               }
@@ -143,27 +134,8 @@ export function VolumeChart({
       type: 'area',
       toolbar: { show: false },
       zoom: { enabled: false },
-      events: {
-        dataPointSelection: function(event, chartContext, config) {
-          const dataPointIndex = config.dataPointIndex;
-          const dataPoint = chartData[dataPointIndex];
-          const value = config.w.config.series[config.seriesIndex].data[dataPointIndex];
-          
-          if (value === null || value === undefined) return;
-          
-          const label = config.w.globals.labels[dataPointIndex];
-          let seriesName;
-          if (dataPoint.isCurrent) {
-            seriesName = 'Current Week';
-          } else if (dataPoint.past !== null) {
-            seriesName = 'Past';
-          } else {
-            seriesName = 'Future';
-          }
-          
-          const unit = metric === 'duration' ? 'h' : 'km';
-          alert(`${label}\n${seriesName}: ${value}${unit}`);
-        }
+      selection: {
+        enabled: false
       }
     },
     dataLabels: { enabled: false },
@@ -216,8 +188,9 @@ export function VolumeChart({
     },
     tooltip: {
       enabled: true,
-      shared: false,
-      intersect: true,
+      shared: true,
+      intersect: false,
+      followCursor: true,
       custom: function({ series, seriesIndex, dataPointIndex, w }) {
         const value = series[seriesIndex][dataPointIndex];
         if (value === null || value === undefined) return '';
@@ -244,11 +217,23 @@ export function VolumeChart({
       },
     },
     markers: {
-      size: 2,
+      size: 0,
       colors: ['#fff'],
       strokeColors: ['#3b82f6', '#8b5cf6'],
       strokeWidth: 3,
       hover: { size: 6, sizeOffset: 2 },
+    },
+    states: {
+      hover: {
+        filter: {
+          type: 'none'
+        }
+      },
+      active: {
+        filter: {
+          type: 'none'
+        }
+      }
     },
   }), [chartData, metric]);
 

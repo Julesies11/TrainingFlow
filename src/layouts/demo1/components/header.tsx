@@ -7,6 +7,8 @@ import { toAbsoluteUrl } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useScrollPosition } from '@/hooks/use-scroll-position';
+import { useProfile } from '@/hooks/use-training-data';
+import { useAuth } from '@/auth/context/auth-context';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -20,6 +22,8 @@ import { SidebarMenu } from './sidebar-menu';
 
 export function Header() {
   const [isSidebarSheetOpen, setIsSidebarSheetOpen] = useState(false);
+  const { data: profile } = useProfile();
+  const { user } = useAuth();
 
   const { pathname } = useLocation();
   const mobileMode = useIsMobile();
@@ -58,11 +62,17 @@ export function Header() {
         <div className="flex items-center">
           <UserDropdownMenu
             trigger={
-              <img
-                className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer"
-                src={toAbsoluteUrl('/media/avatars/300-2.png')}
-                alt="User Avatar"
-              />
+              profile?.avatar_url ? (
+                <img
+                  className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer object-cover"
+                  src={profile.avatar_url}
+                  alt="User Avatar"
+                />
+              ) : (
+                <div className="size-9 rounded-full border-2 border-green-500 bg-primary flex items-center justify-center text-white text-sm font-black shrink-0 cursor-pointer">
+                  {user?.email?.[0]?.toUpperCase() || 'U'}
+                </div>
+              )
             }
           />
         </div>

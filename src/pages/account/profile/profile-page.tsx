@@ -7,6 +7,7 @@ import { useProfile, useUpdateProfile } from '@/hooks/use-training-data';
 import { useAuth } from '@/auth/context/auth-context';
 import { useTheme } from 'next-themes';
 import { toAbsoluteUrl } from '@/lib/helpers';
+import { supabase } from '@/lib/supabase';
 
 export function ProfilePage() {
   const { user, resetPassword } = useAuth();
@@ -29,43 +30,92 @@ export function ProfilePage() {
     }
   }, [profile]);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setMessage({ type: 'error', text: 'Image must be under 2MB.' });
-        return;
+    if (!file || !user?.id) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setMessage({ type: 'error', text: 'Image must be under 2MB.' });
+      return;
+    }
+
+    try {
+      // Delete old avatar if exists
+      if (avatarUrl) {
+        const urlParts = avatarUrl.split('/');
+        const fileNameWithQuery = urlParts[urlParts.length - 1];
+        const oldFileName = fileNameWithQuery.split('?')[0];
+        if (oldFileName) {
+          await supabase.storage.from('avatars').remove([`${user.id}/${oldFileName}`]);
+        }
       }
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        setAvatarUrl(base64String);
-        updateProfile.mutate(
-          { avatar_url: base64String },
-          {
-            onSuccess: () => {
-              setMessage({ type: 'success', text: 'Profile picture updated.' });
-              setTimeout(() => setMessage(null), 3000);
-            },
-          }
-        );
-      };
-      reader.readAsDataURL(file);
+      // Upload new avatar with timestamp to avoid caching issues
+      const timestamp = Date.now();
+      const fileExt = file.name.split('.').pop();
+      const originalName = file.name.replace(`.${fileExt}`, '');
+      const fileName = `${originalName}_${timestamp}.${fileExt}`;
+      const filePath = `${user.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      // Update profile with new URL
+      setAvatarUrl(publicUrl);
+      updateProfile.mutate(
+        { avatar_url: publicUrl },
+        {
+          onSuccess: () => {
+            setMessage({ type: 'success', text: 'Profile picture updated.' });
+            setTimeout(() => setMessage(null), 3000);
+          },
+          onError: () => {
+            setMessage({ type: 'error', text: 'Failed to update profile.' });
+          },
+        }
+      );
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Failed to upload image.' });
     }
   };
 
-  const removeAvatar = () => {
-    setAvatarUrl('');
-    updateProfile.mutate(
-      { avatar_url: '' },
-      {
-        onSuccess: () => {
-          setMessage({ type: 'success', text: 'Profile picture removed.' });
-          setTimeout(() => setMessage(null), 3000);
-        },
+  const removeAvatar = async () => {
+    if (!user?.id || !avatarUrl) return;
+
+    try {
+      // Delete from storage
+      const urlParts = avatarUrl.split('/');
+      const fileNameWithQuery = urlParts[urlParts.length - 1];
+      const oldFileName = fileNameWithQuery.split('?')[0];
+      if (oldFileName) {
+        await supabase.storage.from('avatars').remove([`${user.id}/${oldFileName}`]);
       }
-    );
+
+      // Update profile
+      setAvatarUrl('');
+      updateProfile.mutate(
+        { avatar_url: '' },
+        {
+          onSuccess: () => {
+            setMessage({ type: 'success', text: 'Profile picture removed.' });
+            setTimeout(() => setMessage(null), 3000);
+          },
+          onError: () => {
+            setMessage({ type: 'error', text: 'Failed to remove profile picture.' });
+          },
+        }
+      );
+    } catch (error: any) {
+      setMessage({ type: 'error', text: error.message || 'Failed to remove image.' });
+    }
   };
 
   const handleUpdatePassword = async (e: React.FormEvent) => {

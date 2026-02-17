@@ -91,7 +91,7 @@ export function DashboardPage() {
   return (
     <>
       <div className="container-fixed">
-        <div className="flex flex-col gap-5 lg:gap-7.5 py-5">
+        <div className="flex flex-col gap-5 lg:gap-7.5 py-5 px-4">
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-2 md:gap-4">
           <div>
@@ -145,7 +145,7 @@ export function DashboardPage() {
                     >
                       all
                     </button>
-                    {(['Swim', 'Bike', 'Run'] as SportType[]).map(s => (
+                    {(['Swim', 'Bike', 'Run', 'Strength'] as SportType[]).map(s => (
                       <button
                         key={s}
                         onClick={() => setSport(s)}
@@ -230,7 +230,7 @@ export function DashboardPage() {
             onEdit={(workout) => setWorkoutToEdit(workout)}
             onDelete={(workout) => {
               if (confirm(`Delete workout "${workout.title || workout.sportName}"?`)) {
-                deleteWorkout.mutate(workout.id);
+                deleteWorkout.mutate({ id: workout.id, mode: 'single' });
               }
             }}
           />
