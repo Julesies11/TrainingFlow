@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, BookOpen, Plus, Star, Waves, Bike, PersonStanding, Dumbbell } from 'lucide-react';
+import { ChevronLeft, ChevronRight, BookOpen, Plus, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   useWorkouts,
@@ -29,6 +29,7 @@ import {
 } from '@/services/training/calendar.utils';
 import { getEffortColor, buildSportMap, buildUserSettingsMap } from '@/services/training/effort-colors';
 import { calculatePace } from '@/services/training/pace-utils';
+import { getSportIcon } from '@/services/training/sport-icons';
 import { WorkoutDialog } from './components/workout-dialog';
 import { EventDialog } from './components/event-dialog';
 import { LibraryDrawer } from './components/library-drawer';
@@ -561,9 +562,9 @@ export function CalendarView() {
                                           e.stopPropagation();
                                           setEventWithSegmentsToEdit(event);
                                         }}
-                                        className={`cursor-grab overflow-hidden rounded-lg border border-indigo-400/30 bg-indigo-600 shadow-md transition-all hover:brightness-110 active:cursor-grabbing ${isDraggingId === event.id ? 'opacity-20 grayscale' : ''}`}
+                                        className={`cursor-grab overflow-hidden rounded-lg border border-indigo-400/30 bg-indigo-600/10 shadow-sm transition-all hover:shadow-md active:cursor-grabbing ${isDraggingId === event.id ? 'opacity-20 grayscale' : ''}`}
                                       >
-                                        <div className="flex items-center gap-1.5 px-2 py-1">
+                                        <div className="flex items-center gap-1.5 border-b border-indigo-400/20 bg-indigo-600 px-2 py-1">
                                           <span
                                             className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[5px] lg:h-4 lg:w-4 lg:text-[7px] ${event.priority === 'A' ? 'bg-red-500' : event.priority === 'B' ? 'bg-amber-400' : 'bg-blue-400'}`}
                                           >
@@ -572,24 +573,39 @@ export function CalendarView() {
                                           <span className="truncate text-[6px] font-black uppercase tracking-tight text-white lg:text-[8px]">
                                             {event.title}
                                           </span>
-                                          {hasSegments && (
-                                            <span className="bg-white/20 ml-auto shrink-0 rounded-full px-1.5 py-0.5 text-[6px] font-bold text-white">
-                                              {event.segments!.length}
-                                            </span>
-                                          )}
                                         </div>
                                         {hasSegments && (
-                                          <div className="flex h-1">
+                                          <div className="flex flex-col gap-1 p-1">
                                             {event.segments!.map((seg, segIdx) => {
                                               const sport = sportMap.get(seg.sportTypeId);
                                               const userSettingsForSport = userSettingsMap.get(seg.sportTypeId);
                                               const color = getEffortColor(sport, seg.effortLevel, userSettingsForSport);
+                                              const duration = seg.plannedDurationMinutes || 0;
+                                              const distKm = seg.plannedDistanceKilometers || 0;
+                                              const dist = sport?.name === 'Swim' ? distKm * 1000 : distKm;
+                                              const pace = calculatePace(sport?.name || '', duration, dist);
+                                              
+                                              const sportName = seg.sportName || sport?.name || 'Unknown';
+                                              const IconComponent = getSportIcon(sportName);
+
                                               return (
                                                 <div
                                                   key={segIdx}
-                                                  className="flex-1"
-                                                  style={{ backgroundColor: color }}
-                                                />
+                                                  className="flex items-center gap-1 rounded p-1"
+                                                  style={{ borderLeftWidth: '2px', borderLeftColor: color }}
+                                                >
+                                                  {IconComponent && (
+                                                    <IconComponent className="h-2.5 w-2.5 shrink-0 text-muted-foreground lg:h-3 lg:w-3" />
+                                                  )}
+                                                  <div className="flex flex-col gap-0.5 text-[6px] leading-none lg:text-[8px]">
+                                                    <span className="font-bold lowercase">{sportName}</span>
+                                                    {duration > 0 && <span className="text-muted-foreground">{formatMinsShort(duration)}</span>}
+                                                    {dist > 0 && sport?.paceRelevant && (
+                                                      <span className="text-muted-foreground">{dist}{sport.distanceUnit || 'km'}</span>
+                                                    )}
+                                                    {pace && <span className="text-muted-foreground">{pace}</span>}
+                                                  </div>
+                                                </div>
                                               );
                                             })}
                                           </div>
@@ -646,11 +662,7 @@ export function CalendarView() {
                                               <div className="flex items-center gap-1 truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
                                                 {(() => {
                                                   const sportName = w.sportName || wSt?.name || 'Unknown';
-                                                  const IconComponent = 
-                                                    sportName === 'Swim' ? Waves :
-                                                    sportName === 'Bike' ? Bike :
-                                                    sportName === 'Run' ? PersonStanding :
-                                                    sportName === 'Strength' ? Dumbbell : null;
+                                                  const IconComponent = getSportIcon(sportName);
                                                   return (
                                                     <>
                                                       {IconComponent && <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />}
@@ -682,11 +694,7 @@ export function CalendarView() {
                                               <div className="flex items-center gap-1 truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
                                                 {(() => {
                                                   const sportName = w.sportName || wSt?.name || 'Unknown';
-                                                  const IconComponent = 
-                                                    sportName === 'Swim' ? Waves :
-                                                    sportName === 'Bike' ? Bike :
-                                                    sportName === 'Run' ? PersonStanding :
-                                                    sportName === 'Strength' ? Dumbbell : null;
+                                                  const IconComponent = getSportIcon(sportName);
                                                   return (
                                                     <>
                                                       {IconComponent && <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />}

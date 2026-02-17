@@ -219,7 +219,12 @@ export function DashboardPage() {
             sportMap={sportMap}
             settingsMap={settingsMap}
           />
-          <UpcomingEvents events={upcomingEvents} today={today} />
+          <UpcomingEvents 
+            events={upcomingEvents} 
+            today={today} 
+            sportTypes={sportTypes}
+            userSettingsMap={settingsMap}
+          />
         </div>
       </div>
     </div>

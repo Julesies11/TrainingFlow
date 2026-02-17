@@ -77,7 +77,9 @@ export function WorkoutDialog({
 
   const calculatedPace = useMemo(() => {
     const dur = workout.plannedDurationMinutes || 0;
-    const dist = workout.plannedDistanceKilometers || 0;
+    const distKm = workout.plannedDistanceKilometers || 0;
+    // Convert km to meters for swimming
+    const dist = selectedSport?.name === 'Swim' ? distKm * 1000 : distKm;
     return calculatePace(selectedSport?.name || '', dur, dist);
   }, [
     workout.plannedDurationMinutes,

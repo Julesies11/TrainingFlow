@@ -14,6 +14,9 @@ import { EventDialog } from './components/event-dialog';
 import { format, parseISO, isBefore } from 'date-fns';
 import { getEffortColor, buildUserSettingsMap, buildSportMap } from '@/services/training/effort-colors';
 import { getPriorityColor, getTypeIcon, getDaysUntil } from '../_shared/utils/event-helpers';
+import { calculatePace } from '@/services/training/pace-utils';
+import { formatMinsShort } from '@/services/training/calendar.utils';
+import { getSportIcon } from '@/services/training/sport-icons';
 import { DeleteConfirmOverlay } from '../_shared/components/delete-confirm-overlay';
 
 export function EventsPage() {
@@ -164,50 +167,49 @@ export function EventsPage() {
                 <p className="text-muted-foreground text-sm">{event.description}</p>
               )}
 
-              {/* Segments display */}
+              {/* Discipline breakdown */}
               {totals.count > 0 && (
                 <div className="space-y-2">
-                  {/* Color bar - proportional to duration */}
-                  <div className="flex h-2 overflow-hidden rounded-full">
-                    {event.segments!.map((segment, idx) => {
-                      const sport = sportMap.get(segment.sportTypeId);
-                      const userSettingsForSport = userSettingsMap.get(segment.sportTypeId);
-                      const color = getEffortColor(sport, segment.effortLevel, userSettingsForSport);
-                      const duration = segment.plannedDurationMinutes || 0;
-                      const widthPercent = totals.duration > 0 ? (duration / totals.duration) * 100 : 0;
+                  {event.segments!.map((segment, idx) => {
+                    const sport = sportMap.get(segment.sportTypeId);
+                    const userSettingsForSport = userSettingsMap.get(segment.sportTypeId);
+                    const color = getEffortColor(sport, segment.effortLevel, userSettingsForSport);
+                    const duration = segment.plannedDurationMinutes || 0;
+                    const distKm = segment.plannedDistanceKilometers || 0;
+                    const dist = sport?.name === 'Swim' ? distKm * 1000 : distKm;
+                    const pace = calculatePace(sport?.name || '', duration, dist);
+                    
+                    const sportName = segment.sportName || sport?.name || 'Unknown';
+                    const IconComponent = getSportIcon(sportName);
 
-                      return (
-                        <div
-                          key={idx}
-                          style={{ 
-                            backgroundColor: color,
-                            width: `${widthPercent}%`
-                          }}
-                          title={`${segment.sportName} - ${duration} min - Effort ${segment.effortLevel}`}
-                        />
-                      );
-                    })}
-                  </div>
-
-                  {/* Totals */}
-                  <div className="flex flex-wrap gap-3 text-xs">
-                    <span className="bg-muted/50 flex items-center gap-1 rounded-full px-2 py-1 font-semibold">
-                      <span className="text-muted-foreground">Segments:</span>
-                      <span>{totals.count}</span>
-                    </span>
-                    {totals.duration > 0 && (
-                      <span className="bg-muted/50 flex items-center gap-1 rounded-full px-2 py-1 font-semibold">
-                        <span className="text-muted-foreground">Duration:</span>
-                        <span>{totals.duration} min</span>
-                      </span>
-                    )}
-                    {totals.distance > 0 && (
-                      <span className="bg-muted/50 flex items-center gap-1 rounded-full px-2 py-1 font-semibold">
-                        <span className="text-muted-foreground">Distance:</span>
-                        <span>{totals.distance.toFixed(1)} km</span>
-                      </span>
-                    )}
-                  </div>
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-start gap-3 rounded-lg border p-3"
+                        style={{ borderLeftWidth: '4px', borderLeftColor: color }}
+                      >
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          {IconComponent && (
+                            <IconComponent className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          )}
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <span className="text-sm font-bold lowercase truncate">{sportName}</span>
+                            {duration > 0 && (
+                              <span className="text-xs text-muted-foreground">{formatMinsShort(duration)}</span>
+                            )}
+                            {dist > 0 && sport?.paceRelevant && (
+                              <span className="text-xs text-muted-foreground">
+                                {dist}{sport.distanceUnit || 'km'}
+                              </span>
+                            )}
+                            {pace && (
+                              <span className="text-xs text-muted-foreground">{pace}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
