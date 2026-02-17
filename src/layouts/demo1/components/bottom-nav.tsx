@@ -1,8 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Home, Calendar, BookOpen, Trophy } from 'lucide-react';
+import { UserDropdownMenu } from '@/partials/topbar/user-dropdown-menu';
+import { useProfile } from '@/hooks/use-training-data';
+import { useAuth } from '@/auth/context/auth-context';
 
 export function BottomNav() {
   const { pathname } = useLocation();
+  const { data: profile } = useProfile();
+  const { user } = useAuth();
 
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: Home },
@@ -34,6 +39,25 @@ export function BottomNav() {
           </Link>
         );
       })}
+      
+      {/* User Profile Avatar */}
+      <div className="flex items-center">
+        <UserDropdownMenu
+          trigger={
+            profile?.avatar_url ? (
+              <img
+                className="size-8 rounded-full border-2 border-green-500 shrink-0 cursor-pointer object-cover"
+                src={profile.avatar_url}
+                alt="User Avatar"
+              />
+            ) : (
+              <div className="size-8 rounded-full border-2 border-green-500 bg-primary flex items-center justify-center text-white text-xs font-black shrink-0 cursor-pointer">
+                {user?.email?.[0]?.toUpperCase() || 'U'}
+              </div>
+            )
+          }
+        />
+      </div>
     </nav>
   );
 }

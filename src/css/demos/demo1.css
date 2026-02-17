@@ -25,8 +25,18 @@
     width: var(--sidebar-width);
   }
 
-  .demo1.header-fixed .wrapper {
-    padding-top: var(--header-height);
+  /* No top padding on mobile since header is hidden */
+  @media (max-width: theme(--breakpoint-lg)) {
+    .demo1.header-fixed .wrapper {
+      padding-top: 0;
+    }
+  }
+
+  /* Top padding on desktop where header is visible */
+  @media (min-width: theme(--breakpoint-lg)) {
+    .demo1.header-fixed .wrapper {
+      padding-top: var(--header-height);
+    }
   }
 
   /* Desktop mode */
