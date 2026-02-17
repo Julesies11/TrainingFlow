@@ -41,8 +41,8 @@ export function LibraryPage() {
   >(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  // Filtered library
-  const filteredLibrary = useMemo(() => {
+  // Filtered library grouped by sport type
+  const groupedLibrary = useMemo(() => {
     let items = library;
     if (sportFilter !== ALL_FILTER) {
       items = items.filter((t) => t.sportTypeId === sportFilter);
@@ -56,8 +56,23 @@ export function LibraryPage() {
           (t.sportName || '').toLowerCase().includes(q),
       );
     }
-    return items;
+    
+    // Group by sport type
+    const grouped: Record<string, LibraryWorkout[]> = {};
+    items.forEach((item) => {
+      const sportId = item.sportTypeId || 'unknown';
+      if (!grouped[sportId]) {
+        grouped[sportId] = [];
+      }
+      grouped[sportId].push(item);
+    });
+    
+    return grouped;
   }, [library, sportFilter, searchQuery]);
+  
+  const totalFilteredCount = useMemo(() => {
+    return Object.values(groupedLibrary).reduce((sum, group) => sum + group.length, 0);
+  }, [groupedLibrary]);
 
   // Sport counts (by sportTypeId)
   const sportCounts = useMemo(() => {
@@ -162,7 +177,7 @@ export function LibraryPage() {
 
         {/* Template grid */}
         <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-          {filteredLibrary.length === 0 ? (
+          {totalFilteredCount === 0 ? (
             <div className="flex h-60 flex-col items-center justify-center gap-3">
               <div className="text-muted-foreground text-sm">
                 {library.length === 0
@@ -188,100 +203,118 @@ export function LibraryPage() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-              {filteredLibrary.map((template) => {
-                const st = sportMap.get(template.sportTypeId);
-                const bg = getEffortColor(st, template.effortLevel || 1, userSettingsMap.get(template.sportTypeId));
-                const dur = template.plannedDurationMinutes || 0;
-                const dist = template.plannedDistanceKilometers || 0;
-
-                return (
-                  <div
-                    key={template.id}
-                    onClick={() => setTemplateToEdit(template)}
-                    className={`group relative cursor-pointer overflow-hidden rounded-xl shadow-sm transition-all hover:shadow-lg active:scale-[0.98] ${getContrastColor(bg)} ${template.isKeyWorkout ? 'border-l-4 border-l-white/80' : ''}`}
-                    style={{ backgroundColor: bg }}
-                  >
-                    {/* Key workout star */}
-                    {template.isKeyWorkout && (
-                      <Star className="absolute right-2 top-2 h-3.5 w-3.5 fill-white/90 text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]" />
-                    )}
-
-                    {/* Content */}
-                    <div className="p-4">
-                      <div className="text-[9px] font-black uppercase opacity-70">
-                        {template.sportName || st?.name || 'Unknown'}
-                      </div>
-                      <div className="mt-0.5 truncate text-sm font-bold">
-                        {template.title || 'Untitled'}
-                      </div>
-                      {template.description && (
-                        <div className="mt-1 line-clamp-2 text-[11px] opacity-70">
-                          {template.description}
-                        </div>
-                      )}
-                      <div className="mt-2 flex items-center gap-2 text-[10px] font-semibold opacity-80">
-                        <span>{formatMinsShort(dur)}</span>
-                        {dist > 0 && st?.paceRelevant && (
-                          <span>· {dist}{st.distanceUnit || 'km'}</span>
-                        )}
-                        <span className="opacity-60">
-                          · L{template.effortLevel}
-                        </span>
-                      </div>
+            <div className="space-y-8">
+              {sportTypes
+                .filter((st) => groupedLibrary[st.id] && groupedLibrary[st.id].length > 0)
+                .map((st) => (
+                  <div key={st.id}>
+                    {/* Sport type header */}
+                    <div className="mb-3 flex items-center gap-2">
+                      <h3 className="text-lg font-black lowercase tracking-tight">
+                        {st.name}
+                      </h3>
+                      <span className="text-muted-foreground text-xs">
+                        ({groupedLibrary[st.id].length})
+                      </span>
                     </div>
+                    
+                    {/* Templates grid for this sport */}
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                      {groupedLibrary[st.id].map((template) => {
+                        const bg = getEffortColor(st, template.effortLevel || 1, userSettingsMap.get(template.sportTypeId));
+                        const dur = template.plannedDurationMinutes || 0;
+                        const dist = template.plannedDistanceKilometers || 0;
 
-                    {/* Action buttons */}
-                    <div className="absolute right-2 bottom-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTemplateToEdit(template);
-                        }}
-                        className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow transition-all hover:scale-110 hover:bg-white dark:bg-black/70 dark:text-white dark:hover:bg-black/90"
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setDeleteConfirmId(template.id);
-                        }}
-                        className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-red-600 shadow transition-all hover:scale-110 hover:bg-white dark:bg-black/70 dark:text-red-400 dark:hover:bg-black/90"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </button>
+                        return (
+                          <div
+                            key={template.id}
+                            onClick={() => setTemplateToEdit(template)}
+                            className={`group relative cursor-pointer overflow-hidden rounded-xl shadow-sm transition-all hover:shadow-lg active:scale-[0.98] ${getContrastColor(bg)} ${template.isKeyWorkout ? 'border-l-4 border-l-white/80' : ''}`}
+                            style={{ backgroundColor: bg }}
+                          >
+                            {/* Key workout star */}
+                            {template.isKeyWorkout && (
+                              <Star className="absolute right-2 top-2 h-3.5 w-3.5 fill-white/90 text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)]" />
+                            )}
+
+                            {/* Content */}
+                            <div className="p-4">
+                              <div className="text-[9px] font-black uppercase opacity-70">
+                                {template.sportName || st.name || 'Unknown'}
+                              </div>
+                              <div className="mt-0.5 truncate text-sm font-bold">
+                                {template.title || 'Untitled'}
+                              </div>
+                              {template.description && (
+                                <div className="mt-1 line-clamp-2 text-[11px] opacity-70">
+                                  {template.description}
+                                </div>
+                              )}
+                              <div className="mt-2 flex items-center gap-2 text-[10px] font-semibold opacity-80">
+                                <span>{formatMinsShort(dur)}</span>
+                                {dist > 0 && st.paceRelevant && (
+                                  <span>· {dist}{st.distanceUnit || 'km'}</span>
+                                )}
+                                <span className="opacity-60">
+                                  · L{template.effortLevel}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Action buttons */}
+                            <div className="absolute right-2 bottom-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setTemplateToEdit(template);
+                                }}
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-gray-800 shadow transition-all hover:scale-110 hover:bg-white dark:bg-black/70 dark:text-white dark:hover:bg-black/90"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirmId(template.id);
+                                }}
+                                className="flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-red-600 shadow transition-all hover:scale-110 hover:bg-white dark:bg-black/70 dark:text-red-400 dark:hover:bg-black/90"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+
+                            {/* Delete confirmation overlay */}
+                            {deleteConfirmId === template.id && (
+                              <div
+                                className="absolute inset-0 flex items-center justify-center gap-2 bg-black/70 backdrop-blur-sm"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => {
+                                    deleteLibrary.mutate(template.id);
+                                    setDeleteConfirmId(null);
+                                  }}
+                                >
+                                  delete
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-white/30 text-white hover:bg-white/20"
+                                  onClick={() => setDeleteConfirmId(null)}
+                                >
+                                  cancel
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
-
-                    {/* Delete confirmation overlay */}
-                    {deleteConfirmId === template.id && (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center gap-2 bg-black/70 backdrop-blur-sm"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => {
-                            deleteLibrary.mutate(template.id);
-                            setDeleteConfirmId(null);
-                          }}
-                        >
-                          delete
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="border-white/30 text-white hover:bg-white/20"
-                          onClick={() => setDeleteConfirmId(null)}
-                        >
-                          cancel
-                        </Button>
-                      </div>
-                    )}
                   </div>
-                );
-              })}
+                ))}
             </div>
           )}
         </div>

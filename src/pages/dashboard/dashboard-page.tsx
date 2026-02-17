@@ -1,12 +1,15 @@
 import { useMemo, useState, useCallback } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useWorkouts, useEvents, useSportTypes, useUserSportSettings } from '@/hooks/use-training-data';
+import { useWorkouts, useEvents, useSportTypes, useUserSportSettings, useDeleteWorkout, useDeleteEvent } from '@/hooks/use-training-data';
+import { Workout, Event } from '@/types/training';
 import { buildUserSettingsMap, buildSportMap } from '@/services/training/effort-colors';
 import { format, parseISO } from 'date-fns';
 import { VolumeChart } from './components/volume-chart';
 import { SportDistribution } from './components/sport-distribution';
 import { TodaysSession } from './components/todays-session';
 import { UpcomingEvents } from './components/upcoming-events';
+import { WorkoutDialog } from '../training/calendar/components/workout-dialog';
+import { EventDialog } from '../training/events/components/event-dialog';
 
 type ProgressMetric = 'distance' | 'duration';
 type ViewType = 'week' | 'month';
@@ -17,6 +20,11 @@ export function DashboardPage() {
   const { data: events = [], isLoading: loadingEvents } = useEvents();
   const { data: sportTypes = [] } = useSportTypes();
   const { data: userSettings = [] } = useUserSportSettings();
+  const deleteWorkout = useDeleteWorkout();
+  const deleteEvent = useDeleteEvent();
+
+  const [workoutToEdit, setWorkoutToEdit] = useState<Workout | null>(null);
+  const [eventToEdit, setEventToEdit] = useState<Event | null>(null);
 
   const [metric, setMetric] = useState<ProgressMetric>('duration');
   const [sport, setSport] = useState<SportType | 'All'>('All');
@@ -81,8 +89,9 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="container-fixed py-6">
-      <div className="space-y-6 md:space-y-8 pb-12">
+    <>
+      <div className="container-fixed">
+        <div className="flex flex-col gap-5 lg:gap-7.5 py-5">
         {/* Header */}
         <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-2 md:gap-4">
           <div>
@@ -218,15 +227,53 @@ export function DashboardPage() {
             workout={todayWorkout}
             sportMap={sportMap}
             settingsMap={settingsMap}
+            onEdit={(workout) => setWorkoutToEdit(workout)}
+            onDelete={(workout) => {
+              if (confirm(`Delete workout "${workout.title || workout.sportName}"?`)) {
+                deleteWorkout.mutate(workout.id);
+              }
+            }}
           />
           <UpcomingEvents 
             events={upcomingEvents} 
             today={today} 
             sportTypes={sportTypes}
             userSettingsMap={settingsMap}
+            onEdit={(event) => setEventToEdit(event)}
+            onDelete={(event) => {
+              if (confirm(`Delete event "${event.title}"?`)) {
+                deleteEvent.mutate(event.id);
+              }
+            }}
           />
         </div>
+        </div>
       </div>
-    </div>
+
+      {/* Workout Dialog */}
+    {workoutToEdit && (
+      <WorkoutDialog
+        workout={workoutToEdit}
+        sportTypes={sportTypes}
+        userSettingsMap={settingsMap}
+        existingWorkouts={workouts}
+        onSave={() => setWorkoutToEdit(null)}
+        onSaveBulk={() => setWorkoutToEdit(null)}
+        onDelete={() => setWorkoutToEdit(null)}
+        onCancel={() => setWorkoutToEdit(null)}
+      />
+    )}
+
+    {/* Event Dialog */}
+    {eventToEdit && (
+      <EventDialog
+        event={eventToEdit}
+        sportTypes={sportTypes}
+        userSettings={userSettings}
+        onSave={() => setEventToEdit(null)}
+        onCancel={() => setEventToEdit(null)}
+      />
+    )}
+    </>
   );
 }

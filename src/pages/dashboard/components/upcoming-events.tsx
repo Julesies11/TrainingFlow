@@ -1,10 +1,12 @@
-import { Trophy } from 'lucide-react';
+import { Trophy, Pencil, Trash2 } from 'lucide-react';
 import { parseISO, format, differenceInDays } from 'date-fns';
 import { Link } from 'react-router';
 import { Event, SportTypeRecord } from '@/types/training';
 import { calculatePace } from '@/services/training/pace-utils';
 import { getEffortColor } from '@/services/training/effort-colors';
 import { getSportIcon } from '@/services/training/sport-icons';
+import { formatEventDuration } from '@/services/training/event-duration';
+import { Button } from '@/components/ui/button';
 
 const formatMins = (totalMins: number) => {
   const roundedMins = Math.round(totalMins);
@@ -22,9 +24,11 @@ interface UpcomingEventsProps {
   today: Date;
   sportTypes: SportTypeRecord[];
   userSettingsMap: Map<string, any>;
+  onEdit?: (event: Event) => void;
+  onDelete?: (event: Event) => void;
 }
 
-export function UpcomingEvents({ events, today, sportTypes, userSettingsMap }: UpcomingEventsProps) {
+export function UpcomingEvents({ events, today, sportTypes, userSettingsMap, onEdit, onDelete }: UpcomingEventsProps) {
   const sportMap = new Map(sportTypes.map(st => [st.id, st]));
   return (
     <div className="bg-card overflow-hidden rounded-2xl border shadow-sm">
@@ -69,16 +73,44 @@ export function UpcomingEvents({ events, today, sportTypes, userSettingsMap }: U
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-black tracking-tight truncate">
-                        {event.title}
-                      </h4>
-                      <p className="text-muted-foreground text-xs">
-                        {daysUntil === 0
-                          ? 'Today'
-                          : daysUntil === 1
-                            ? 'Tomorrow'
-                            : `${daysUntil} days`}
-                      </p>
+                      <div className="flex-1">
+                        <h4 className="text-sm font-black tracking-tight truncate">
+                          {event.title}
+                        </h4>
+                        <p className="text-muted-foreground text-xs">
+                          {formatEventDuration(daysUntil)}
+                        </p>
+                      </div>
+                      {(onEdit || onDelete) && (
+                        <div className="flex gap-1">
+                          {onEdit && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onEdit(event);
+                              }}
+                              className="h-7 w-7 p-0"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                          )}
+                          {onDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete(event);
+                              }}
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   {hasSegments && (

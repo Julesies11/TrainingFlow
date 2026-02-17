@@ -6,6 +6,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useSettings } from '@/providers/settings-provider';
 import { Header } from './components/header';
 import { Sidebar } from './components/sidebar';
+import { BottomNav } from './components/bottom-nav';
 
 export function Demo1Layout() {
   const isMobile = useIsMobile();
@@ -59,10 +60,12 @@ export function Demo1Layout() {
       <div className="wrapper flex grow flex-col">
         <Header />
 
-        <main className="grow pt-5" role="content">
+        <main className={`grow pt-5 ${isMobile ? 'pb-20' : ''}`} role="content">
           <Outlet />
         </main>
       </div>
+
+      {isMobile && <BottomNav />}
     </>
   );
 }

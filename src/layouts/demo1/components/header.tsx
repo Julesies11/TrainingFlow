@@ -40,7 +40,7 @@ export function Header() {
       )}
     >
       <Container className="flex h-11 justify-between items-center lg:gap-4">
-        {/* Mobile: Logo + Sidebar toggle */}
+        {/* Mobile: Logo only (navigation moved to bottom) */}
         <div className="flex items-center gap-2.5 lg:hidden">
           <Link to="/" className="shrink-0">
             <img
@@ -49,28 +49,6 @@ export function Header() {
               alt="mini-logo"
             />
           </Link>
-          {mobileMode && (
-            <Sheet
-              open={isSidebarSheetOpen}
-              onOpenChange={setIsSidebarSheetOpen}
-            >
-              <SheetTrigger asChild>
-                <Button variant="ghost" mode="icon">
-                  <Menu className="text-muted-foreground/70" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent
-                className="p-0 gap-0 w-[275px]"
-                side="left"
-                close={false}
-              >
-                <SheetHeader className="p-0 space-y-0" />
-                <SheetBody className="p-0 overflow-y-auto">
-                  <SidebarMenu />
-                </SheetBody>
-              </SheetContent>
-            </Sheet>
-          )}
         </div>
 
         {/* Spacer on desktop (no mega menu) */}

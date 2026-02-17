@@ -11,9 +11,10 @@ import {
 } from '@/hooks/use-training-data';
 import { Event } from '@/types/training';
 import { EventDialog } from './components/event-dialog';
-import { format, parseISO, isBefore } from 'date-fns';
+import { format, parseISO, isBefore, differenceInDays } from 'date-fns';
 import { getEffortColor, buildUserSettingsMap, buildSportMap } from '@/services/training/effort-colors';
-import { getPriorityColor, getTypeIcon, getDaysUntil } from '../_shared/utils/event-helpers';
+import { getPriorityColor, getTypeIcon } from '../_shared/utils/event-helpers';
+import { formatEventDuration } from '@/services/training/event-duration';
 import { calculatePace } from '@/services/training/pace-utils';
 import { formatMinsShort } from '@/services/training/calendar.utils';
 import { getSportIcon } from '@/services/training/sport-icons';
@@ -150,7 +151,7 @@ export function EventsPage() {
                     <h3 className="text-lg font-black tracking-tight">{event.title}</h3>
                   </div>
                   <p className="text-muted-foreground mt-1 text-xs font-semibold">
-                    {getDaysUntil(event.date)}
+                    {formatEventDuration(differenceInDays(parseISO(event.date), today))}
                   </p>
                 </div>
 

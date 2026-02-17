@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, BookOpen, Plus, Star } from 'lucide-react';
+import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import {
   useWorkouts,
@@ -384,15 +385,15 @@ export function CalendarView() {
                 variant="ghost"
                 size="sm"
                 onClick={() => stepMonth('up')}
-                className="h-8 w-8 p-0"
+                className="h-12 w-12 p-0 lg:h-8 lg:w-8"
               >
-                <ChevronLeft className="h-4 w-4" />
+                <ChevronLeft className="h-6 w-6 lg:h-4 lg:w-4" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={goToToday}
-                className="px-2 text-[10px] font-black uppercase"
+                className="px-3 text-xs font-black uppercase lg:px-2 lg:text-[10px]"
               >
                 today
               </Button>
@@ -400,9 +401,9 @@ export function CalendarView() {
                 variant="ghost"
                 size="sm"
                 onClick={() => stepMonth('down')}
-                className="h-8 w-8 p-0"
+                className="h-12 w-12 p-0 lg:h-8 lg:w-8"
               >
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-6 w-6 lg:h-4 lg:w-4" />
               </Button>
             </div>
           </div>
@@ -795,27 +796,28 @@ export function CalendarView() {
                       {/* Week summary row - mobile only */}
                       {viewMode === 'summary' && (
                         <div className="bg-primary/5 border-b p-3 lg:hidden">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">Week Total</span>
-                            <span className="text-primary text-base font-black">
-                              {formatMinsShort(weekTotals.duration)}
+                          <div className="mb-3">
+                            <span className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
+                              Week of {format(week[0], 'MMM d')}
                             </span>
                           </div>
-                          <div className="flex flex-wrap gap-3">
+                          <div className="flex gap-4">
                             {Object.entries(sportTotals).map(([stId, sTotal]) => {
                               if (sTotal.duration === 0) return null;
                               const st = sportMap.get(stId);
                               const sportColor = getEffortColor(st, 2, userSettingsMap.get(stId));
                               return (
-                                <div key={stId} className="flex items-center gap-2">
-                                  <span
-                                    className="h-2 w-2 shrink-0 rounded-full"
-                                    style={{ backgroundColor: sportColor }}
-                                  />
-                                  <span className="text-[10px] font-black lowercase">
-                                    {st?.name || 'Unknown'}
-                                  </span>
-                                  <span className="text-[10px] font-black">
+                                <div key={stId} className="flex flex-col items-start gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <span
+                                      className="h-2 w-2 shrink-0 rounded-full"
+                                      style={{ backgroundColor: sportColor }}
+                                    />
+                                    <span className="text-[10px] font-black lowercase">
+                                      {st?.name || 'Unknown'}
+                                    </span>
+                                  </div>
+                                  <span className="text-[10px]">
                                     {formatMinsShort(sTotal.duration)}
                                   </span>
                                   {sTotal.distance > 0 && st?.paceRelevant && (

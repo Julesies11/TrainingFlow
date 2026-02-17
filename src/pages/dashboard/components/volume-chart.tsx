@@ -143,6 +143,28 @@ export function VolumeChart({
       type: 'area',
       toolbar: { show: false },
       zoom: { enabled: false },
+      events: {
+        dataPointSelection: function(event, chartContext, config) {
+          const dataPointIndex = config.dataPointIndex;
+          const dataPoint = chartData[dataPointIndex];
+          const value = config.w.config.series[config.seriesIndex].data[dataPointIndex];
+          
+          if (value === null || value === undefined) return;
+          
+          const label = config.w.globals.labels[dataPointIndex];
+          let seriesName;
+          if (dataPoint.isCurrent) {
+            seriesName = 'Current Week';
+          } else if (dataPoint.past !== null) {
+            seriesName = 'Past';
+          } else {
+            seriesName = 'Future';
+          }
+          
+          const unit = metric === 'duration' ? 'h' : 'km';
+          alert(`${label}\n${seriesName}: ${value}${unit}`);
+        }
+      }
     },
     dataLabels: { enabled: false },
     legend: { show: false },
@@ -222,11 +244,11 @@ export function VolumeChart({
       },
     },
     markers: {
-      size: 0,
+      size: 2,
       colors: ['#fff'],
       strokeColors: ['#3b82f6', '#8b5cf6'],
-      strokeWidth: 4,
-      hover: { size: 8 },
+      strokeWidth: 3,
+      hover: { size: 6, sizeOffset: 2 },
     },
   }), [chartData, metric]);
 

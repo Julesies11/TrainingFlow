@@ -1,6 +1,7 @@
-import { Calendar } from 'lucide-react';
+import { Calendar, Pencil, Trash2 } from 'lucide-react';
 import { Workout, SportType, UserSportSetting } from '@/types/training';
 import { getEffortColor } from '@/services/training/effort-colors';
+import { Button } from '@/components/ui/button';
 
 const formatMins = (totalMins: number) => {
   const roundedMins = Math.round(totalMins);
@@ -17,9 +18,11 @@ interface TodaysSessionProps {
   workout: Workout | undefined;
   sportMap: Map<string, SportType>;
   settingsMap: Map<string, UserSportSetting>;
+  onEdit?: (workout: Workout) => void;
+  onDelete?: (workout: Workout) => void;
 }
 
-export function TodaysSession({ workout, sportMap, settingsMap }: TodaysSessionProps) {
+export function TodaysSession({ workout, sportMap, settingsMap, onEdit, onDelete }: TodaysSessionProps) {
   return (
     <div className="bg-card overflow-hidden rounded-2xl border shadow-sm">
       <div className="border-b bg-muted/30 px-5 py-4">
@@ -72,6 +75,32 @@ export function TodaysSession({ workout, sportMap, settingsMap }: TodaysSessionP
                 )}
               </div>
             </div>
+            {(onEdit || onDelete) && (
+              <div className="flex gap-2 border-t pt-3">
+                {onEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onEdit(workout)}
+                    className="gap-1"
+                  >
+                    <Pencil className="h-3 w-3" />
+                    Edit
+                  </Button>
+                )}
+                {onDelete && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onDelete(workout)}
+                    className="gap-1 text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    Delete
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
         ) : (
           <div className="flex h-32 items-center justify-center">
