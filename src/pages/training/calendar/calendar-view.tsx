@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, BookOpen, Plus, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -53,11 +53,12 @@ export function CalendarView() {
   const deleteLibrary = useDeleteLibraryWorkout();
 
   // Navigation state
-  const [baseDate, setBaseDate] = useState<Date>(() => getMonday(new Date()));
   const [selectedDate, setSelectedDate] = useState<string>(
     formatDateToLocalISO(new Date()),
   );
   const [viewMode, setViewMode] = useState<'calendar' | 'summary'>('calendar');
+  const [displayMonth, setDisplayMonth] = useState<number>(new Date().getMonth());
+  const [displayYear, setDisplayYear] = useState<number>(new Date().getFullYear());
 
   // Modal state
   const [workoutToEdit, setWorkoutToEdit] = useState<Partial<Workout> | null>(
@@ -66,157 +67,230 @@ export function CalendarView() {
   const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] = useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
 
-  // Animation state
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [slideOffset, setSlideOffset] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-
   // Refs
-  const lastScrollTime = useRef<number>(0);
-  const touchStartY = useRef<number | null>(null);
   const calendarRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const scrollAccumulator = useRef<number>(0);
+  const initialScrollDone = useRef(false);
+  const headerUpdateTimer = useRef<number | null>(null);
+
+  // Weeks state for load more functionality
+  const [weeksState, setWeeksState] = useState<Date[][]>([]);
+  const [isLoadingWeeks, setIsLoadingWeeks] = useState(false);
+  const [showLoadEarlier, setShowLoadEarlier] = useState(false);
+  const [showLoadLater, setShowLoadLater] = useState(false);
+  const scrollPositionRef = useRef({ top: 0, bottom: 0 });
+  const buttonVisibilityTimer = useRef<number | null>(null);
 
   const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
   const userSettingsMap = useMemo(() => buildUserSettingsMap(userSportSettings), [userSportSettings]);
 
-  // Grid data
-  const gridData = useMemo(() => {
-    const weeks: Date[][] = [];
-    const cursor = new Date(baseDate);
-    for (let w = 0; w < 6; w++) {
+  // Helper: Generate weeks sequentially from a start Monday
+  const generateWeeksFrom = useCallback((startMonday: Date, count: number) => {
+    const result: Date[][] = [];
+    const cursor = new Date(startMonday);
+    for (let w = 0; w < count; w++) {
       const week: Date[] = [];
       for (let d = 0; d < 7; d++) {
         week.push(new Date(cursor));
         cursor.setDate(cursor.getDate() + 1);
       }
-      weeks.push(week);
+      result.push(week);
     }
-    const middleDate = new Date(baseDate);
-    middleDate.setDate(middleDate.getDate() + 17);
-    return {
-      weeks,
-      predominantMonth: middleDate.getMonth(),
-      predominantYear: middleDate.getFullYear(),
-    };
-  }, [baseDate]);
+    return result;
+  }, []);
 
-  // Reset scroll on date change
+  // Generate 52 weeks (26 before today, 26 after) - immediately available
+  const weeks = useMemo(() => {
+    if (weeksState.length > 0) return weeksState;
+    
+    const today = new Date();
+    const startDate = new Date(today);
+    startDate.setDate(startDate.getDate() - (26 * 7)); // 26 weeks back
+    const startMonday = getMonday(startDate);
+    return generateWeeksFrom(startMonday, 52);
+  }, [weeksState, generateWeeksFrom]);
+
+  // Scroll to today's week on initial load
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = 0;
-  }, [baseDate]);
+    if (weeks.length > 0 && scrollRef.current && !initialScrollDone.current) {
+      const todayStr = formatDateToLocalISO(new Date());
+      const todayWeekIndex = weeks.findIndex(week =>
+        week.some(date => formatDateToLocalISO(date) === todayStr)
+      );
+      if (todayWeekIndex >= 0) {
+        const avgWeekHeight = 160;
+        scrollRef.current.scrollTop = todayWeekIndex * avgWeekHeight;
+        initialScrollDone.current = true;
+      }
+    }
+  }, [weeks]);
+
+  // Debounced header update from scroll position
+  const updateHeaderFromScroll = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container || weeks.length === 0) return;
+
+    const avgWeekHeight = 160;
+    const visibleWeekIndex = Math.max(0, Math.floor(container.scrollTop / avgWeekHeight));
+    
+    if (visibleWeekIndex < weeks.length) {
+      const visibleWeek = weeks[visibleWeekIndex];
+      const midDate = visibleWeek[3]; // Wednesday
+      
+      requestAnimationFrame(() => {
+        setDisplayMonth(midDate.getMonth());
+        setDisplayYear(midDate.getFullYear());
+      });
+    }
+  }, [weeks]);
+
+  // Scroll handler - only updates header with debounce
+  const handleScroll = useCallback(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    // Track scroll position in ref (no re-render)
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    scrollPositionRef.current = { 
+      top: scrollTop, 
+      bottom: scrollHeight - (scrollTop + clientHeight) 
+    };
+
+    // Throttled button visibility update (every 200ms)
+    if (buttonVisibilityTimer.current) {
+      clearTimeout(buttonVisibilityTimer.current);
+    }
+    buttonVisibilityTimer.current = window.setTimeout(() => {
+      const pos = scrollPositionRef.current;
+      setShowLoadEarlier(pos.top < 1000);
+      setShowLoadLater(pos.bottom < 1000);
+    }, 200);
+
+    // Debounced header update
+    if (headerUpdateTimer.current) {
+      clearTimeout(headerUpdateTimer.current);
+    }
+    headerUpdateTimer.current = window.setTimeout(() => {
+      updateHeaderFromScroll();
+    }, 150);
+  }, [updateHeaderFromScroll]);
+
+  // Attach passive scroll listener
+  useEffect(() => {
+    const container = scrollRef.current;
+    if (!container) return;
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (headerUpdateTimer.current) {
+        clearTimeout(headerUpdateTimer.current);
+      }
+      if (buttonVisibilityTimer.current) {
+        clearTimeout(buttonVisibilityTimer.current);
+      }
+    };
+  }, [handleScroll]);
+
+  // Load earlier weeks (prepend)
+  const loadEarlierWeeks = useCallback(() => {
+    setIsLoadingWeeks(true);
+    const firstWeek = weeks[0];
+    const earlierStart = new Date(firstWeek[0]);
+    earlierStart.setDate(earlierStart.getDate() - (26 * 7));
+    const newWeeks = generateWeeksFrom(getMonday(earlierStart), 26);
+    
+    setWeeksState(prev => {
+      const updated = prev.length > 0 ? [...newWeeks, ...prev] : [...newWeeks, ...weeks];
+      return updated;
+    });
+    
+    // Adjust scroll position to maintain view
+    if (scrollRef.current) {
+      const avgWeekHeight = 160;
+      requestAnimationFrame(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop += (26 * avgWeekHeight);
+          setIsLoadingWeeks(false);
+        }
+      });
+    } else {
+      setIsLoadingWeeks(false);
+    }
+  }, [weeks, generateWeeksFrom]);
+
+  // Load later weeks (append)
+  const loadLaterWeeks = useCallback(() => {
+    setIsLoadingWeeks(true);
+    const lastWeek = weeks[weeks.length - 1];
+    const laterStart = new Date(lastWeek[6]);
+    laterStart.setDate(laterStart.getDate() + 1);
+    const newWeeks = generateWeeksFrom(getMonday(laterStart), 26);
+    
+    setWeeksState(prev => {
+      const updated = prev.length > 0 ? [...prev, ...newWeeks] : [...weeks, ...newWeeks];
+      return updated;
+    });
+    
+    setTimeout(() => setIsLoadingWeeks(false), 100);
+  }, [weeks, generateWeeksFrom]);
 
   // Navigation helpers
-  const stepWeek = useCallback(
-    (dir: 'up' | 'down') => {
-      if (isTransitioning || isAnimating) return;
-      setIsTransitioning(true);
-      setIsAnimating(true);
-      setSlideOffset(dir === 'up' ? 60 : -60);
-      // Reduced animation time from 200ms to 180ms for snappier feel
-      setTimeout(() => {
-        setBaseDate((prev) => {
-          const d = new Date(prev);
-          d.setDate(d.getDate() + (dir === 'up' ? -7 : 7));
-          return d;
-        });
-        setIsAnimating(false);
-        setSlideOffset(0);
-        // Use double RAF for smoother state updates
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => setIsTransitioning(false));
-        });
-      }, 180);
-    },
-    [isTransitioning, isAnimating],
-  );
-
   const stepMonth = useCallback(
     (dir: 'up' | 'down') => {
-      if (isTransitioning || isAnimating) return;
-      setIsTransitioning(true);
-      setIsAnimating(true);
-      setSlideOffset(dir === 'up' ? 100 : -100);
-      setTimeout(() => {
-        setBaseDate(() => {
-          const target = new Date(
-            gridData.predominantYear,
-            gridData.predominantMonth + (dir === 'up' ? -1 : 1),
-            1,
-          );
-          return getMonday(target);
+      const container = scrollRef.current;
+      if (!container || weeks.length === 0) return;
+      
+      // Get current visible month from scroll position
+      const avgWeekHeight = 160;
+      const currentWeekIndex = Math.max(0, Math.floor(container.scrollTop / avgWeekHeight));
+      const currentWeek = weeks[currentWeekIndex];
+      if (!currentWeek) return;
+      
+      const currentMonth = currentWeek[3].getMonth();
+      const currentYear = currentWeek[3].getFullYear();
+      
+      const targetMonth = dir === 'up' ? currentMonth - 1 : currentMonth + 1;
+      const targetYear = targetMonth < 0 ? currentYear - 1 : targetMonth > 11 ? currentYear + 1 : currentYear;
+      const normalizedMonth = targetMonth < 0 ? 11 : targetMonth > 11 ? 0 : targetMonth;
+      
+      // Find first week of target month
+      const targetWeekIndex = weeks.findIndex(week =>
+        week.some(date => date.getMonth() === normalizedMonth && date.getFullYear() === targetYear)
+      );
+      
+      if (targetWeekIndex >= 0) {
+        container.scrollTo({ 
+          top: targetWeekIndex * avgWeekHeight, 
+          behavior: 'smooth' 
         });
-        setIsAnimating(false);
-        setSlideOffset(0);
-        requestAnimationFrame(() => setIsTransitioning(false));
-      }, 250);
+        
+        // Update header immediately
+        const targetWeek = weeks[targetWeekIndex];
+        const midDate = targetWeek[3];
+        setDisplayMonth(midDate.getMonth());
+        setDisplayYear(midDate.getFullYear());
+      }
     },
-    [isTransitioning, isAnimating, gridData],
+    [weeks],
   );
 
-  const goToToday = () => {
-    setBaseDate(getMonday(new Date()));
-    setSelectedDate(formatDateToLocalISO(new Date()));
-  };
-
-  // Scroll & touch listeners
-  useEffect(() => {
-    const handleWheel = (e: WheelEvent) => {
-      if (workoutToEdit || eventWithSegmentsToEdit || showLibrary || isTransitioning)
-        return;
-      
-      // Prevent default scroll behavior for smoother week transitions
-      e.preventDefault();
-      
-      const now = Date.now();
-      // Reduced debounce from 450ms to 300ms for more responsive feel
-      if (now - lastScrollTime.current < 300) return;
-      
-      scrollAccumulator.current += e.deltaY;
-      // Increased threshold from 30 to 80 to require more deliberate scroll
-      if (Math.abs(scrollAccumulator.current) > 80) {
-        stepWeek(scrollAccumulator.current > 0 ? 'down' : 'up');
-        lastScrollTime.current = now;
-        scrollAccumulator.current = 0;
-      }
-    };
-
-    const handleTouchStart = (e: TouchEvent) => {
-      touchStartY.current = e.touches[0].clientY;
-    };
-
-    const handleTouchEnd = (e: TouchEvent) => {
-      if (
-        touchStartY.current === null ||
-        workoutToEdit ||
-        eventWithSegmentsToEdit ||
-        showLibrary ||
-        isTransitioning
-      )
-        return;
-      const diffY = touchStartY.current - e.changedTouches[0].clientY;
-      if (Math.abs(diffY) > 50) {
-        stepWeek(diffY > 0 ? 'down' : 'up');
-      }
-      touchStartY.current = null;
-    };
-
-    const el = calendarRef.current;
-    if (el) {
-      // Use passive: false for wheel to allow preventDefault for smooth scrolling
-      el.addEventListener('wheel', handleWheel, { passive: false });
-      el.addEventListener('touchstart', handleTouchStart, { passive: true });
-      el.addEventListener('touchend', handleTouchEnd, { passive: true });
+  const goToToday = useCallback(() => {
+    const todayStr = formatDateToLocalISO(new Date());
+    const todayWeekIndex = weeks.findIndex(week =>
+      week.some(date => formatDateToLocalISO(date) === todayStr)
+    );
+    
+    if (todayWeekIndex >= 0 && scrollRef.current) {
+      const avgWeekHeight = 160;
+      scrollRef.current.scrollTo({ 
+        top: todayWeekIndex * avgWeekHeight, 
+        behavior: 'smooth' 
+      });
     }
-    return () => {
-      if (el) {
-        el.removeEventListener('wheel', handleWheel);
-        el.removeEventListener('touchstart', handleTouchStart);
-        el.removeEventListener('touchend', handleTouchEnd);
-      }
-    };
-  }, [workoutToEdit, eventWithSegmentsToEdit, showLibrary, isTransitioning, stepWeek]);
+    setSelectedDate(todayStr);
+  }, [weeks]);
 
   // Drag & drop
   const [dragOverInfo, setDragOverInfo] = useState<{ date: string; index: number } | null>(null);
@@ -377,8 +451,8 @@ export function CalendarView() {
         <header className="z-[70] flex w-full shrink-0 flex-col items-center justify-between gap-3 overflow-hidden px-4 lg:flex-row lg:px-4">
           <div className="flex w-full shrink-0 items-center justify-between gap-2 lg:w-auto lg:gap-4">
             <h2 className="truncate text-lg font-black lowercase tracking-tighter lg:text-3xl">
-              {MONTH_NAMES[gridData.predominantMonth]}{' '}
-              {gridData.predominantYear}
+              {MONTH_NAMES[displayMonth]}{' '}
+              {displayYear}
             </h2>
             <div className="bg-muted flex shrink-0 items-center gap-0.5 rounded-xl border p-1 shadow-sm lg:gap-1">
               <Button
@@ -451,6 +525,7 @@ export function CalendarView() {
         <div
           ref={calendarRef}
           className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-hidden lg:flex-row"
+          style={{ touchAction: 'pan-y' }}
         >
           <div className="bg-card relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border shadow-sm">
             {/* Day headers */}
@@ -475,17 +550,41 @@ export function CalendarView() {
             {/* Weeks */}
             <div
               ref={scrollRef}
-              className="relative flex-1 overflow-y-auto scroll-smooth [scrollbar-width:none]"
+              className="relative flex-1 overflow-y-auto [scrollbar-width:none]"
+              style={{ overscrollBehaviorY: 'contain' }}
             >
-              <div
-                className={`h-full ${isAnimating ? 'transition-transform duration-300' : 'transition-none'}`}
-                style={{ transform: `translateY(${slideOffset}px)` }}
-              >
-                {gridData.weeks.map((week, wIdx) => {
+              <div>
+                {/* Load Earlier Button - only show when near top */}
+                {showLoadEarlier && (
+                  <div className="sticky top-0 z-50 flex justify-center border-b bg-background/95 py-3 backdrop-blur lg:py-2">
+                    <Button
+                      variant="default"
+                      size="lg"
+                      onClick={loadEarlierWeeks}
+                      disabled={isLoadingWeeks}
+                      className="gap-2 text-sm font-bold shadow-lg lg:size-sm lg:text-xs"
+                    >
+                      {isLoadingWeeks ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          <ChevronLeft className="h-4 w-4" />
+                          Load Earlier Weeks
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+
+                {weeks.map((week, wIdx) => {
                   const { sportTotals, weekTotals } =
                     calculateWeekSummary(week);
+                  const weekStart = formatDateToLocalISO(week[0]);
                   return (
-                    <div key={wIdx} className="flex flex-col lg:contents">
+                    <div key={wIdx} className="flex flex-col lg:contents" data-week-start={weekStart}>
                       {/* Week grid */}
                       <div
                         className={`grid min-h-[120px] border-b lg:min-h-[160px] ${gridColsClass}`}
@@ -504,7 +603,7 @@ export function CalendarView() {
                             formatDateToLocalISO(new Date()) === dateStr;
                           const isSelected = selectedDate === dateStr;
                           const isSameMonth =
-                            date.getMonth() === gridData.predominantMonth;
+                            date.getMonth() === displayMonth;
                           const isFirstOfMonth = date.getDate() === 1;
 
                           return (
@@ -834,6 +933,31 @@ export function CalendarView() {
                     </div>
                   );
                 })}
+
+                {/* Load Later Button - only show when near bottom */}
+                {showLoadLater && (
+                  <div className="sticky bottom-0 z-50 flex justify-center border-t bg-background/95 py-3 backdrop-blur lg:py-2">
+                    <Button
+                      variant="default"
+                      size="lg"
+                      onClick={loadLaterWeeks}
+                      disabled={isLoadingWeeks}
+                      className="gap-2 text-sm font-bold shadow-lg lg:size-sm lg:text-xs"
+                    >
+                      {isLoadingWeeks ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          Load Later Weeks
+                          <ChevronRight className="h-4 w-4" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
