@@ -50,7 +50,7 @@ export function SportTypesAdminPage() {
 
   if (!isDeveloper) {
     return (
-      <div className="flex h-[calc(100vh-4.5rem)] items-center justify-center">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-center">
           <ShieldAlert className="text-muted-foreground mx-auto mb-4 h-16 w-16" />
           <h1 className="text-2xl font-black lowercase tracking-tight">
@@ -66,15 +66,15 @@ export function SportTypesAdminPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[calc(100vh-4.5rem)] items-center justify-center">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-muted-foreground text-sm">Loading sport types...</div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-[calc(100vh-4.5rem)] flex-col">
-      <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex flex-col">
+      <div className="flex flex-col">
         {/* Header */}
         <header className="bg-muted/30 flex shrink-0 items-center justify-between border-b px-4 py-6">
           <div>
@@ -99,7 +99,7 @@ export function SportTypesAdminPage() {
         </header>
 
         {/* Sport type cards */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4 pt-4">
+        <div className="px-4 pb-4 pt-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {sportTypes.map((st) => (
               <div

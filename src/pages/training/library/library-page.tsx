@@ -96,7 +96,7 @@ export function LibraryPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[calc(100vh-4.5rem)] items-center justify-center">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-muted-foreground text-sm">
           Loading library...
         </div>
@@ -106,7 +106,7 @@ export function LibraryPage() {
 
   return (
     <div className="container-fixed">
-      <div className="flex h-[calc(100vh-4.5rem)] flex-col gap-4 overflow-hidden lg:h-[calc(100vh-5rem)]">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <header className="flex shrink-0 flex-col gap-3 px-4 pt-2 lg:flex-row lg:items-center lg:justify-between lg:px-4">
           <div>
@@ -176,7 +176,7 @@ export function LibraryPage() {
         </div>
 
         {/* Template grid */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+        <div className="px-4 pb-4">
           {totalFilteredCount === 0 ? (
             <div className="flex h-60 flex-col items-center justify-center gap-3">
               <div className="text-muted-foreground text-sm">

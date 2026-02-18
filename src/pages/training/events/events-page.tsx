@@ -102,7 +102,7 @@ export function EventsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[calc(100vh-4.5rem)] items-center justify-center">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-muted-foreground text-sm">Loading events...</div>
       </div>
     );
@@ -244,7 +244,7 @@ export function EventsPage() {
 
   return (
     <div className="container-fixed">
-      <div className="flex h-[calc(100vh-4.5rem)] flex-col gap-4 overflow-hidden lg:h-[calc(100vh-5rem)]">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <header className="flex shrink-0 flex-col gap-3 px-4 pt-2 lg:flex-row lg:items-center lg:justify-between lg:px-4">
           <div>
@@ -262,7 +262,7 @@ export function EventsPage() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-4 pb-4">
+        <div className="px-4 pb-4">
           <div className="space-y-6">
             {/* Upcoming Events */}
             <div>

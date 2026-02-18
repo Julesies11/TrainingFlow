@@ -121,7 +121,7 @@ export function SportTypesPage() {
 
   if (loadingSports || loadingSettings) {
     return (
-      <div className="flex h-[calc(100vh-4.5rem)] items-center justify-center">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-muted-foreground text-sm">Loading sport types...</div>
       </div>
     );
@@ -129,7 +129,7 @@ export function SportTypesPage() {
 
   return (
     <div className="container-fixed">
-      <div className="flex h-[calc(100vh-4.5rem)] flex-col gap-4 overflow-hidden lg:h-[calc(100vh-5rem)]">
+      <div className="flex flex-col gap-4">
         {/* Header */}
         <header className="flex shrink-0 items-center justify-between px-4 pt-2">
           <div>
@@ -143,7 +143,7 @@ export function SportTypesPage() {
         </header>
 
         {/* Sport type cards */}
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+        <div className="px-4 pb-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {sportTypes.map((st) => {
               const hasPending = !!pendingColors[st.id] || !!pendingLabels[st.id];

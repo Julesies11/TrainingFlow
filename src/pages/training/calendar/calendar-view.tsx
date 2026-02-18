@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useLayoutEffect, useRef, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { ChevronLeft, ChevronRight, BookOpen, Plus, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
@@ -67,19 +67,9 @@ export function CalendarView() {
   const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] = useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
 
-  // Refs
-  const calendarRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const initialScrollDone = useRef(false);
-  const headerUpdateTimer = useRef<number | null>(null);
-
-  // Weeks state for load more functionality
-  const [weeksState, setWeeksState] = useState<Date[][]>([]);
-  const [isLoadingWeeks, setIsLoadingWeeks] = useState(false);
-  const [showLoadEarlier, setShowLoadEarlier] = useState(false);
-  const [showLoadLater, setShowLoadLater] = useState(false);
-  const scrollPositionRef = useRef({ top: 0, bottom: 0 });
-  const buttonVisibilityTimer = useRef<number | null>(null);
+  // Drag and drop state
+  const [isDraggingId, setIsDraggingId] = useState<string | null>(null);
+  const [dragOverInfo, setDragOverInfo] = useState<{ date: string } | null>(null);
 
   const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
   const userSettingsMap = useMemo(() => buildUserSettingsMap(userSportSettings), [userSportSettings]);
@@ -99,202 +89,45 @@ export function CalendarView() {
     return result;
   }, []);
 
-  // Generate 52 weeks (26 before today, 26 after) - immediately available
+  // Generate weeks for the currently displayed month only
   const weeks = useMemo(() => {
-    if (weeksState.length > 0) return weeksState;
+    const firstDay = new Date(displayYear, displayMonth, 1);
+    const lastDay = new Date(displayYear, displayMonth + 1, 0);
     
-    const today = new Date();
-    const startDate = new Date(today);
-    startDate.setDate(startDate.getDate() - (26 * 7)); // 26 weeks back
-    const startMonday = getMonday(startDate);
-    return generateWeeksFrom(startMonday, 52);
-  }, [weeksState, generateWeeksFrom]);
-
-  // Scroll to today's week on initial load
-  useEffect(() => {
-    if (weeks.length > 0 && scrollRef.current && !initialScrollDone.current) {
-      const todayStr = formatDateToLocalISO(new Date());
-      const todayWeekIndex = weeks.findIndex(week =>
-        week.some(date => formatDateToLocalISO(date) === todayStr)
-      );
-      if (todayWeekIndex >= 0) {
-        const avgWeekHeight = 160;
-        scrollRef.current.scrollTop = todayWeekIndex * avgWeekHeight;
-        initialScrollDone.current = true;
-      }
-    }
-  }, [weeks]);
-
-  // Debounced header update from scroll position
-  const updateHeaderFromScroll = useCallback(() => {
-    const container = scrollRef.current;
-    if (!container || weeks.length === 0) return;
-
-    const avgWeekHeight = 160;
-    const visibleWeekIndex = Math.max(0, Math.floor(container.scrollTop / avgWeekHeight));
+    // Start from the Monday of the week containing the 1st
+    const startMonday = getMonday(firstDay);
     
-    if (visibleWeekIndex < weeks.length) {
-      const visibleWeek = weeks[visibleWeekIndex];
-      const midDate = visibleWeek[3]; // Wednesday
-      
-      requestAnimationFrame(() => {
-        setDisplayMonth(midDate.getMonth());
-        setDisplayYear(midDate.getFullYear());
-      });
-    }
-  }, [weeks]);
-
-  // Scroll handler - only updates header with debounce
-  const handleScroll = useCallback(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    // Track scroll position in ref (no re-render)
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    scrollPositionRef.current = { 
-      top: scrollTop, 
-      bottom: scrollHeight - (scrollTop + clientHeight) 
-    };
-
-    // Throttled button visibility update (every 200ms)
-    if (buttonVisibilityTimer.current) {
-      clearTimeout(buttonVisibilityTimer.current);
-    }
-    buttonVisibilityTimer.current = window.setTimeout(() => {
-      const pos = scrollPositionRef.current;
-      setShowLoadEarlier(pos.top < 1000);
-      setShowLoadLater(pos.bottom < 1000);
-    }, 200);
-
-    // Debounced header update
-    if (headerUpdateTimer.current) {
-      clearTimeout(headerUpdateTimer.current);
-    }
-    headerUpdateTimer.current = window.setTimeout(() => {
-      updateHeaderFromScroll();
-    }, 150);
-  }, [updateHeaderFromScroll]);
-
-  // Attach passive scroll listener
-  useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
-
-    container.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      container.removeEventListener('scroll', handleScroll);
-      if (headerUpdateTimer.current) {
-        clearTimeout(headerUpdateTimer.current);
-      }
-      if (buttonVisibilityTimer.current) {
-        clearTimeout(buttonVisibilityTimer.current);
-      }
-    };
-  }, [handleScroll]);
-
-  // Load earlier weeks (prepend)
-  const loadEarlierWeeks = useCallback(() => {
-    setIsLoadingWeeks(true);
-    const firstWeek = weeks[0];
-    const earlierStart = new Date(firstWeek[0]);
-    earlierStart.setDate(earlierStart.getDate() - (26 * 7));
-    const newWeeks = generateWeeksFrom(getMonday(earlierStart), 26);
+    // Calculate how many weeks we need to display the entire month
+    const endMonday = getMonday(lastDay);
+    const daysDiff = Math.ceil((endMonday.getTime() - startMonday.getTime()) / (1000 * 60 * 60 * 24));
+    const weekCount = Math.ceil(daysDiff / 7) + 1;
     
-    setWeeksState(prev => {
-      const updated = prev.length > 0 ? [...newWeeks, ...prev] : [...newWeeks, ...weeks];
-      return updated;
+    return generateWeeksFrom(startMonday, weekCount);
+  }, [displayMonth, displayYear, generateWeeksFrom]);
+
+  // Navigation helpers - simple state updates, no scroll
+  const stepMonth = useCallback((dir: 'up' | 'down') => {
+    setDisplayMonth(prev => {
+      const newMonth = dir === 'up' ? prev - 1 : prev + 1;
+      if (newMonth < 0) {
+        setDisplayYear(y => y - 1);
+        return 11;
+      } else if (newMonth > 11) {
+        setDisplayYear(y => y + 1);
+        return 0;
+      }
+      return newMonth;
     });
-    
-    // Adjust scroll position to maintain view
-    if (scrollRef.current) {
-      const avgWeekHeight = 160;
-      requestAnimationFrame(() => {
-        if (scrollRef.current) {
-          scrollRef.current.scrollTop += (26 * avgWeekHeight);
-          setIsLoadingWeeks(false);
-        }
-      });
-    } else {
-      setIsLoadingWeeks(false);
-    }
-  }, [weeks, generateWeeksFrom]);
-
-  // Load later weeks (append)
-  const loadLaterWeeks = useCallback(() => {
-    setIsLoadingWeeks(true);
-    const lastWeek = weeks[weeks.length - 1];
-    const laterStart = new Date(lastWeek[6]);
-    laterStart.setDate(laterStart.getDate() + 1);
-    const newWeeks = generateWeeksFrom(getMonday(laterStart), 26);
-    
-    setWeeksState(prev => {
-      const updated = prev.length > 0 ? [...prev, ...newWeeks] : [...weeks, ...newWeeks];
-      return updated;
-    });
-    
-    setTimeout(() => setIsLoadingWeeks(false), 100);
-  }, [weeks, generateWeeksFrom]);
-
-  // Navigation helpers
-  const stepMonth = useCallback(
-    (dir: 'up' | 'down') => {
-      const container = scrollRef.current;
-      if (!container || weeks.length === 0) return;
-      
-      // Get current visible month from scroll position
-      const avgWeekHeight = 160;
-      const currentWeekIndex = Math.max(0, Math.floor(container.scrollTop / avgWeekHeight));
-      const currentWeek = weeks[currentWeekIndex];
-      if (!currentWeek) return;
-      
-      const currentMonth = currentWeek[3].getMonth();
-      const currentYear = currentWeek[3].getFullYear();
-      
-      const targetMonth = dir === 'up' ? currentMonth - 1 : currentMonth + 1;
-      const targetYear = targetMonth < 0 ? currentYear - 1 : targetMonth > 11 ? currentYear + 1 : currentYear;
-      const normalizedMonth = targetMonth < 0 ? 11 : targetMonth > 11 ? 0 : targetMonth;
-      
-      // Find first week of target month
-      const targetWeekIndex = weeks.findIndex(week =>
-        week.some(date => date.getMonth() === normalizedMonth && date.getFullYear() === targetYear)
-      );
-      
-      if (targetWeekIndex >= 0) {
-        container.scrollTo({ 
-          top: targetWeekIndex * avgWeekHeight, 
-          behavior: 'smooth' 
-        });
-        
-        // Update header immediately
-        const targetWeek = weeks[targetWeekIndex];
-        const midDate = targetWeek[3];
-        setDisplayMonth(midDate.getMonth());
-        setDisplayYear(midDate.getFullYear());
-      }
-    },
-    [weeks],
-  );
+  }, []);
 
   const goToToday = useCallback(() => {
-    const todayStr = formatDateToLocalISO(new Date());
-    const todayWeekIndex = weeks.findIndex(week =>
-      week.some(date => formatDateToLocalISO(date) === todayStr)
-    );
-    
-    if (todayWeekIndex >= 0 && scrollRef.current) {
-      const avgWeekHeight = 160;
-      scrollRef.current.scrollTo({ 
-        top: todayWeekIndex * avgWeekHeight, 
-        behavior: 'smooth' 
-      });
-    }
-    setSelectedDate(todayStr);
-  }, [weeks]);
+    const today = new Date();
+    setDisplayMonth(today.getMonth());
+    setDisplayYear(today.getFullYear());
+    setSelectedDate(formatDateToLocalISO(today));
+  }, []);
 
-  // Drag & drop
-  const [dragOverInfo, setDragOverInfo] = useState<{ date: string; index: number } | null>(null);
-  const [isDraggingId, setIsDraggingId] = useState<string | null>(null);
+  // Drag & drop handlers
 
   const handleDragStart = (
     e: React.DragEvent,
@@ -436,7 +269,7 @@ export function CalendarView() {
 
   if (loadingWorkouts) {
     return (
-      <div className="flex h-[calc(100vh-4.5rem)] items-center justify-center">
+      <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-muted-foreground text-sm">
           Loading training data...
         </div>
@@ -446,7 +279,7 @@ export function CalendarView() {
 
   return (
     <div className="container-fixed">
-      <div className="flex h-[calc(100vh-4.5rem)] flex-col space-y-4 overflow-hidden lg:h-[calc(100vh-5rem)]">
+      <div className="flex flex-col space-y-4">
         {/* Header */}
         <header className="z-[70] flex w-full shrink-0 flex-col items-center justify-between gap-3 overflow-hidden px-4 lg:flex-row lg:px-4">
           <div className="flex w-full shrink-0 items-center justify-between gap-2 lg:w-auto lg:gap-4">
@@ -454,20 +287,20 @@ export function CalendarView() {
               {MONTH_NAMES[displayMonth]}{' '}
               {displayYear}
             </h2>
-            <div className="bg-muted flex shrink-0 items-center gap-0.5 rounded-xl border p-1 shadow-sm lg:gap-1">
+            <div className="bg-muted flex shrink-0 items-center gap-1 rounded-xl border p-1.5 shadow-sm lg:gap-1 lg:p-1">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => stepMonth('up')}
-                className="h-12 w-12 p-0 lg:h-8 lg:w-8"
+                className="h-14 w-14 p-0 lg:h-10 lg:w-10"
               >
-                <ChevronLeft className="h-6 w-6 lg:h-4 lg:w-4" />
+                <ChevronLeft className="h-7 w-7 lg:h-5 lg:w-5" />
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={goToToday}
-                className="px-3 text-xs font-black uppercase lg:px-2 lg:text-[10px]"
+                className="px-4 text-sm font-black uppercase lg:px-3 lg:text-xs"
               >
                 today
               </Button>
@@ -475,9 +308,9 @@ export function CalendarView() {
                 variant="ghost"
                 size="sm"
                 onClick={() => stepMonth('down')}
-                className="h-12 w-12 p-0 lg:h-8 lg:w-8"
+                className="h-14 w-14 p-0 lg:h-10 lg:w-10"
               >
-                <ChevronRight className="h-6 w-6 lg:h-4 lg:w-4" />
+                <ChevronRight className="h-7 w-7 lg:h-5 lg:w-5" />
               </Button>
             </div>
           </div>
@@ -523,11 +356,9 @@ export function CalendarView() {
 
         {/* Calendar Grid */}
         <div
-          ref={calendarRef}
-          className="relative flex min-h-0 flex-1 flex-col gap-4 overflow-hidden lg:flex-row"
-          style={{ touchAction: 'pan-y' }}
+          className="relative flex flex-col gap-4 lg:flex-row"
         >
-          <div className="bg-card relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border shadow-sm">
+          <div className="bg-card relative flex flex-1 flex-col rounded-2xl border shadow-sm">
             {/* Day headers */}
             <div
               className={`bg-muted/50 z-[80] grid shrink-0 border-b ${gridColsClass}`}
@@ -548,36 +379,8 @@ export function CalendarView() {
             </div>
 
             {/* Weeks */}
-            <div
-              ref={scrollRef}
-              className="relative flex-1 overflow-y-auto [scrollbar-width:none]"
-              style={{ overscrollBehaviorY: 'contain' }}
-            >
+            <div>
               <div>
-                {/* Load Earlier Button - only show when near top */}
-                {showLoadEarlier && (
-                  <div className="sticky top-0 z-50 flex justify-center border-b bg-background/95 py-3 backdrop-blur lg:py-2">
-                    <Button
-                      variant="default"
-                      size="lg"
-                      onClick={loadEarlierWeeks}
-                      disabled={isLoadingWeeks}
-                      className="gap-2 text-sm font-bold shadow-lg lg:size-sm lg:text-xs"
-                    >
-                      {isLoadingWeeks ? (
-                        <>
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          Loading...
-                        </>
-                      ) : (
-                        <>
-                          <ChevronLeft className="h-4 w-4" />
-                          Load Earlier Weeks
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
 
                 {weeks.map((week, wIdx) => {
                   const { sportTotals, weekTotals } =
@@ -617,7 +420,7 @@ export function CalendarView() {
                               onDrop={(e) => handleDrop(e, dateStr)}
                               className={`group/cell relative flex flex-col overflow-hidden border-r p-1 transition-all last:border-r-0 lg:p-2
                                 ${!isSameMonth ? 'bg-muted/20' : ''}
-                                ${isSelected ? 'bg-primary/5 ring-primary/30 z-10 shadow-sm ring-1 ring-inset' : ''}
+                                ${isSelected ? 'bg-primary/10 dark:bg-primary/30 ring-primary/50 dark:ring-primary/70 z-10 shadow-md ring-2 ring-inset' : ''}
                                 ${dragOverInfo?.date === dateStr && isDraggingId ? 'ring-2 ring-inset ring-primary bg-primary/10 dark:bg-primary/20' : ''}`}
                             >
                               <div className="mb-1 flex shrink-0 items-start justify-between">
@@ -626,7 +429,9 @@ export function CalendarView() {
                                     ${isToday ? 'bg-primary text-primary-foreground shadow-lg' : isSelected ? 'text-primary font-black' : 'text-muted-foreground'}
                                     ${!isSameMonth ? 'opacity-30' : ''}`}
                                 >
-                                  {isFirstOfMonth
+                                  {dIdx === 0
+                                    ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}`
+                                    : isFirstOfMonth
                                     ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} 1`
                                     : date.getDate()}
                                 </span>
@@ -934,30 +739,6 @@ export function CalendarView() {
                   );
                 })}
 
-                {/* Load Later Button - only show when near bottom */}
-                {showLoadLater && (
-                  <div className="sticky bottom-0 z-50 flex justify-center border-t bg-background/95 py-3 backdrop-blur lg:py-2">
-                    <Button
-                      variant="default"
-                      size="lg"
-                      onClick={loadLaterWeeks}
-                      disabled={isLoadingWeeks}
-                      className="gap-2 text-sm font-bold shadow-lg lg:size-sm lg:text-xs"
-                    >
-                      {isLoadingWeeks ? (
-                        <>
-                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          Loading...
-                        </>
-                      ) : (
-                        <>
-                          Load Later Weeks
-                          <ChevronRight className="h-4 w-4" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -1012,7 +793,7 @@ export function CalendarView() {
           onClick={() =>
             setWorkoutToEdit({ date: selectedDate, order: Date.now() })
           }
-          className="fixed bottom-6 right-6 z-[90] h-14 w-14 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-shadow lg:bottom-8 lg:right-8"
+          className="fixed bottom-20 right-6 z-[90] h-14 w-14 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-shadow lg:bottom-8 lg:right-8"
         >
           <Plus className="h-6 w-6" />
         </Button>
