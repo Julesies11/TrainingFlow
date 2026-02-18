@@ -64,6 +64,8 @@ export function WorkoutDialog({
     !!initialWorkout.recurrenceId,
   );
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showExtendSeries, setShowExtendSeries] = useState(false);
+  const [extendWeeks, setExtendWeeks] = useState(4);
   const [recurrenceConfig, setRecurrenceConfig] = useState<{
     endType: 'count' | 'date';
     endValue: number | string;
@@ -74,6 +76,24 @@ export function WorkoutDialog({
   }, [workout.sportTypeId, sportTypes]);
 
   const userSettings = userSettingsMap.get(workout.sportTypeId || '');
+
+  // Get recurring series info
+  const seriesInfo = useMemo(() => {
+    if (!workout.recurrenceId) return null;
+    
+    const seriesWorkouts = existingWorkouts.filter(
+      (w) => w.recurrenceId === workout.recurrenceId
+    ).sort((a, b) => a.date.localeCompare(b.date));
+    
+    if (seriesWorkouts.length === 0) return null;
+    
+    return {
+      totalCount: seriesWorkouts.length,
+      startDate: seriesWorkouts[0].date,
+      endDate: seriesWorkouts[seriesWorkouts.length - 1].date,
+      currentIndex: seriesWorkouts.findIndex((w) => w.id === workout.id) + 1,
+    };
+  }, [workout.recurrenceId, workout.id, existingWorkouts]);
 
   const calculatedPace = useMemo(() => {
     const dur = workout.plannedDurationMinutes || 0;
@@ -88,6 +108,29 @@ export function WorkoutDialog({
   ]);
 
   const headerColor = getEffortColor(selectedSport, workout.effortLevel || 1, userSettings);
+
+  const handleExtendSeries = () => {
+    if (!workout.recurrenceId || !seriesInfo) return;
+    
+    const instances: Partial<Workout>[] = [];
+    const lastDate = new Date(seriesInfo.endDate.replace(/-/g, '/'));
+    
+    for (let i = 1; i <= extendWeeks; i++) {
+      const d = new Date(lastDate);
+      d.setDate(d.getDate() + i * 7);
+      instances.push({
+        ...workout,
+        id: undefined,
+        date: formatDateToLocalISO(d),
+        recurrenceId: workout.recurrenceId,
+        recurrenceRule: workout.recurrenceRule,
+        order: Date.now() + i,
+      });
+    }
+    
+    onSaveBulk?.(instances);
+    setShowExtendSeries(false);
+  };
 
   const handleSave = () => {
     if (isRecurring && !workout.recurrenceId) {
@@ -127,7 +170,7 @@ export function WorkoutDialog({
 
   return (
     <Dialog open={true} onOpenChange={() => onCancel()}>
-      <DialogContent className="max-h-[90vh] w-full max-w-2xl overflow-hidden p-0">
+      <DialogContent className="max-h-[90vh] w-full max-w-2xl overflow-hidden bg-background p-0">
         {/* Color bar */}
         <div className="h-2 shrink-0" style={{ backgroundColor: headerColor }} />
 
@@ -155,6 +198,62 @@ export function WorkoutDialog({
                     }
                   />
                 </div>
+
+                {/* Recurring Series Info */}
+                {seriesInfo && (
+                  <div className="bg-primary/10 dark:bg-primary/20 space-y-3 rounded-2xl border border-primary/30 p-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-primary text-[10px] font-black uppercase tracking-widest">
+                        recurring series
+                      </Label>
+                      <span className="text-primary text-xs font-bold">
+                        {seriesInfo.currentIndex} of {seriesInfo.totalCount}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div>
+                        <div className="text-muted-foreground text-[9px] font-bold uppercase">Start</div>
+                        <div className="font-semibold">{new Date(seriesInfo.startDate).toLocaleDateString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-muted-foreground text-[9px] font-bold uppercase">End</div>
+                        <div className="font-semibold">{new Date(seriesInfo.endDate).toLocaleDateString()}</div>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowExtendSeries(!showExtendSeries)}
+                      className="w-full text-[10px] font-bold"
+                    >
+                      {showExtendSeries ? 'cancel extend' : 'extend series'}
+                    </Button>
+                    {showExtendSeries && (
+                      <div className="space-y-2">
+                        <Label className="text-[9px] font-bold uppercase">Add weeks</Label>
+                        <div className="flex gap-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            max="52"
+                            value={extendWeeks}
+                            onChange={(e) => setExtendWeeks(Number(e.target.value))}
+                            className="flex-1"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={handleExtendSeries}
+                            className="text-[10px] font-bold"
+                          >
+                            add
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Sport selector */}
                 <div className="bg-muted/50 space-y-4 rounded-2xl border p-5">
@@ -334,12 +433,12 @@ export function WorkoutDialog({
           </DialogBody>
 
           <DialogFooter className="gap-3">
-            <Button variant="outline" onClick={onCancel}>
+            <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               cancel
             </Button>
 
             {isExisting && onDelete && (
-              <div className="relative">
+              <div className="relative w-full sm:w-auto">
                 <Button
                   variant="destructive"
                   onClick={() =>
@@ -347,6 +446,7 @@ export function WorkoutDialog({
                       ? setIsDeleting(!isDeleting)
                       : onDelete(workout.id!, 'single')
                   }
+                  className="w-full sm:w-auto"
                 >
                   {isDeleting ? 'no' : 'delete'}
                 </Button>
@@ -373,7 +473,7 @@ export function WorkoutDialog({
               </div>
             )}
 
-            <Button onClick={handleSave} className="flex-1">
+            <Button onClick={handleSave} className="w-full sm:flex-1">
               save session
             </Button>
           </DialogFooter>

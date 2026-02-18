@@ -156,14 +156,14 @@ export function EventDialog({
             <Button
               variant="outline"
               onClick={() => onDelete(event.id)}
-              className="text-red-500 hover:bg-red-500/10"
+              className="w-full text-red-500 hover:bg-red-500/10 sm:w-auto"
             >
               delete
             </Button>
-            <Button variant="outline" onClick={onCancel}>
+            <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               cancel
             </Button>
-            <Button onClick={() => onSave(event)} className="flex-1">
+            <Button onClick={() => onSave(event)} className="w-full sm:flex-1">
               save changes
             </Button>
           </DialogFooter>

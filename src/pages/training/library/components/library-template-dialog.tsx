@@ -198,10 +198,10 @@ export function LibraryTemplateDialog({
           </DialogBody>
 
           <DialogFooter className="gap-3">
-            <Button variant="outline" onClick={onCancel}>
+            <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">
               cancel
             </Button>
-            <Button onClick={() => onSave(template)} className="flex-1">
+            <Button onClick={() => onSave(template)} className="w-full sm:flex-1">
               {isExisting ? 'save changes' : 'create template'}
             </Button>
           </DialogFooter>

@@ -1,4 +1,4 @@
-import { Waves, Bike, PersonStanding, Dumbbell, LucideIcon } from 'lucide-react';
+import { Waves, Bike, Footprints, Dumbbell, LucideIcon } from 'lucide-react';
 
 /**
  * Get the icon component for a sport name
@@ -11,7 +11,7 @@ export function getSportIcon(sportName: string | undefined): LucideIcon | null {
   
   if (normalized === 'swim' || normalized === 'swimming') return Waves;
   if (normalized === 'bike' || normalized === 'cycling' || normalized === 'biking') return Bike;
-  if (normalized === 'run' || normalized === 'running') return PersonStanding;
+  if (normalized === 'run' || normalized === 'running') return Footprints;
   if (normalized === 'strength' || normalized === 'weights' || normalized === 'gym') return Dumbbell;
   
   return null;
