@@ -4,7 +4,6 @@ import { MENU_SIDEBAR } from '@/config/menu.config';
 import { useMenu } from '@/hooks/use-menu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSettings } from '@/providers/settings-provider';
-import { Header } from './components/header';
 import { Sidebar } from './components/sidebar';
 import { BottomNav } from './components/bottom-nav';
 
@@ -36,7 +35,6 @@ export function Demo1Layout() {
     // Add a class to the body element
     bodyClass.add('demo1');
     bodyClass.add('sidebar-fixed');
-    bodyClass.add('header-fixed');
 
     const timer = setTimeout(() => {
       bodyClass.add('layout-initialized');
@@ -47,7 +45,6 @@ export function Demo1Layout() {
       bodyClass.remove('demo1');
       bodyClass.remove('sidebar-fixed');
       bodyClass.remove('sidebar-collapse');
-      bodyClass.remove('header-fixed');
       bodyClass.remove('layout-initialized');
       clearTimeout(timer);
     };
@@ -58,9 +55,7 @@ export function Demo1Layout() {
       {!isMobile && <Sidebar />}
 
       <div className="wrapper flex grow flex-col">
-        <Header />
-
-        <main className={`grow pt-5 ${isMobile ? 'pb-20' : ''}`} role="content">
+        <main className={`grow ${isMobile ? 'pb-20 pt-5' : 'pt-5'}`} role="content">
           <Outlet />
         </main>
       </div>

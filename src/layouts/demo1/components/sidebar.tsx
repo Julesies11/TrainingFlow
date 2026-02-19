@@ -3,10 +3,15 @@ import { cn } from '@/lib/utils';
 import { useSettings } from '@/providers/settings-provider';
 import { SidebarHeader } from './sidebar-header';
 import { SidebarMenu } from './sidebar-menu';
+import { UserDropdownMenu } from '@/partials/topbar/user-dropdown-menu';
+import { useProfile } from '@/hooks/use-training-data';
+import { useAuth } from '@/auth/context/auth-context';
 
 export function Sidebar() {
   const { settings } = useSettings();
   const { pathname } = useLocation();
+  const { data: profile } = useProfile();
+  const { user } = useAuth();
 
   return (
     <div
@@ -18,10 +23,29 @@ export function Sidebar() {
       )}
     >
       <SidebarHeader />
-      <div className="overflow-hidden">
+      <div className="overflow-hidden flex-1">
         <div className="w-(--sidebar-default-width)">
           <SidebarMenu />
         </div>
+      </div>
+      
+      {/* User Avatar at bottom of sidebar */}
+      <div className="shrink-0 border-t border-border p-3 lg:p-4">
+        <UserDropdownMenu
+          trigger={
+            profile?.avatar_url ? (
+              <img
+                className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer object-cover mx-auto"
+                src={profile.avatar_url}
+                alt="User Avatar"
+              />
+            ) : (
+              <div className="size-9 rounded-full border-2 border-green-500 bg-primary flex items-center justify-center text-white text-sm font-black shrink-0 cursor-pointer mx-auto">
+                {user?.email?.[0]?.toUpperCase() || 'U'}
+              </div>
+            )
+          }
+        />
       </div>
     </div>
   );
