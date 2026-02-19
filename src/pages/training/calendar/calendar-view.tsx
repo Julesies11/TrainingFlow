@@ -19,6 +19,7 @@ import {
   useSportTypes,
   useUserSportSettings,
 } from '@/hooks/use-training-data';
+import { useSupabaseUserId } from '@/hooks/use-supabase-user';
 import { Workout, Event, LibraryWorkout } from '@/types/training';
 import {
   formatDateToLocalISO,
@@ -36,11 +37,12 @@ import { EventDialog } from './components/event-dialog';
 import { LibraryDrawer } from './components/library-drawer';
 
 export function CalendarView() {
+  const userId = useSupabaseUserId();
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
   const { data: events = [] } = useEvents();
   const { data: library = [] } = useLibrary();
-  const { data: sportTypes = [] } = useSportTypes();
-  const { data: userSportSettings = [] } = useUserSportSettings();
+  const { data: sportTypes = [], isLoading: loadingSports } = useSportTypes();
+  const { data: userSportSettings = [], isLoading: loadingSettings } = useUserSportSettings();
 
   const updateWorkout = useUpdateWorkout();
   const createWorkout = useCreateWorkout();
@@ -267,7 +269,9 @@ export function CalendarView() {
       ? 'grid-cols-7 lg:grid-cols-[repeat(7,minmax(0,1fr))_120px]'
       : 'grid-cols-7';
 
-  if (loadingWorkouts) {
+  const isLoading = !userId || loadingWorkouts || loadingSports || loadingSettings;
+
+  if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
         <div className="text-muted-foreground text-sm">
