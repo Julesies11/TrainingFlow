@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { useAuth } from '@/auth/context/auth-context';
 import { Dumbbell, Moon, ShieldCheck, UserCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { useIsDeveloper } from '@/hooks/use-is-developer';
 import { useProfile } from '@/hooks/use-training-data';
 import { Button } from '@/components/ui/button';

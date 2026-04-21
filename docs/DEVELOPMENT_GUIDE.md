@@ -34,6 +34,17 @@ This guide outlines the local development workflow, project-specific scripts, an
 - `npm run create-demo-user`: Creates a test user in Supabase.
 - `npm run debug-auth`: Utility script for troubleshooting authentication issues.
 
+## Smoke Testing
+
+A set of smoke tests is available in `src/test/smoke/` to ensure that core application pages render without crashing. These tests mock heavy dependencies like ApexCharts and FullCalendar, as well as Supabase API calls.
+
+To run smoke tests:
+```bash
+npm test
+```
+
+When adding new pages, consider adding a basic smoke test in `src/test/smoke/pages.test.tsx` to verify successful rendering.
+
 ## Calendar Integration
 
 The training calendar uses **FullCalendar**. If you encounter build errors related to `@fullcalendar`, ensure the following dependencies are installed:

@@ -1,6 +1,6 @@
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { Pencil, Trash2, Trophy } from 'lucide-react';
-import { Link } from 'react-router';
+import { Link } from 'react-router-dom';
 import { Event, SportTypeRecord } from '@/types/training';
 import { getEffortColor } from '@/services/training/effort-colors';
 import { formatEventDuration } from '@/services/training/event-duration';

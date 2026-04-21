@@ -1,6 +1,28 @@
 import { Event, EventSegment } from '@/types/training';
 import { supabase } from '@/lib/supabase';
 
+interface DbSegmentWithSportName {
+  id: string;
+  event_id: string;
+  sport_type_id: string;
+  sport_name?: string;
+  planned_duration_minutes: number | null;
+  planned_distance_kilometers: number | null;
+  effort_level: number;
+  segment_order: number;
+}
+
+interface DbSegmentFromSupabase {
+  id: string;
+  event_id: string;
+  sport_type_id: string;
+  pf_sport_types: { name: string } | null;
+  planned_duration_minutes: number | null;
+  planned_distance_kilometers: number | null;
+  effort_level: number;
+  segment_order: number;
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapDbSegment(s: any): EventSegment {
   return {
@@ -22,14 +44,14 @@ function mapDbEvent(e: {
   title: string;
   priority: string;
   description?: string;
-  segments?: any[];
+  segments?: DbSegmentWithSportName[];
 }): Event {
   return {
     id: e.id,
     date: e.date,
-    type: e.type,
+    type: e.type as Event['type'],
     title: e.title,
-    priority: e.priority,
+    priority: e.priority as Event['priority'],
     description: e.description,
     segments: e.segments ? e.segments.map(mapDbSegment) : [],
   };
@@ -60,7 +82,7 @@ export const eventsApi = {
     if (error) throw error;
 
     return (data || []).map((e) => {
-      const segments = (e.segments || []).map((s: any) => ({
+      const segments = (e.segments || []).map((s: DbSegmentFromSupabase) => ({
         ...s,
         sport_name: s.pf_sport_types?.name,
       }));
@@ -123,10 +145,12 @@ export const eventsApi = {
 
     if (fetchError) throw fetchError;
 
-    const segments = (fullEvent.segments || []).map((s: any) => ({
-      ...s,
-      sport_name: s.pf_sport_types?.name,
-    }));
+    const segments = (fullEvent.segments || []).map(
+      (s: DbSegmentFromSupabase) => ({
+        ...s,
+        sport_name: s.pf_sport_types?.name,
+      }),
+    );
 
     return mapDbEvent({ ...fullEvent, segments });
   },
@@ -221,10 +245,12 @@ export const eventsApi = {
 
     if (finalFetchError) throw finalFetchError;
 
-    const segments = (fullEvent.segments || []).map((s: any) => ({
-      ...s,
-      sport_name: s.pf_sport_types?.name,
-    }));
+    const segments = (fullEvent.segments || []).map(
+      (s: DbSegmentFromSupabase) => ({
+        ...s,
+        sport_name: s.pf_sport_types?.name,
+      }),
+    );
 
     return mapDbEvent({ ...fullEvent, segments });
   },

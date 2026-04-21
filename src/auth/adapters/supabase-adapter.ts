@@ -4,39 +4,60 @@ import { supabase } from '@/lib/supabase';
 /**
  * Supabase adapter that maintains the same interface as the existing auth flow
  * but uses Supabase under the hood.
+ *
+ * Implements a "Lazy Profile Creation" strategy for shared Supabase databases.
  */
 export const SupabaseAdapter = {
+  /**
+   * Private-ish helper to ensure a record exists in pf_profiles.
+   * Performs an upsert to bridge users from shared auth.users.
+   */
+  async _ensureProfileExists(user: any): Promise<void> {
+    const metadata = user.user_metadata || {};
+
+    const { error } = await supabase.from('pf_profiles').upsert(
+      {
+        id: user.id,
+        workout_type_options: JSON.stringify({
+          Swim: ['Easy', 'Hard'],
+          Bike: ['Easy', 'Hard'],
+          Run: ['Easy', 'Tempo', 'Interval'],
+          Strength: ['Full Body', 'Upper', 'Lower'],
+        }),
+        effort_settings: {},
+        updated_at: new Date().toISOString(),
+        // Map common metadata fields if they exist from other apps
+        theme: metadata.theme || 'light',
+        avatar_url: metadata.pic || metadata.avatar_url || null,
+      },
+      { onConflict: 'id' },
+    );
+
+    if (error) {
+      console.error('SupabaseAdapter: Error ensuring profile exists:', error);
+      // We don't throw here to avoid blocking the login if profile sync fails
+    }
+  },
+
   /**
    * Login with email and password
    */
   async login(email: string, password: string): Promise<AuthModel> {
-    console.log('SupabaseAdapter: Attempting login with email:', email);
-
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) {
-        console.error('SupabaseAdapter: Login error from Supabase:', error);
-        throw new Error(error.message);
+      if (error) throw new Error(error.message);
+
+      if (data.user) {
+        await this._ensureProfileExists(data.user);
       }
 
-      console.log(
-        'SupabaseAdapter: Login successful, session:',
-        data.session
-          ? {
-              access_token_length: data.session.access_token?.length,
-              refresh_token_length: data.session.refresh_token?.length,
-            }
-          : 'No session data',
-      );
-
-      // Transform Supabase session to AuthModel
       return {
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
+        access_token: data.session?.access_token || '',
+        refresh_token: data.session?.refresh_token || '',
       };
     } catch (error) {
       console.error('SupabaseAdapter: Unexpected login error:', error);
@@ -57,16 +78,9 @@ export const SupabaseAdapter = {
       | 'slack',
     options?: { redirectTo?: string },
   ): Promise<void> {
-    console.log(
-      'SupabaseAdapter: Initiating OAuth flow with provider:',
-      provider,
-    );
-
     try {
       const redirectTo =
         options?.redirectTo || `${window.location.origin}/auth/callback`;
-
-      console.log('SupabaseAdapter: Using redirect URL:', redirectTo);
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
@@ -75,14 +89,7 @@ export const SupabaseAdapter = {
         },
       });
 
-      if (error) {
-        console.error('SupabaseAdapter: OAuth error:', error);
-        throw new Error(error.message);
-      }
-
-      console.log('SupabaseAdapter: OAuth flow initiated successfully');
-
-      // No need to return anything - the browser will be redirected
+      if (error) throw new Error(error.message);
     } catch (error) {
       console.error('SupabaseAdapter: Unexpected OAuth error:', error);
       throw error;
@@ -108,7 +115,7 @@ export const SupabaseAdapter = {
       password,
       options: {
         data: {
-          username: email.split('@')[0], // Default username from email
+          username: email.split('@')[0],
           first_name: firstName || '',
           last_name: lastName || '',
           fullname:
@@ -120,15 +127,14 @@ export const SupabaseAdapter = {
 
     if (error) throw new Error(error.message);
 
-    // Return empty tokens if email confirmation is required
-    if (!data.session) {
-      return {
-        access_token: '',
-        refresh_token: '',
-      };
+    if (data.user) {
+      await this._ensureProfileExists(data.user);
     }
 
-    // Transform Supabase session to AuthModel
+    if (!data.session) {
+      return { access_token: '', refresh_token: '' };
+    }
+
     return {
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token,
@@ -139,23 +145,13 @@ export const SupabaseAdapter = {
    * Request password reset
    */
   async requestPasswordReset(email: string): Promise<void> {
-    console.log('Requesting password reset for:', email);
-
     try {
-      // Ensure the redirect URL is properly formatted with a hash for token
       const redirectUrl = `${window.location.origin}/auth/reset-password`;
-      console.log('Using redirect URL:', redirectUrl);
-
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectUrl,
       });
 
-      if (error) {
-        console.error('Password reset request error:', error);
-        throw new Error(error.message);
-      }
-
-      console.log('Password reset email sent successfully');
+      if (error) throw new Error(error.message);
     } catch (err) {
       console.error('Unexpected error in password reset:', err);
       throw err;
@@ -202,6 +198,17 @@ export const SupabaseAdapter = {
     const { data } = await supabase.auth.getUser();
     if (!data.user) return null;
 
+    // Check if profile exists, if not, create it lazily
+    const { data: profile } = await supabase
+      .from('pf_profiles')
+      .select('id')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    if (!profile) {
+      await this._ensureProfileExists(data.user);
+    }
+
     return this.getUserProfile();
   },
 
@@ -216,10 +223,8 @@ export const SupabaseAdapter = {
 
     if (error || !user) throw new Error(error?.message || 'User not found');
 
-    // Get user metadata and transform to UserModel format
     const metadata = user.user_metadata || {};
 
-    // Format data to maintain compatibility with existing UI
     return {
       id: user.id,
       email: user.email || '',
@@ -232,7 +237,7 @@ export const SupabaseAdapter = {
         `${metadata.first_name || ''} ${metadata.last_name || ''}`.trim(),
       occupation: metadata.occupation || '',
       company_name: metadata.company_name || '',
-      companyName: metadata.company_name || '', // For backward compatibility
+      companyName: metadata.company_name || '',
       phone: metadata.phone || '',
       roles: metadata.roles || [],
       pic: metadata.pic || '',
@@ -245,7 +250,6 @@ export const SupabaseAdapter = {
    * Update user profile (stored in metadata)
    */
   async updateUserProfile(userData: Partial<UserModel>): Promise<UserModel> {
-    // Transform from UserModel to metadata format
     const metadata: Record<string, unknown> = {
       username: userData.username,
       first_name: userData.first_name,
@@ -254,7 +258,7 @@ export const SupabaseAdapter = {
         userData.fullname ||
         `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
       occupation: userData.occupation,
-      company_name: userData.company_name || userData.companyName, // Support both formats
+      company_name: userData.company_name || userData.companyName,
       phone: userData.phone,
       roles: userData.roles,
       pic: userData.pic,
@@ -263,19 +267,25 @@ export const SupabaseAdapter = {
       updated_at: new Date().toISOString(),
     };
 
-    // Remove undefined fields
     Object.keys(metadata).forEach((key) => {
       if (metadata[key] === undefined) {
         delete metadata[key];
       }
     });
 
-    // Update user metadata
     const { error } = await supabase.auth.updateUser({
       data: metadata,
     });
 
     if (error) throw new Error(error.message);
+
+    // Also update the relational profile if relevant fields changed
+    if (userData.pic) {
+      await supabase
+        .from('pf_profiles')
+        .update({ avatar_url: userData.pic })
+        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+    }
 
     return this.getCurrentUser() as Promise<UserModel>;
   },

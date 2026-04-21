@@ -13,6 +13,7 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -77,6 +78,9 @@ export function LibraryTemplateDialog({
             <DialogTitle className="text-2xl font-black tracking-tight lowercase">
               {dialogTitle}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              [Description]
+            </DialogDescription>
           </DialogHeader>
 
           <DialogBody>

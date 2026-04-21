@@ -1,32 +1,93 @@
-import { ProfilePage } from '@/pages/account/profile';
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen, waitFor } from '../test-utils';
 import { DashboardPage } from '@/pages/dashboard';
+import { ProfilePage } from '@/pages/account/profile';
 import { EventsPage } from '@/pages/training/events';
 import { LibraryPage } from '@/pages/training/library';
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '../test-utils';
+import {
+  CalendarView,
+  CalendarViewFC,
+  CalendarViewKit,
+  CalendarViewMonth,
+} from '@/pages/training/calendar';
 
-// Mocking layout components if necessary, but AllTheProviders should handle basic rendering
-// Let's test the pages themselves
+// Mock all training data hooks to return data immediately
+vi.mock('@/hooks/use-training-data', () => ({
+  useWorkouts: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useEvents: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useLibrary: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useSportTypes: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useUserSportSettings: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useProfile: vi.fn().mockReturnValue({ data: { theme: 'light', effort_settings: {} }, isLoading: false }),
+  useUpdateProfile: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useUpdateWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useCreateWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useCreateWorkoutsBulk: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useDeleteWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useUpdateEvent: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useDeleteEvent: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useCreateLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useUpdateLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useDeleteLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useCreateEvent: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useUpsertUserSportSettings: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+}));
 
 describe('Smoke Test: Main Pages', () => {
   it('renders Dashboard page without crashing', async () => {
     render(<DashboardPage />);
-    // Add a basic check - adjusting based on actual page content
-    expect(screen.getByText(/dashboard/i)).toBeDefined();
+    await waitFor(() => {
+      expect(screen.queryByText(/loading dashboard/i)).toBeNull();
+    }, { timeout: 5000 });
+    // Look for the lowercase header text
+    expect(screen.getByText(/athlete dashboard/i)).toBeDefined();
   });
 
   it('renders Profile page without crashing', async () => {
     render(<ProfilePage />);
-    expect(screen.getByText(/profile/i)).toBeDefined();
+    await waitFor(() => {
+      expect(screen.queryByText(/loading profile/i)).toBeNull();
+    });
+    expect(screen.getByText(/athlete profile/i)).toBeDefined();
   });
 
   it('renders Events page without crashing', async () => {
     render(<EventsPage />);
-    expect(screen.getByText(/events/i)).toBeDefined();
+    await waitFor(() => {
+      expect(screen.queryByText(/loading events/i)).toBeNull();
+    });
+    expect(screen.getByText(/events & goals/i)).toBeDefined();
   });
 
   it('renders Library page without crashing', async () => {
     render(<LibraryPage />);
     expect(screen.getByText(/library/i)).toBeDefined();
+  });
+
+  it('renders CalendarView page without crashing', async () => {
+    render(<CalendarView />);
+    await waitFor(() => {
+      expect(screen.queryByText(/loading training data/i)).toBeNull();
+    }, { timeout: 5000 });
+    // Match any instance of 2026
+    expect(screen.getAllByText(/2026/)).toBeDefined();
+  });
+
+  it('renders CalendarViewFC page without crashing', async () => {
+    render(<CalendarViewFC />);
+    await waitFor(() => {
+      expect(screen.queryByText(/loading training data/i)).toBeNull();
+    });
+    expect(screen.getByText(/Training Calendar/i)).toBeDefined();
+  });
+
+  it('renders CalendarViewKit page without crashing', async () => {
+    render(<CalendarViewKit />);
+    expect(screen.getAllByText(/2026/)).toBeDefined();
+  });
+
+  it('renders CalendarViewMonth page without crashing', async () => {
+    render(<CalendarViewMonth />);
+    expect(screen.getAllByText(/2026/)).toBeDefined();
   });
 });

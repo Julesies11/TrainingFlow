@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -58,6 +59,9 @@ export function EventDialog({
             <DialogTitle className="text-2xl font-black lowercase tracking-tight">
               edit event
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              [Description]
+            </DialogDescription>
           </DialogHeader>
 
           <DialogBody>

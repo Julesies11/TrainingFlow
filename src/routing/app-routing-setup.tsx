@@ -14,7 +14,7 @@ import {
 } from '@/pages/training/calendar';
 import { EventsPage } from '@/pages/training/events';
 import { LibraryPage } from '@/pages/training/library';
-import { Navigate, Route, Routes } from 'react-router';
+import { Navigate, Route, Routes } from 'react-router-dom';
 
 function PlaceholderPage({ title }: { title: string }) {
   return (

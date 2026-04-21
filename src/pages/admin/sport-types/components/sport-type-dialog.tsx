@@ -6,6 +6,7 @@ import {
   Dialog,
   DialogBody,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -77,6 +78,9 @@ export function SportTypeDialog({
             <DialogTitle className="text-2xl font-black tracking-tight lowercase">
               {isEdit ? 'edit sport type' : 'new sport type'}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              [Description]
+            </DialogDescription>
           </DialogHeader>
 
           <DialogBody>

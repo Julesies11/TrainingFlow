@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar from '@fullcalendar/react';
@@ -58,6 +58,8 @@ export function CalendarViewFC() {
   const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] =
     useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const calendarRef = useRef<any>(null);
 
   // Build maps
   const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
@@ -162,7 +164,7 @@ export function CalendarViewFC() {
 
   // Handle event click
   const handleEventClick = (info: {
-    event: { extendedProps: { type: string; data: any } };
+    event: { extendedProps: { type: string; data: Workout | Event } };
   }) => {
     const { extendedProps } = info.event;
     if (extendedProps.type === 'workout') {
