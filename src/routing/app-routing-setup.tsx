@@ -2,7 +2,7 @@ import { AuthRouting } from '@/auth/auth-routing';
 import { RequireAuth } from '@/auth/require-auth';
 import { ErrorRouting } from '@/errors/error-routing';
 import { Demo1Layout } from '@/layouts/demo1/layout';
-import { CalendarView } from '@/pages/training/calendar';
+import { CalendarView, CalendarViewFC, CalendarViewKit, CalendarViewMonth } from '@/pages/training/calendar';
 import { LibraryPage } from '@/pages/training/library';
 import { EventsPage } from '@/pages/training/events';
 import { DashboardPage } from '@/pages/dashboard';
@@ -33,6 +33,9 @@ export function AppRoutingSetup() {
         <Route element={<Demo1Layout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/training/calendar" element={<CalendarView />} />
+          <Route path="/training/calendar-new" element={<CalendarViewFC />} />
+          <Route path="/training/calendar-kit" element={<CalendarViewKit />} />
+          <Route path="/training/calendar-month" element={<CalendarViewMonth />} />
           <Route path="/training/library" element={<LibraryPage />} />
           <Route path="/training/events" element={<EventsPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
