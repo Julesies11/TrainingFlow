@@ -35,7 +35,7 @@ export function getTypeIcon(type: 'Race' | 'Goal' | 'Test') {
 export function getDaysUntil(dateStr: string, today: Date): string {
   const targetDate = new Date(dateStr);
   const days = differenceInDays(targetDate, today);
-  
+
   if (days === 0) return 'Today';
   if (days === 1) return 'Tomorrow';
   if (days < 0) return `${Math.abs(days)} days ago`;

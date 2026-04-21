@@ -1,5 +1,9 @@
+import {
+  IntensitySettings,
+  UserProfile,
+  WorkoutTypeOptions,
+} from '@/types/training';
 import { supabase } from '@/lib/supabase';
-import { UserProfile, IntensitySettings, WorkoutTypeOptions } from '@/types/training';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapDbProfile(p: any): UserProfile {
@@ -10,19 +14,16 @@ function mapDbProfile(p: any): UserProfile {
     workoutTypeOptions = p.workout_type_options;
   }
 
-  let intensitySettings: IntensitySettings;
-  if (typeof p.intensity_settings === 'string') {
-    intensitySettings = JSON.parse(p.intensity_settings);
+  let effortSettings: IntensitySettings;
+  if (typeof p.effort_settings === 'string') {
+    effortSettings = JSON.parse(p.effort_settings);
   } else {
-    intensitySettings = p.intensity_settings;
+    effortSettings = p.effort_settings;
   }
 
   return {
     id: p.id,
     updated_at: p.updated_at,
-    ftp: p.ftp || 200,
-    threshold_hr: p.threshold_hr || 170,
-    weight: p.weight || 70,
     theme: p.theme || 'light',
     avatar_url: p.avatar_url,
     workout_type_options: workoutTypeOptions || {
@@ -31,7 +32,7 @@ function mapDbProfile(p: any): UserProfile {
       Run: ['Easy', 'Tempo', 'Interval'],
       Strength: ['Full Body', 'Upper', 'Lower'],
     },
-    intensity_settings: intensitySettings || defaultIntensitySettings(),
+    effort_settings: effortSettings || defaultIntensitySettings(),
   };
 }
 
@@ -67,7 +68,7 @@ function defaultIntensitySettings(): IntensitySettings {
 export const profileApi = {
   async get(userId: string): Promise<UserProfile | null> {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('pf_profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
@@ -76,18 +77,21 @@ export const profileApi = {
     return data ? mapDbProfile(data) : null;
   },
 
-  async update(userId: string, updates: Partial<UserProfile>): Promise<UserProfile> {
+  async update(
+    userId: string,
+    updates: Partial<UserProfile>,
+  ): Promise<UserProfile> {
     const dbPayload: Record<string, unknown> = {};
-    if (updates.ftp !== undefined) dbPayload.ftp = updates.ftp;
-    if (updates.threshold_hr !== undefined) dbPayload.threshold_hr = updates.threshold_hr;
-    if (updates.weight !== undefined) dbPayload.weight = updates.weight;
     if (updates.theme !== undefined) dbPayload.theme = updates.theme;
-    if (updates.avatar_url !== undefined) dbPayload.avatar_url = updates.avatar_url;
-    if (updates.workout_type_options !== undefined) dbPayload.workout_type_options = updates.workout_type_options;
-    if (updates.intensity_settings !== undefined) dbPayload.intensity_settings = updates.intensity_settings;
+    if (updates.avatar_url !== undefined)
+      dbPayload.avatar_url = updates.avatar_url;
+    if (updates.workout_type_options !== undefined)
+      dbPayload.workout_type_options = updates.workout_type_options;
+    if (updates.effort_settings !== undefined)
+      dbPayload.effort_settings = updates.effort_settings;
 
     const { data, error } = await supabase
-      .from('profiles')
+      .from('pf_profiles')
       .update(dbPayload)
       .eq('id', userId)
       .select()

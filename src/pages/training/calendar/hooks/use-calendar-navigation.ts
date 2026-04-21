@@ -1,5 +1,12 @@
-import { useState, useMemo } from 'react';
-import { startOfWeek, addWeeks, subWeeks, startOfMonth, endOfMonth, eachDayOfInterval, addDays } from 'date-fns';
+import { useMemo, useState } from 'react';
+import {
+  addDays,
+  addWeeks,
+  eachDayOfInterval,
+  startOfMonth,
+  startOfWeek,
+  subWeeks,
+} from 'date-fns';
 
 export interface CalendarWeek {
   weeks: Date[][];
@@ -14,10 +21,12 @@ export function useCalendarNavigation() {
 
   const gridData = useMemo((): CalendarWeek => {
     const monthStart = startOfMonth(baseDate);
-    const monthEnd = endOfMonth(baseDate);
     const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
     const calendarEnd = addDays(calendarStart, 41);
-    const allDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+    const allDays = eachDayOfInterval({
+      start: calendarStart,
+      end: calendarEnd,
+    });
 
     const weeks: Date[][] = [];
     for (let i = 0; i < allDays.length; i += 7) {
@@ -37,7 +46,9 @@ export function useCalendarNavigation() {
     setSlideOffset(offset);
 
     setTimeout(() => {
-      setBaseDate((prev) => (direction === 'up' ? subWeeks(prev, 1) : addWeeks(prev, 1)));
+      setBaseDate((prev) =>
+        direction === 'up' ? subWeeks(prev, 1) : addWeeks(prev, 1),
+      );
       setSlideOffset(0);
       setIsAnimating(false);
     }, 300);

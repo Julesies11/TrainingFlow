@@ -1,7 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/auth/context/auth-context';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Check, Eye, EyeOff } from 'lucide-react';
+import {
+  AlertCircle,
+  Check,
+  Eye,
+  EyeOff,
+  LoaderCircleIcon,
+} from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -15,7 +20,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { LoaderCircleIcon } from 'lucide-react';
 import {
   getNewPasswordSchema,
   NewPasswordSchemaType,
@@ -24,7 +28,6 @@ import {
 export function ChangePasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const {} = useAuth();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);

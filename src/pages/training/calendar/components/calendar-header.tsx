@@ -1,5 +1,5 @@
+import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 
 interface CalendarHeaderProps {
   monthName: string;
@@ -11,11 +11,6 @@ interface CalendarHeaderProps {
   onViewModeChange: (mode: 'calendar' | 'summary') => void;
   onToggleLibrary: () => void;
 }
-
-const MONTH_NAMES = [
-  'january', 'february', 'march', 'april', 'may', 'june',
-  'july', 'august', 'september', 'october', 'november', 'december'
-];
 
 export function CalendarHeader({
   monthName,

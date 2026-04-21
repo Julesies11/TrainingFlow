@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { Plus, Pencil, Trash2, Ruler, Timer, ShieldAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import {
-  useSportTypes,
-  useCreateSportType,
-  useUpdateSportType,
-  useDeleteSportType,
-} from '@/hooks/use-training-data';
-import { useIsDeveloper } from '@/hooks/use-is-developer';
+import { Pencil, Plus, Ruler, ShieldAlert, Timer, Trash2 } from 'lucide-react';
 import { SportTypeRecord } from '@/types/training';
+import { useIsDeveloper } from '@/hooks/use-is-developer';
+import {
+  useCreateSportType,
+  useDeleteSportType,
+  useSportTypes,
+  useUpdateSportType,
+} from '@/hooks/use-training-data';
+import { Button } from '@/components/ui/button';
 import { SportTypeDialog } from './components/sport-type-dialog';
 
 export function SportTypesAdminPage() {
@@ -18,7 +18,8 @@ export function SportTypesAdminPage() {
   const updateSportType = useUpdateSportType();
   const deleteSportType = useDeleteSportType();
 
-  const [dialogSportType, setDialogSportType] = useState<SportTypeRecord | null>(null);
+  const [dialogSportType, setDialogSportType] =
+    useState<SportTypeRecord | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -67,7 +68,9 @@ export function SportTypesAdminPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-muted-foreground text-sm">Loading sport types...</div>
+        <div className="text-muted-foreground text-sm">
+          Loading sport types...
+        </div>
       </div>
     );
   }
@@ -109,7 +112,9 @@ export function SportTypesAdminPage() {
                 {/* Color strip */}
                 <div className="flex h-3">
                   {[1, 2, 3, 4].map((level) => {
-                    const hex = st[`effort${level}Hex` as keyof SportTypeRecord] as string;
+                    const hex = st[
+                      `effort${level}Hex` as keyof SportTypeRecord
+                    ] as string;
                     return (
                       <div
                         key={level}
@@ -158,8 +163,12 @@ export function SportTypesAdminPage() {
                   {/* Effort levels preview */}
                   <div className="mt-4 grid grid-cols-4 gap-2">
                     {[1, 2, 3, 4].map((level) => {
-                      const label = st[`effort${level}Label` as keyof SportTypeRecord] as string;
-                      const hex = st[`effort${level}Hex` as keyof SportTypeRecord] as string;
+                      const label = st[
+                        `effort${level}Label` as keyof SportTypeRecord
+                      ] as string;
+                      const hex = st[
+                        `effort${level}Hex` as keyof SportTypeRecord
+                      ] as string;
                       return (
                         <div key={level} className="text-center">
                           <div

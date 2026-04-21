@@ -1,21 +1,24 @@
-import { useState, useMemo } from 'react';
-import { Plus, Search, Trash2, Pencil, Star } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useMemo, useState } from 'react';
+import { Pencil, Plus, Search, Star, Trash2 } from 'lucide-react';
+import { LibraryWorkout } from '@/types/training';
 import {
-  useLibrary,
   useCreateLibraryWorkout,
-  useUpdateLibraryWorkout,
   useDeleteLibraryWorkout,
+  useLibrary,
   useSportTypes,
+  useUpdateLibraryWorkout,
   useUserSportSettings,
 } from '@/hooks/use-training-data';
-import { LibraryWorkout } from '@/types/training';
 import {
   formatMinsShort,
   getContrastColor,
 } from '@/services/training/calendar.utils';
-import { getEffortColor, buildSportMap, buildUserSettingsMap } from '@/services/training/effort-colors';
+import {
+  buildUserSettingsMap,
+  getEffortColor,
+} from '@/services/training/effort-colors';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { LibraryTemplateDialog } from './components/library-template-dialog';
 
 const ALL_FILTER = 'All';
@@ -28,17 +31,18 @@ export function LibraryPage() {
   const updateLibrary = useUpdateLibraryWorkout();
   const deleteLibrary = useDeleteLibraryWorkout();
 
-  const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
-  const userSettingsMap = useMemo(() => buildUserSettingsMap(userSportSettings), [userSportSettings]);
+  const userSettingsMap = useMemo(
+    () => buildUserSettingsMap(userSportSettings),
+    [userSportSettings],
+  );
 
   // Filter & search state
   const [sportFilter, setSportFilter] = useState<string>(ALL_FILTER);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Dialog state
-  const [templateToEdit, setTemplateToEdit] = useState<
-    Partial<LibraryWorkout> | null
-  >(null);
+  const [templateToEdit, setTemplateToEdit] =
+    useState<Partial<LibraryWorkout> | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   // Filtered library grouped by sport type
@@ -56,7 +60,7 @@ export function LibraryPage() {
           (t.sportName || '').toLowerCase().includes(q),
       );
     }
-    
+
     // Group by sport type
     const grouped: Record<string, LibraryWorkout[]> = {};
     items.forEach((item) => {
@@ -66,12 +70,15 @@ export function LibraryPage() {
       }
       grouped[sportId].push(item);
     });
-    
+
     return grouped;
   }, [library, sportFilter, searchQuery]);
-  
+
   const totalFilteredCount = useMemo(() => {
-    return Object.values(groupedLibrary).reduce((sum, group) => sum + group.length, 0);
+    return Object.values(groupedLibrary).reduce(
+      (sum, group) => sum + group.length,
+      0,
+    );
   }, [groupedLibrary]);
 
   // Sport counts (by sportTypeId)
@@ -97,9 +104,7 @@ export function LibraryPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-muted-foreground text-sm">
-          Loading library...
-        </div>
+        <div className="text-muted-foreground text-sm">Loading library...</div>
       </div>
     );
   }
@@ -205,7 +210,10 @@ export function LibraryPage() {
           ) : (
             <div className="space-y-8">
               {sportTypes
-                .filter((st) => groupedLibrary[st.id] && groupedLibrary[st.id].length > 0)
+                .filter(
+                  (st) =>
+                    groupedLibrary[st.id] && groupedLibrary[st.id].length > 0,
+                )
                 .map((st) => (
                   <div key={st.id}>
                     {/* Sport type header */}
@@ -217,11 +225,15 @@ export function LibraryPage() {
                         ({groupedLibrary[st.id].length})
                       </span>
                     </div>
-                    
+
                     {/* Templates grid for this sport */}
                     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                       {groupedLibrary[st.id].map((template) => {
-                        const bg = getEffortColor(st, template.effortLevel || 1, userSettingsMap.get(template.sportTypeId));
+                        const bg = getEffortColor(
+                          st,
+                          template.effortLevel || 1,
+                          userSettingsMap.get(template.sportTypeId),
+                        );
                         const dur = template.plannedDurationMinutes || 0;
                         const dist = template.plannedDistanceKilometers || 0;
 
@@ -253,7 +265,10 @@ export function LibraryPage() {
                               <div className="mt-2 flex items-center gap-2 text-[10px] font-semibold opacity-80">
                                 <span>{formatMinsShort(dur)}</span>
                                 {dist > 0 && st.paceRelevant && (
-                                  <span>· {dist}{st.distanceUnit || 'km'}</span>
+                                  <span>
+                                    · {dist}
+                                    {st.distanceUnit || 'km'}
+                                  </span>
                                 )}
                                 <span className="opacity-60">
                                   · L{template.effortLevel}

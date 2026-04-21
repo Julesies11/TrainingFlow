@@ -6,10 +6,10 @@ interface DeleteConfirmOverlayProps {
   message?: string;
 }
 
-export function DeleteConfirmOverlay({ 
-  onConfirm, 
-  onCancel, 
-  message = 'Delete this item?' 
+export function DeleteConfirmOverlay({
+  onConfirm,
+  onCancel,
+  message = 'Delete this item?',
 }: DeleteConfirmOverlayProps) {
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/80 backdrop-blur-sm">

@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
-import { Workout, Event } from '@/types/training';
+import {
+  Event,
+  SportTypeRecord,
+  UserSportSettings,
+  Workout,
+} from '@/types/training';
 
-export interface FCEvent extends Record<string, any> {
+export interface FCEvent {
   id: string;
   title: string;
   start: string;
@@ -25,9 +30,13 @@ export interface FCEvent extends Record<string, any> {
 export function useCalendarDataFC(
   workouts: Workout[] = [],
   events: Event[] = [],
-  sportMap: Map<string, any>,
-  userSettingsMap: Map<string, any>,
-  getEffortColor: (sport: any, effort: number, settings: any) => string
+  sportMap: Map<string, SportTypeRecord>,
+  userSettingsMap: Map<string, UserSportSettings>,
+  getEffortColor: (
+    sport: SportTypeRecord | undefined,
+    effort: number,
+    settings: UserSportSettings | undefined,
+  ) => string,
 ) {
   const calendarEvents = useMemo((): FCEvent[] => {
     const result: FCEvent[] = [];
@@ -36,7 +45,11 @@ export function useCalendarDataFC(
     workouts.forEach((workout) => {
       const sport = sportMap.get(workout.sportTypeId);
       const userSettings = userSettingsMap.get(workout.sportTypeId);
-      const backgroundColor = getEffortColor(sport, workout.effortLevel || 1, userSettings);
+      const backgroundColor = getEffortColor(
+        sport,
+        workout.effortLevel || 1,
+        userSettings,
+      );
 
       result.push({
         id: `workout-${workout.id}`,

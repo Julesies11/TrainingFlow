@@ -1,11 +1,11 @@
+import { useAuth } from '@/auth/context/auth-context';
+import { UserDropdownMenu } from '@/partials/topbar/user-dropdown-menu';
 import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useProfile } from '@/hooks/use-training-data';
 import { useSettings } from '@/providers/settings-provider';
 import { SidebarHeader } from './sidebar-header';
 import { SidebarMenu } from './sidebar-menu';
-import { UserDropdownMenu } from '@/partials/topbar/user-dropdown-menu';
-import { useProfile } from '@/hooks/use-training-data';
-import { useAuth } from '@/auth/context/auth-context';
 
 export function Sidebar() {
   const { settings } = useSettings();
@@ -28,7 +28,7 @@ export function Sidebar() {
           <SidebarMenu />
         </div>
       </div>
-      
+
       {/* User Avatar at bottom of sidebar */}
       <div className="shrink-0 border-t border-border p-3 lg:p-4">
         <UserDropdownMenu

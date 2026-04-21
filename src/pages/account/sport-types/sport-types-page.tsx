@@ -1,25 +1,29 @@
-import { useState, useMemo } from 'react';
-import { Ruler, Timer, RotateCcw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { useMemo, useState } from 'react';
+import { RotateCcw, Ruler, Timer } from 'lucide-react';
 import {
   useSportTypes,
-  useUserSportSettings,
   useUpsertUserSportSettings,
+  useUserSportSettings,
 } from '@/hooks/use-training-data';
 import { getContrastColor } from '@/services/training/calendar.utils';
 import {
+  buildUserSettingsMap,
   getEffortColor,
   getEffortLabel,
-  buildUserSettingsMap,
 } from '@/services/training/effort-colors';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 
 export function SportTypesPage() {
   const { data: sportTypes = [], isLoading: loadingSports } = useSportTypes();
-  const { data: userSettings = [], isLoading: loadingSettings } = useUserSportSettings();
+  const { data: userSettings = [], isLoading: loadingSettings } =
+    useUserSportSettings();
   const upsertSettings = useUpsertUserSportSettings();
 
-  const settingsMap = useMemo(() => buildUserSettingsMap(userSettings), [userSettings]);
+  const settingsMap = useMemo(
+    () => buildUserSettingsMap(userSettings),
+    [userSettings],
+  );
 
   const [pendingColors, setPendingColors] = useState<
     Record<string, Record<number, string>>
@@ -70,10 +74,14 @@ export function SportTypesPage() {
         effort2Hex: pendingC?.[2] || existing?.effort2Hex || st?.effort2Hex,
         effort3Hex: pendingC?.[3] || existing?.effort3Hex || st?.effort3Hex,
         effort4Hex: pendingC?.[4] || existing?.effort4Hex || st?.effort4Hex,
-        effort1Label: pendingL?.[1] || existing?.effort1Label || st?.effort1Label,
-        effort2Label: pendingL?.[2] || existing?.effort2Label || st?.effort2Label,
-        effort3Label: pendingL?.[3] || existing?.effort3Label || st?.effort3Label,
-        effort4Label: pendingL?.[4] || existing?.effort4Label || st?.effort4Label,
+        effort1Label:
+          pendingL?.[1] || existing?.effort1Label || st?.effort1Label,
+        effort2Label:
+          pendingL?.[2] || existing?.effort2Label || st?.effort2Label,
+        effort3Label:
+          pendingL?.[3] || existing?.effort3Label || st?.effort3Label,
+        effort4Label:
+          pendingL?.[4] || existing?.effort4Label || st?.effort4Label,
       },
     });
 
@@ -122,7 +130,9 @@ export function SportTypesPage() {
   if (loadingSports || loadingSettings) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="text-muted-foreground text-sm">Loading sport types...</div>
+        <div className="text-muted-foreground text-sm">
+          Loading sport types...
+        </div>
       </div>
     );
   }
@@ -146,7 +156,8 @@ export function SportTypesPage() {
         <div className="px-4 pb-4">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
             {sportTypes.map((st) => {
-              const hasPending = !!pendingColors[st.id] || !!pendingLabels[st.id];
+              const hasPending =
+                !!pendingColors[st.id] || !!pendingLabels[st.id];
               return (
                 <div
                   key={st.id}
@@ -158,7 +169,9 @@ export function SportTypesPage() {
                       <div
                         key={level}
                         className="flex-1"
-                        style={{ backgroundColor: getDisplayColor(st.id, level) }}
+                        style={{
+                          backgroundColor: getDisplayColor(st.id, level),
+                        }}
                       />
                     ))}
                   </div>
@@ -215,14 +228,22 @@ export function SportTypesPage() {
                               <input
                                 type="color"
                                 value={color}
-                                onChange={(e) => handleColorChange(st.id, level, e.target.value)}
+                                onChange={(e) =>
+                                  handleColorChange(
+                                    st.id,
+                                    level,
+                                    e.target.value,
+                                  )
+                                }
                                 className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                               />
                             </label>
                             <Input
                               type="text"
                               value={label}
-                              onChange={(e) => handleLabelChange(st.id, level, e.target.value)}
+                              onChange={(e) =>
+                                handleLabelChange(st.id, level, e.target.value)
+                              }
                               placeholder={`Level ${level}`}
                               className="h-7 text-center text-[10px] font-semibold"
                             />

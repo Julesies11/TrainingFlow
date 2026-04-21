@@ -1,5 +1,5 @@
 import { Calendar, Pencil, Trash2 } from 'lucide-react';
-import { Workout, SportTypeRecord, UserSportSettings } from '@/types/training';
+import { SportTypeRecord, UserSportSettings, Workout } from '@/types/training';
 import { getEffortColor } from '@/services/training/effort-colors';
 import { Button } from '@/components/ui/button';
 
@@ -22,7 +22,13 @@ interface TodaysSessionProps {
   onDelete?: (workout: Workout) => void;
 }
 
-export function TodaysSession({ workout, sportMap, settingsMap, onEdit, onDelete }: TodaysSessionProps) {
+export function TodaysSession({
+  workout,
+  sportMap,
+  settingsMap,
+  onEdit,
+  onDelete,
+}: TodaysSessionProps) {
   return (
     <div className="bg-card overflow-hidden rounded-2xl border shadow-sm">
       <div className="border-b bg-muted/30 px-5 py-4">
@@ -43,7 +49,7 @@ export function TodaysSession({ workout, sportMap, settingsMap, onEdit, onDelete
                   backgroundColor: getEffortColor(
                     sportMap.get(workout.sportTypeId),
                     workout.effortLevel,
-                    settingsMap.get(workout.sportTypeId)
+                    settingsMap.get(workout.sportTypeId),
                   ),
                 }}
               />
@@ -57,14 +63,22 @@ export function TodaysSession({ workout, sportMap, settingsMap, onEdit, onDelete
                 <div className="mt-3 flex gap-4 text-sm">
                   {workout.plannedDurationMinutes && (
                     <div>
-                      <span className="text-muted-foreground font-medium">Duration: </span>
-                      <span className="font-bold">{formatMins(workout.plannedDurationMinutes)}</span>
+                      <span className="text-muted-foreground font-medium">
+                        Duration:{' '}
+                      </span>
+                      <span className="font-bold">
+                        {formatMins(workout.plannedDurationMinutes)}
+                      </span>
                     </div>
                   )}
                   {workout.plannedDistanceKilometers && (
                     <div>
-                      <span className="text-muted-foreground font-medium">Distance: </span>
-                      <span className="font-bold">{workout.plannedDistanceKilometers} km</span>
+                      <span className="text-muted-foreground font-medium">
+                        Distance:{' '}
+                      </span>
+                      <span className="font-bold">
+                        {workout.plannedDistanceKilometers} km
+                      </span>
                     </div>
                   )}
                 </div>
@@ -104,7 +118,9 @@ export function TodaysSession({ workout, sportMap, settingsMap, onEdit, onDelete
           </div>
         ) : (
           <div className="flex h-32 items-center justify-center">
-            <p className="text-muted-foreground text-sm">No workout scheduled for today</p>
+            <p className="text-muted-foreground text-sm">
+              No workout scheduled for today
+            </p>
           </div>
         )}
       </div>

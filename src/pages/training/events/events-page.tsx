@@ -1,24 +1,28 @@
-import { useState, useMemo } from 'react';
-import { Plus, Calendar, Trash2, Pencil } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useMemo, useState } from 'react';
+import { differenceInDays, format, isBefore, parseISO } from 'date-fns';
+import { Calendar, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Event } from '@/types/training';
 import {
-  useEvents,
   useCreateEvent,
-  useUpdateEvent,
   useDeleteEvent,
+  useEvents,
   useSportTypes,
+  useUpdateEvent,
   useUserSportSettings,
 } from '@/hooks/use-training-data';
-import { Event } from '@/types/training';
-import { EventDialog } from './components/event-dialog';
-import { format, parseISO, isBefore, differenceInDays } from 'date-fns';
-import { getEffortColor, buildUserSettingsMap, buildSportMap } from '@/services/training/effort-colors';
-import { getPriorityColor, getTypeIcon } from '../_shared/utils/event-helpers';
+import { formatMinsShort } from '@/services/training/calendar.utils';
+import {
+  buildSportMap,
+  buildUserSettingsMap,
+  getEffortColor,
+} from '@/services/training/effort-colors';
 import { formatEventDuration } from '@/services/training/event-duration';
 import { calculatePace } from '@/services/training/pace-utils';
-import { formatMinsShort } from '@/services/training/calendar.utils';
 import { getSportIcon } from '@/services/training/sport-icons';
+import { Button } from '@/components/ui/button';
 import { DeleteConfirmOverlay } from '../_shared/components/delete-confirm-overlay';
+import { getPriorityColor, getTypeIcon } from '../_shared/utils/event-helpers';
+import { EventDialog } from './components/event-dialog';
 
 export function EventsPage() {
   const { data: events = [], isLoading } = useEvents();
@@ -32,7 +36,10 @@ export function EventsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  const userSettingsMap = useMemo(() => buildUserSettingsMap(userSettings), [userSettings]);
+  const userSettingsMap = useMemo(
+    () => buildUserSettingsMap(userSettings),
+    [userSettings],
+  );
   const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
 
   const today = useMemo(() => {
@@ -90,11 +97,11 @@ export function EventsPage() {
 
     const duration = event.segments.reduce(
       (sum, seg) => sum + (seg.plannedDurationMinutes || 0),
-      0
+      0,
     );
     const distance = event.segments.reduce(
       (sum, seg) => sum + (seg.plannedDistanceKilometers || 0),
-      0
+      0,
     );
 
     return { duration, distance, count: event.segments.length };
@@ -128,7 +135,9 @@ export function EventsPage() {
           <div className="flex items-start gap-4">
             {/* Date badge */}
             <div className="bg-primary/10 text-primary flex shrink-0 flex-col items-center rounded-xl p-3">
-              <span className="text-2xl font-black">{format(parseISO(event.date), 'd')}</span>
+              <span className="text-2xl font-black">
+                {format(parseISO(event.date), 'd')}
+              </span>
               <span className="text-[9px] font-black uppercase tracking-widest">
                 {format(parseISO(event.date), 'MMM')}
               </span>
@@ -148,10 +157,14 @@ export function EventsPage() {
                         return <Icon className="h-4 w-4" />;
                       })()}
                     </div>
-                    <h3 className="text-lg font-black tracking-tight">{event.title}</h3>
+                    <h3 className="text-lg font-black tracking-tight">
+                      {event.title}
+                    </h3>
                   </div>
                   <p className="text-muted-foreground mt-1 text-xs font-semibold">
-                    {formatEventDuration(differenceInDays(parseISO(event.date), today))}
+                    {formatEventDuration(
+                      differenceInDays(parseISO(event.date), today),
+                    )}
                   </p>
                 </div>
 
@@ -165,7 +178,9 @@ export function EventsPage() {
               </div>
 
               {event.description && (
-                <p className="text-muted-foreground text-sm">{event.description}</p>
+                <p className="text-muted-foreground text-sm">
+                  {event.description}
+                </p>
               )}
 
               {/* Discipline breakdown */}
@@ -173,38 +188,60 @@ export function EventsPage() {
                 <div className="space-y-2">
                   {event.segments!.map((segment, idx) => {
                     const sport = sportMap.get(segment.sportTypeId);
-                    const userSettingsForSport = userSettingsMap.get(segment.sportTypeId);
-                    const color = getEffortColor(sport, segment.effortLevel, userSettingsForSport);
+                    const userSettingsForSport = userSettingsMap.get(
+                      segment.sportTypeId,
+                    );
+                    const color = getEffortColor(
+                      sport,
+                      segment.effortLevel,
+                      userSettingsForSport,
+                    );
                     const duration = segment.plannedDurationMinutes || 0;
                     const distKm = segment.plannedDistanceKilometers || 0;
-                    const dist = sport?.name === 'Swim' ? distKm * 1000 : distKm;
-                    const pace = calculatePace(sport?.name || '', duration, dist);
-                    
-                    const sportName = segment.sportName || sport?.name || 'Unknown';
+                    const dist =
+                      sport?.name === 'Swim' ? distKm * 1000 : distKm;
+                    const pace = calculatePace(
+                      sport?.name || '',
+                      duration,
+                      dist,
+                    );
+
+                    const sportName =
+                      segment.sportName || sport?.name || 'Unknown';
                     const IconComponent = getSportIcon(sportName);
 
                     return (
                       <div
                         key={idx}
                         className="flex items-start gap-3 rounded-lg border p-3"
-                        style={{ borderLeftWidth: '4px', borderLeftColor: color }}
+                        style={{
+                          borderLeftWidth: '4px',
+                          borderLeftColor: color,
+                        }}
                       >
                         <div className="flex items-center gap-2 min-w-0 flex-1">
                           {IconComponent && (
                             <IconComponent className="h-4 w-4 shrink-0 text-muted-foreground" />
                           )}
                           <div className="flex flex-col gap-1 min-w-0">
-                            <span className="text-sm font-bold lowercase truncate">{sportName}</span>
+                            <span className="text-sm font-bold lowercase truncate">
+                              {sportName}
+                            </span>
                             {duration > 0 && (
-                              <span className="text-xs text-muted-foreground">{formatMinsShort(duration)}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatMinsShort(duration)}
+                              </span>
                             )}
                             {dist > 0 && sport?.paceRelevant && (
                               <span className="text-xs text-muted-foreground">
-                                {dist}{sport.distanceUnit || 'km'}
+                                {dist}
+                                {sport.distanceUnit || 'km'}
                               </span>
                             )}
                             {pace && (
-                              <span className="text-xs text-muted-foreground">{pace}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {pace}
+                              </span>
                             )}
                           </div>
                         </div>
@@ -275,7 +312,9 @@ export function EventsPage() {
 
               {upcoming.length === 0 ? (
                 <div className="bg-muted/30 flex h-32 items-center justify-center rounded-2xl border border-dashed">
-                  <p className="text-muted-foreground text-sm">No upcoming events</p>
+                  <p className="text-muted-foreground text-sm">
+                    No upcoming events
+                  </p>
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -1,13 +1,12 @@
-import { useState, useEffect, useRef } from 'react';
-import { Camera, Moon, Sun, Lock } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { useAuth } from '@/auth/context/auth-context';
+import { Camera, Lock, Moon, Sun } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { supabase } from '@/lib/supabase';
+import { useProfile, useUpdateProfile } from '@/hooks/use-training-data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useProfile, useUpdateProfile } from '@/hooks/use-training-data';
-import { useAuth } from '@/auth/context/auth-context';
-import { useTheme } from 'next-themes';
-import { toAbsoluteUrl } from '@/lib/helpers';
-import { supabase } from '@/lib/supabase';
 
 export function ProfilePage() {
   const { user, resetPassword } = useAuth();
@@ -20,7 +19,10 @@ export function ProfilePage() {
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [passwordLoading, setPasswordLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [message, setMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+  } | null>(null);
 
   const userEmail = user?.email || '';
 
@@ -46,7 +48,9 @@ export function ProfilePage() {
         const fileNameWithQuery = urlParts[urlParts.length - 1];
         const oldFileName = fileNameWithQuery.split('?')[0];
         if (oldFileName) {
-          await supabase.storage.from('avatars').remove([`${user.id}/${oldFileName}`]);
+          await supabase.storage
+            .from('avatars')
+            .remove([`${user.id}/${oldFileName}`]);
         }
       }
 
@@ -64,9 +68,9 @@ export function ProfilePage() {
       if (uploadError) throw uploadError;
 
       // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('avatars').getPublicUrl(filePath);
 
       // Update profile with new URL
       setAvatarUrl(publicUrl);
@@ -80,10 +84,13 @@ export function ProfilePage() {
           onError: () => {
             setMessage({ type: 'error', text: 'Failed to update profile.' });
           },
-        }
+        },
       );
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Failed to upload image.' });
+      setMessage({
+        type: 'error',
+        text: error.message || 'Failed to upload image.',
+      });
     }
   };
 
@@ -96,7 +103,9 @@ export function ProfilePage() {
       const fileNameWithQuery = urlParts[urlParts.length - 1];
       const oldFileName = fileNameWithQuery.split('?')[0];
       if (oldFileName) {
-        await supabase.storage.from('avatars').remove([`${user.id}/${oldFileName}`]);
+        await supabase.storage
+          .from('avatars')
+          .remove([`${user.id}/${oldFileName}`]);
       }
 
       // Update profile
@@ -109,12 +118,18 @@ export function ProfilePage() {
             setTimeout(() => setMessage(null), 3000);
           },
           onError: () => {
-            setMessage({ type: 'error', text: 'Failed to remove profile picture.' });
+            setMessage({
+              type: 'error',
+              text: 'Failed to remove profile picture.',
+            });
           },
-        }
+        },
       );
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Failed to remove image.' });
+      setMessage({
+        type: 'error',
+        text: error.message || 'Failed to remove image.',
+      });
     }
   };
 
@@ -125,7 +140,10 @@ export function ProfilePage() {
       return;
     }
     if (newPassword.length < 6) {
-      setMessage({ type: 'error', text: 'Password must be at least 6 characters.' });
+      setMessage({
+        type: 'error',
+        text: 'Password must be at least 6 characters.',
+      });
       return;
     }
 
@@ -138,8 +156,12 @@ export function ProfilePage() {
       setNewPassword('');
       setConfirmPassword('');
       setTimeout(() => setMessage(null), 3000);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Failed to update password.' });
+      setMessage({
+        type: 'error',
+        text: err.message || 'Failed to update password.',
+      });
     } finally {
       setPasswordLoading(false);
     }
@@ -158,7 +180,9 @@ export function ProfilePage() {
       <div className="mx-auto max-w-2xl space-y-6 pb-12">
         {/* Header */}
         <header>
-          <h2 className="text-2xl md:text-3xl font-black tracking-tight lowercase">athlete profile</h2>
+          <h2 className="text-2xl md:text-3xl font-black tracking-tight lowercase">
+            athlete profile
+          </h2>
           <p className="text-muted-foreground font-medium text-sm md:text-base lowercase">
             manage your account and security settings.
           </p>
@@ -216,7 +240,9 @@ export function ProfilePage() {
                 <span className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em] block mb-1">
                   authenticated athlete
                 </span>
-                <h3 className="text-xl md:text-2xl font-black tracking-tight lowercase">{userEmail}</h3>
+                <h3 className="text-xl md:text-2xl font-black tracking-tight lowercase">
+                  {userEmail}
+                </h3>
               </div>
 
               <div className="flex flex-wrap justify-center md:justify-start gap-2">
@@ -245,7 +271,11 @@ export function ProfilePage() {
         {/* Appearance Card */}
         <div className="p-6 md:p-8 bg-card rounded-2xl shadow-sm border">
           <h3 className="text-lg md:text-xl font-black tracking-tight mb-6 flex items-center gap-2 lowercase">
-            {theme === 'dark' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+            {theme === 'dark' ? (
+              <Moon className="w-5 h-5" />
+            ) : (
+              <Sun className="w-5 h-5" />
+            )}
             appearance
           </h3>
 

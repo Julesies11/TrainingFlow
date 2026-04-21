@@ -1,16 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { SegmentEditor } from '@/pages/training/events/components/segment-editor';
+import { Event, SportTypeRecord } from '@/types/training';
+import { buildUserSettingsMap } from '@/services/training/effort-colors';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogBody,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -18,14 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Event, SportTypeRecord } from '@/types/training';
-import { SegmentEditor } from '@/pages/training/events/components/segment-editor';
-import { buildUserSettingsMap } from '@/services/training/effort-colors';
+import { Textarea } from '@/components/ui/textarea';
 
 interface EventDialogProps {
   event: Event;
   sportTypes: SportTypeRecord[];
-  userSettings: any[];
+  userSettings: UserSportSettings[];
   onSave: (event: Event) => void;
   onDelete: (id: string) => void;
   onCancel: () => void;
@@ -39,11 +39,14 @@ export function EventDialog({
   onDelete,
   onCancel,
 }: EventDialogProps) {
-  const [event, setEvent] = useState<Event>({ ...initial, segments: initial.segments || [] });
+  const [event, setEvent] = useState<Event>({
+    ...initial,
+    segments: initial.segments || [],
+  });
 
   const userSettingsMap = useMemo(
     () => buildUserSettingsMap(userSettings),
-    [userSettings]
+    [userSettings],
   );
 
   return (
@@ -68,7 +71,9 @@ export function EventDialog({
                   required
                   type="text"
                   value={event.title}
-                  onChange={(e) => setEvent({ ...event, title: e.target.value })}
+                  onChange={(e) =>
+                    setEvent({ ...event, title: e.target.value })
+                  }
                 />
               </div>
 
@@ -136,7 +141,9 @@ export function EventDialog({
                 </Label>
                 <Textarea
                   value={event.description || ''}
-                  onChange={(e) => setEvent({ ...event, description: e.target.value })}
+                  onChange={(e) =>
+                    setEvent({ ...event, description: e.target.value })
+                  }
                   placeholder="Add notes..."
                   rows={3}
                 />
@@ -160,7 +167,11 @@ export function EventDialog({
             >
               delete
             </Button>
-            <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              className="w-full sm:w-auto"
+            >
               cancel
             </Button>
             <Button onClick={() => onSave(event)} className="w-full sm:flex-1">

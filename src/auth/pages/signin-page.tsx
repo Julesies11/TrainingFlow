@@ -2,7 +2,13 @@ import { useEffect, useState } from 'react';
 import { SupabaseAdapter } from '@/auth/adapters/supabase-adapter';
 import { useAuth } from '@/auth/context/auth-context';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Check, Eye, EyeOff } from 'lucide-react';
+import {
+  AlertCircle,
+  Check,
+  Eye,
+  EyeOff,
+  LoaderCircleIcon,
+} from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
@@ -19,7 +25,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/common/icons';
 import { getSigninSchema, SigninSchemaType } from '../forms/signin-schema';
-import { LoaderCircleIcon } from 'lucide-react';
 
 export function SignInPage() {
   const [searchParams] = useSearchParams();
@@ -176,8 +181,8 @@ export function SignInPage() {
           >
             {isGoogleLoading ? (
               <span className="flex items-center gap-2">
-                <LoaderCircleIcon className="size-4! animate-spin" /> Signing in with
-                Google...
+                <LoaderCircleIcon className="size-4! animate-spin" /> Signing in
+                with Google...
               </span>
             ) : (
               <>

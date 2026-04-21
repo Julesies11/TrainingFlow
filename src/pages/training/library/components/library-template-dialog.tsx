@@ -1,19 +1,26 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import {
+  LibraryWorkout,
+  SportTypeRecord,
+  UserSportSettings,
+} from '@/types/training';
+import {
+  getEffortColor,
+  getEffortLabel,
+} from '@/services/training/effort-colors';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogBody,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { LibraryWorkout, SportTypeRecord, UserSportSettings } from '@/types/training';
-import { getEffortColor, getEffortLabel } from '@/services/training/effort-colors';
+import { Textarea } from '@/components/ui/textarea';
 
 interface LibraryTemplateDialogProps {
   template: Partial<LibraryWorkout>;
@@ -48,7 +55,11 @@ export function LibraryTemplateDialog({
   }, [template.sportTypeId, sportTypes]);
 
   const userSettings = userSettingsMap.get(template.sportTypeId || '');
-  const headerColor = getEffortColor(selectedSport, template.effortLevel || 1, userSettings);
+  const headerColor = getEffortColor(
+    selectedSport,
+    template.effortLevel || 1,
+    userSettings,
+  );
 
   const dialogTitle = isExisting ? 'edit template' : 'new template';
 
@@ -56,7 +67,10 @@ export function LibraryTemplateDialog({
     <Dialog open={true} onOpenChange={() => onCancel()}>
       <DialogContent className="max-h-[90vh] w-full max-w-2xl overflow-hidden p-0">
         {/* Color bar */}
-        <div className="h-2 shrink-0" style={{ backgroundColor: headerColor }} />
+        <div
+          className="h-2 shrink-0"
+          style={{ backgroundColor: headerColor }}
+        />
 
         <div className="flex flex-col overflow-y-auto p-6">
           <DialogHeader>
@@ -79,7 +93,9 @@ export function LibraryTemplateDialog({
                       <Button
                         key={st.id}
                         type="button"
-                        variant={template.sportTypeId === st.id ? 'primary' : 'outline'}
+                        variant={
+                          template.sportTypeId === st.id ? 'primary' : 'outline'
+                        }
                         size="sm"
                         onClick={() =>
                           setTemplate({ ...template, sportTypeId: st.id })
@@ -109,7 +125,11 @@ export function LibraryTemplateDialog({
                         <div
                           className="h-2 w-full rounded-full"
                           style={{
-                            backgroundColor: getEffortColor(selectedSport, level, userSettings),
+                            backgroundColor: getEffortColor(
+                              selectedSport,
+                              level,
+                              userSettings,
+                            ),
                           }}
                         />
                         <span className="text-[8px] font-black lowercase tracking-tighter">
@@ -198,10 +218,17 @@ export function LibraryTemplateDialog({
           </DialogBody>
 
           <DialogFooter className="gap-3">
-            <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              className="w-full sm:w-auto"
+            >
               cancel
             </Button>
-            <Button onClick={() => onSave(template)} className="w-full sm:flex-1">
+            <Button
+              onClick={() => onSave(template)}
+              className="w-full sm:flex-1"
+            >
               {isExisting ? 'save changes' : 'create template'}
             </Button>
           </DialogFooter>

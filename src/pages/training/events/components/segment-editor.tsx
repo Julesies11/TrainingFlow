@@ -1,4 +1,11 @@
-import { GripVertical, Trash2, Plus } from 'lucide-react';
+import { GripVertical, Plus, Trash2 } from 'lucide-react';
+import { EventSegment, SportTypeRecord } from '@/types/training';
+import { getContrastColor } from '@/services/training/calendar.utils';
+import {
+  getEffortColor,
+  getEffortLabel,
+} from '@/services/training/effort-colors';
+import { calculatePace } from '@/services/training/pace-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,15 +16,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { EventSegment, SportTypeRecord } from '@/types/training';
-import { getEffortColor, getEffortLabel } from '@/services/training/effort-colors';
-import { calculatePace } from '@/services/training/pace-utils';
-import { getContrastColor } from '@/services/training/calendar.utils';
 
 interface SegmentEditorProps {
   segments: Partial<EventSegment>[];
   sportTypes: SportTypeRecord[];
-  userSettingsMap: Map<string, any>;
+  userSettingsMap: Map<string, UserSportSettings>;
   onChange: (segments: Partial<EventSegment>[]) => void;
 }
 
@@ -43,7 +46,10 @@ export function SegmentEditor({
     onChange(updated.map((seg, i) => ({ ...seg, segmentOrder: i })));
   };
 
-  const handleUpdateSegment = (index: number, updates: Partial<EventSegment>) => {
+  const handleUpdateSegment = (
+    index: number,
+    updates: Partial<EventSegment>,
+  ) => {
     const updated = [...segments];
     updated[index] = { ...updated[index], ...updates };
     onChange(updated);
@@ -59,7 +65,10 @@ export function SegmentEditor({
 
     const updated = [...segments];
     const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    [updated[index], updated[targetIndex]] = [updated[targetIndex], updated[index]];
+    [updated[index], updated[targetIndex]] = [
+      updated[targetIndex],
+      updated[index],
+    ];
     onChange(updated.map((seg, i) => ({ ...seg, segmentOrder: i })));
   };
 
@@ -91,16 +100,15 @@ export function SegmentEditor({
         <div className="space-y-3">
           {segments.map((segment, index) => {
             const sport = sportTypes.find((s) => s.id === segment.sportTypeId);
-            const userSettings = userSettingsMap.get(segment.sportTypeId || '');
-            const color = getEffortColor(sport, segment.effortLevel || 1, userSettings);
             // Convert km to meters for swimming, keep km for other sports
-            const distance = sport?.name === 'Swim' 
-              ? (segment.plannedDistanceKilometers || 0) * 1000 
-              : (segment.plannedDistanceKilometers || 0);
+            const distance =
+              sport?.name === 'Swim'
+                ? (segment.plannedDistanceKilometers || 0) * 1000
+                : segment.plannedDistanceKilometers || 0;
             const pace = calculatePace(
               sport?.name || '',
               segment.plannedDurationMinutes || 0,
-              distance
+              distance,
             );
 
             return (
@@ -202,8 +210,16 @@ export function SegmentEditor({
                     </Label>
                     <div className="grid grid-cols-4 gap-2">
                       {[1, 2, 3, 4].map((level) => {
-                        const levelColor = getEffortColor(sport, level, userSettings);
-                        const levelLabel = getEffortLabel(sport, level, userSettings);
+                        const levelColor = getEffortColor(
+                          sport,
+                          level,
+                          userSettings,
+                        );
+                        const levelLabel = getEffortLabel(
+                          sport,
+                          level,
+                          userSettings,
+                        );
                         const isSelected = segment.effortLevel === level;
 
                         return (
@@ -273,20 +289,32 @@ export function SegmentEditor({
           </Label>
           <div className="flex h-8 overflow-hidden rounded-lg">
             {(() => {
-              const totalDuration = segments.reduce((sum, s) => sum + (s.plannedDurationMinutes || 0), 0);
+              const totalDuration = segments.reduce(
+                (sum, s) => sum + (s.plannedDurationMinutes || 0),
+                0,
+              );
               return segments.map((segment, index) => {
-                const sport = sportTypes.find((s) => s.id === segment.sportTypeId);
-                const userSettings = userSettingsMap.get(segment.sportTypeId || '');
-                const color = getEffortColor(sport, segment.effortLevel || 1, userSettings);
+                const sport = sportTypes.find(
+                  (s) => s.id === segment.sportTypeId,
+                );
+                const userSettings = userSettingsMap.get(
+                  segment.sportTypeId || '',
+                );
+                const color = getEffortColor(
+                  sport,
+                  segment.effortLevel || 1,
+                  userSettings,
+                );
                 const duration = segment.plannedDurationMinutes || 0;
-                const widthPercent = totalDuration > 0 ? (duration / totalDuration) * 100 : 0;
+                const widthPercent =
+                  totalDuration > 0 ? (duration / totalDuration) * 100 : 0;
 
                 return (
                   <div
                     key={index}
-                    style={{ 
+                    style={{
                       backgroundColor: color,
-                      width: `${widthPercent}%`
+                      width: `${widthPercent}%`,
                     }}
                     title={`${sport?.name} - ${duration} min - ${getEffortLabel(sport, segment.effortLevel || 1, userSettings)}`}
                   />
@@ -302,13 +330,20 @@ export function SegmentEditor({
               <span className="text-muted-foreground">
                 Total:{' '}
                 <span className="font-bold">
-                  {segments.reduce((sum, s) => sum + (s.plannedDurationMinutes || 0), 0)} min
+                  {segments.reduce(
+                    (sum, s) => sum + (s.plannedDurationMinutes || 0),
+                    0,
+                  )}{' '}
+                  min
                 </span>
               </span>
               <span className="text-muted-foreground">
                 <span className="font-bold">
                   {segments
-                    .reduce((sum, s) => sum + (s.plannedDistanceKilometers || 0), 0)
+                    .reduce(
+                      (sum, s) => sum + (s.plannedDistanceKilometers || 0),
+                      0,
+                    )
                     .toFixed(1)}{' '}
                   km
                 </span>

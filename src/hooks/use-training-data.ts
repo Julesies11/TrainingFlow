@@ -1,7 +1,20 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { workoutsApi, libraryApi, eventsApi, profileApi, sportTypesApi, userSportSettingsApi } from '@/services/api/training';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  Event,
+  LibraryWorkout,
+  SportTypeRecord,
+  UserProfile,
+  Workout,
+} from '@/types/training';
+import {
+  eventsApi,
+  libraryApi,
+  profileApi,
+  sportTypesApi,
+  userSportSettingsApi,
+  workoutsApi,
+} from '@/services/api/training';
 import { useSupabaseUserId } from './use-supabase-user';
-import { Workout, LibraryWorkout, Event, UserProfile, SportTypeRecord } from '@/types/training';
 
 // ─── Query Keys ──────────────────────────────────────────────
 const KEYS = {
@@ -99,8 +112,7 @@ export function useUpdateSportType() {
   const userId = useSupabaseUserId();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (st: SportTypeRecord) =>
-      sportTypesApi.update(st, userId!),
+    mutationFn: (st: SportTypeRecord) => sportTypesApi.update(st, userId!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.sportTypes });
     },
@@ -243,7 +255,6 @@ export function useDeleteLibraryWorkout() {
     },
   });
 }
-
 
 // ─── Events ──────────────────────────────────────────────────
 export function useEvents() {

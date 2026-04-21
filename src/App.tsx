@@ -15,24 +15,24 @@ const { BASE_URL } = import.meta.env;
 export function App() {
   return (
     <AuthProvider>
-        <SettingsProvider>
-          <ThemeProvider>
-            <I18nProvider>
-              <TooltipsProvider>
-                <QueryProvider>
-                  <LoadingBarContainer>
-                    <BrowserRouter basename={BASE_URL}>
-                      <Toaster />
-                      <ModulesProvider>
-                        <AppRouting />
-                      </ModulesProvider>
-                    </BrowserRouter>
-                  </LoadingBarContainer>
-                </QueryProvider>
-              </TooltipsProvider>
-            </I18nProvider>
-          </ThemeProvider>
-        </SettingsProvider>
-      </AuthProvider>
+      <SettingsProvider>
+        <ThemeProvider>
+          <I18nProvider>
+            <TooltipsProvider>
+              <QueryProvider>
+                <LoadingBarContainer>
+                  <BrowserRouter basename={BASE_URL}>
+                    <Toaster />
+                    <ModulesProvider>
+                      <AppRouting />
+                    </ModulesProvider>
+                  </BrowserRouter>
+                </LoadingBarContainer>
+              </QueryProvider>
+            </TooltipsProvider>
+          </I18nProvider>
+        </ThemeProvider>
+      </SettingsProvider>
+    </AuthProvider>
   );
 }

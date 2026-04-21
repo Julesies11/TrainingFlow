@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogBody,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { SportTypeRecord } from '@/types/training';
 import { getContrastColor } from '@/services/training/calendar.utils';
+import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Textarea } from '@/components/ui/textarea';
 
 interface SportTypeDialogProps {
   sportType?: SportTypeRecord;
@@ -59,7 +59,9 @@ export function SportTypeDialog({
         {/* Color bar preview */}
         <div className="flex h-3">
           {[1, 2, 3, 4].map((level) => {
-            const hex = formData[`effort${level}Hex` as keyof SportTypeRecord] as string;
+            const hex = formData[
+              `effort${level}Hex` as keyof SportTypeRecord
+            ] as string;
             return (
               <div
                 key={level}
@@ -135,7 +137,10 @@ export function SportTypeDialog({
                         type="text"
                         value={formData.distanceUnit}
                         onChange={(e) =>
-                          setFormData({ ...formData, distanceUnit: e.target.value })
+                          setFormData({
+                            ...formData,
+                            distanceUnit: e.target.value,
+                          })
                         }
                         placeholder="e.g., km, mi"
                       />
@@ -164,7 +169,8 @@ export function SportTypeDialog({
                 </Label>
                 <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
                   {[1, 2, 3, 4].map((level) => {
-                    const labelKey = `effort${level}Label` as keyof SportTypeRecord;
+                    const labelKey =
+                      `effort${level}Label` as keyof SportTypeRecord;
                     const hexKey = `effort${level}Hex` as keyof SportTypeRecord;
                     const label = formData[labelKey] as string;
                     const hex = formData[hexKey] as string;
@@ -182,7 +188,10 @@ export function SportTypeDialog({
                             type="color"
                             value={hex || '#ccc'}
                             onChange={(e) =>
-                              setFormData({ ...formData, [hexKey]: e.target.value })
+                              setFormData({
+                                ...formData,
+                                [hexKey]: e.target.value,
+                              })
                             }
                             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
                           />
@@ -191,7 +200,10 @@ export function SportTypeDialog({
                           type="text"
                           value={label || ''}
                           onChange={(e) =>
-                            setFormData({ ...formData, [labelKey]: e.target.value })
+                            setFormData({
+                              ...formData,
+                              [labelKey]: e.target.value,
+                            })
                           }
                           placeholder={`Level ${level}`}
                           className="h-8 text-center text-[10px] font-semibold"

@@ -1,5 +1,5 @@
-import { supabase } from '@/lib/supabase';
 import { UserSportSettings } from '@/types/training';
+import { supabase } from '@/lib/supabase';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapDbRow(r: any): UserSportSettings {
@@ -20,7 +20,7 @@ function mapDbRow(r: any): UserSportSettings {
 export const userSportSettingsApi = {
   async getAll(userId: string): Promise<UserSportSettings[]> {
     const { data, error } = await supabase
-      .from('user_sport_settings')
+      .from('pf_user_sport_settings')
       .select('*')
       .eq('user_id', userId);
 
@@ -43,7 +43,7 @@ export const userSportSettingsApi = {
     },
   ): Promise<UserSportSettings> {
     const { data, error } = await supabase
-      .from('user_sport_settings')
+      .from('pf_user_sport_settings')
       .upsert(
         {
           user_id: userId,
@@ -61,7 +61,7 @@ export const userSportSettingsApi = {
         {
           onConflict: 'user_id,sport_type_id',
           ignoreDuplicates: false,
-        }
+        },
       )
       .select()
       .single();

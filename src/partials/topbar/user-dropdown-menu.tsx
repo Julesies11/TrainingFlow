@@ -1,14 +1,10 @@
 import { ReactNode } from 'react';
 import { useAuth } from '@/auth/context/auth-context';
-import { useProfile } from '@/hooks/use-training-data';
-import {
-  Moon,
-  UserCircle,
-  Dumbbell,
-  ShieldCheck,
-} from 'lucide-react';
+import { Dumbbell, Moon, ShieldCheck, UserCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Link } from 'react-router';
+import { useIsDeveloper } from '@/hooks/use-is-developer';
+import { useProfile } from '@/hooks/use-training-data';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -18,7 +14,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Switch } from '@/components/ui/switch';
-import { useIsDeveloper } from '@/hooks/use-is-developer';
 
 export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
   const { logout, user } = useAuth();
@@ -69,20 +64,14 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
 
         {/* Menu Items */}
         <DropdownMenuItem asChild>
-          <Link
-            to="/account/profile"
-            className="flex items-center gap-2"
-          >
+          <Link to="/account/profile" className="flex items-center gap-2">
             <UserCircle />
             Profile
           </Link>
         </DropdownMenuItem>
-        
+
         <DropdownMenuItem asChild>
-          <Link
-            to="/account/sport-types"
-            className="flex items-center gap-2"
-          >
+          <Link to="/account/sport-types" className="flex items-center gap-2">
             <Dumbbell />
             Sport Types
           </Link>
@@ -90,10 +79,7 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
 
         {isDeveloper && (
           <DropdownMenuItem asChild>
-            <Link
-              to="/admin/sport-types"
-              className="flex items-center gap-2"
-            >
+            <Link to="/admin/sport-types" className="flex items-center gap-2">
               <ShieldCheck />
               Sport Types Admin
             </Link>

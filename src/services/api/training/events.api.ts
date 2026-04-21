@@ -1,6 +1,7 @@
-import { supabase } from '@/lib/supabase';
 import { Event, EventSegment } from '@/types/training';
+import { supabase } from '@/lib/supabase';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapDbSegment(s: any): EventSegment {
   return {
     id: s.id,
@@ -14,7 +15,15 @@ function mapDbSegment(s: any): EventSegment {
   };
 }
 
-function mapDbEvent(e: any): Event {
+function mapDbEvent(e: {
+  id: string;
+  date: string;
+  type: string;
+  title: string;
+  priority: string;
+  description?: string;
+  segments?: any[];
+}): Event {
   return {
     id: e.id,
     date: e.date,
@@ -29,20 +38,22 @@ function mapDbEvent(e: any): Event {
 export const eventsApi = {
   async getAll(userId: string): Promise<Event[]> {
     const { data, error } = await supabase
-      .from('events')
-      .select(`
+      .from('pf_events')
+      .select(
+        `
         *,
-        segments:event_segments(
+        segments:pf_event_segments(
           id,
           event_id,
           sport_type_id,
-          sport_types(name),
+          pf_sport_types(name),
           planned_duration_minutes,
           planned_distance_kilometers,
           effort_level,
           segment_order
         )
-      `)
+      `,
+      )
       .eq('user_id', userId)
       .order('date', { ascending: true });
 
@@ -51,7 +62,7 @@ export const eventsApi = {
     return (data || []).map((e) => {
       const segments = (e.segments || []).map((s: any) => ({
         ...s,
-        sport_name: s.sport_types?.name,
+        sport_name: s.pf_sport_types?.name,
       }));
       return mapDbEvent({ ...e, segments });
     });
@@ -59,7 +70,7 @@ export const eventsApi = {
 
   async create(event: Partial<Event>, userId: string): Promise<Event> {
     const { data: eventData, error: eventError } = await supabase
-      .from('events')
+      .from('pf_events')
       .insert({
         user_id: userId,
         date: event.date,
@@ -84,27 +95,29 @@ export const eventsApi = {
       }));
 
       const { error: segmentsError } = await supabase
-        .from('event_segments')
+        .from('pf_event_segments')
         .insert(segmentsToInsert);
 
       if (segmentsError) throw segmentsError;
     }
 
     const { data: fullEvent, error: fetchError } = await supabase
-      .from('events')
-      .select(`
+      .from('pf_events')
+      .select(
+        `
         *,
-        segments:event_segments(
+        segments:pf_event_segments(
           id,
           event_id,
           sport_type_id,
-          sport_types(name),
+          pf_sport_types(name),
           planned_duration_minutes,
           planned_distance_kilometers,
           effort_level,
           segment_order
         )
-      `)
+      `,
+      )
       .eq('id', eventData.id)
       .single();
 
@@ -112,7 +125,7 @@ export const eventsApi = {
 
     const segments = (fullEvent.segments || []).map((s: any) => ({
       ...s,
-      sport_name: s.sport_types?.name,
+      sport_name: s.pf_sport_types?.name,
     }));
 
     return mapDbEvent({ ...fullEvent, segments });
@@ -120,7 +133,7 @@ export const eventsApi = {
 
   async update(event: Event, userId: string): Promise<Event> {
     const { error: eventError } = await supabase
-      .from('events')
+      .from('pf_events')
       .update({
         date: event.date,
         type: event.type,
@@ -134,7 +147,7 @@ export const eventsApi = {
     if (eventError) throw eventError;
 
     const { data: existingSegments, error: fetchError } = await supabase
-      .from('event_segments')
+      .from('pf_event_segments')
       .select('id')
       .eq('event_id', event.id);
 
@@ -142,13 +155,15 @@ export const eventsApi = {
 
     const existingIds = new Set((existingSegments || []).map((s) => s.id));
     const newSegmentIds = new Set(
-      (event.segments || []).filter((s) => s.id).map((s) => s.id)
+      (event.segments || []).filter((s) => s.id).map((s) => s.id),
     );
 
-    const toDelete = Array.from(existingIds).filter((id) => !newSegmentIds.has(id));
+    const toDelete = Array.from(existingIds).filter(
+      (id) => !newSegmentIds.has(id),
+    );
     if (toDelete.length > 0) {
       const { error: deleteError } = await supabase
-        .from('event_segments')
+        .from('pf_event_segments')
         .delete()
         .in('id', toDelete);
 
@@ -169,14 +184,14 @@ export const eventsApi = {
 
         if (seg.id && existingIds.has(seg.id)) {
           const { error: updateError } = await supabase
-            .from('event_segments')
+            .from('pf_event_segments')
             .update(segmentData)
             .eq('id', seg.id);
 
           if (updateError) throw updateError;
         } else {
           const { error: insertError } = await supabase
-            .from('event_segments')
+            .from('pf_event_segments')
             .insert(segmentData);
 
           if (insertError) throw insertError;
@@ -185,20 +200,22 @@ export const eventsApi = {
     }
 
     const { data: fullEvent, error: finalFetchError } = await supabase
-      .from('events')
-      .select(`
+      .from('pf_events')
+      .select(
+        `
         *,
-        segments:event_segments(
+        segments:pf_event_segments(
           id,
           event_id,
           sport_type_id,
-          sport_types(name),
+          pf_sport_types(name),
           planned_duration_minutes,
           planned_distance_kilometers,
           effort_level,
           segment_order
         )
-      `)
+      `,
+      )
       .eq('id', event.id)
       .single();
 
@@ -206,7 +223,7 @@ export const eventsApi = {
 
     const segments = (fullEvent.segments || []).map((s: any) => ({
       ...s,
-      sport_name: s.sport_types?.name,
+      sport_name: s.pf_sport_types?.name,
     }));
 
     return mapDbEvent({ ...fullEvent, segments });
@@ -214,7 +231,7 @@ export const eventsApi = {
 
   async remove(id: string, userId: string): Promise<void> {
     const { error } = await supabase
-      .from('events')
+      .from('pf_events')
       .delete()
       .eq('id', id)
       .eq('user_id', userId);

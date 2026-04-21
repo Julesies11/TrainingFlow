@@ -1,0 +1,28 @@
+# Authentication & Database
+
+PeakForm uses **Supabase Auth** for identity management and a relational PostgreSQL schema in the `public` schema for application data. All application tables use the `pf_` prefix.
+
+## Database Schema Strategy
+
+The application uses a set of dedicated tables to manage its core entities.
+
+### Key Components
+
+- **Profiles**: The `public.pf_profiles` table contains user-specific metadata and preferences, linked directly to `auth.users`.
+- **Relational Tables**: Application-specific data like `pf_workouts`, `pf_events`, and `pf_sport_types` are stored in their own tables with appropriate foreign keys to maintain data integrity.
+
+### Baseline Migration
+
+The initial database schema is defined in `supabase/migrations/2026042100_baseline_schema.sql`.
+
+## Authentication Flow
+
+1. **Provider**: `src/auth/providers/supabase-provider.tsx` wraps the app.
+2. **Context**: `src/auth/context/auth-context.tsx` provides access to the current user and auth state.
+3. **Hooks**: `src/hooks/use-supabase-user.ts` allows components to reactively access user data.
+4. **Protection**: `src/auth/require-auth.tsx` is used in routing to protect private pages.
+
+## Data Rules
+
+- **Foreign Keys**: All user-specific tables must have a foreign key to `auth.users` with `ON DELETE CASCADE`.
+- **Row Level Security (RLS)**: RLS is enabled and fully configured on all `pf_` tables in `baseline_schema.sql` to ensure users can only access their own data.

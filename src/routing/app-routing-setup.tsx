@@ -2,13 +2,18 @@ import { AuthRouting } from '@/auth/auth-routing';
 import { RequireAuth } from '@/auth/require-auth';
 import { ErrorRouting } from '@/errors/error-routing';
 import { Demo1Layout } from '@/layouts/demo1/layout';
-import { CalendarView, CalendarViewFC, CalendarViewKit, CalendarViewMonth } from '@/pages/training/calendar';
-import { LibraryPage } from '@/pages/training/library';
-import { EventsPage } from '@/pages/training/events';
-import { DashboardPage } from '@/pages/dashboard';
-import { SportTypesPage } from '@/pages/account/sport-types';
 import { ProfilePage } from '@/pages/account/profile';
+import { SportTypesPage } from '@/pages/account/sport-types';
 import { SportTypesAdminPage } from '@/pages/admin/sport-types';
+import { DashboardPage } from '@/pages/dashboard';
+import {
+  CalendarView,
+  CalendarViewFC,
+  CalendarViewKit,
+  CalendarViewMonth,
+} from '@/pages/training/calendar';
+import { EventsPage } from '@/pages/training/events';
+import { LibraryPage } from '@/pages/training/library';
 import { Navigate, Route, Routes } from 'react-router';
 
 function PlaceholderPage({ title }: { title: string }) {
@@ -35,7 +40,10 @@ export function AppRoutingSetup() {
           <Route path="/training/calendar" element={<CalendarView />} />
           <Route path="/training/calendar-new" element={<CalendarViewFC />} />
           <Route path="/training/calendar-kit" element={<CalendarViewKit />} />
-          <Route path="/training/calendar-month" element={<CalendarViewMonth />} />
+          <Route
+            path="/training/calendar-month"
+            element={<CalendarViewMonth />}
+          />
           <Route path="/training/library" element={<LibraryPage />} />
           <Route path="/training/events" element={<EventsPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />

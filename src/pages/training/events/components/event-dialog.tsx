@@ -1,16 +1,18 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { format } from 'date-fns';
+import { Event, SportTypeRecord, UserSportSettings } from '@/types/training';
+import { buildUserSettingsMap } from '@/services/training/effort-colors';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogBody,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
@@ -18,15 +20,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Event, EventSegment, SportTypeRecord } from '@/types/training';
-import { format } from 'date-fns';
+import { Textarea } from '@/components/ui/textarea';
 import { SegmentEditor } from './segment-editor';
-import { buildUserSettingsMap } from '@/services/training/effort-colors';
 
 interface EventDialogProps {
   event?: Event;
   sportTypes: SportTypeRecord[];
-  userSettings: any[];
+  userSettings: UserSportSettings[];
   onSave: (event: Partial<Event>) => void;
   onCancel: () => void;
 }
@@ -42,7 +42,7 @@ export function EventDialog({
 
   const userSettingsMap = useMemo(
     () => buildUserSettingsMap(userSettings),
-    [userSettings]
+    [userSettings],
   );
 
   const [formData, setFormData] = useState<Partial<Event>>({
@@ -173,9 +173,7 @@ export function EventDialog({
                 segments={formData.segments || []}
                 sportTypes={sportTypes}
                 userSettingsMap={userSettingsMap}
-                onChange={(segments) =>
-                  setFormData({ ...formData, segments })
-                }
+                onChange={(segments) => setFormData({ ...formData, segments })}
               />
 
               {/* Priority info */}

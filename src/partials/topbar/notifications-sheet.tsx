@@ -46,9 +46,7 @@ export function NotificationsSheet({ trigger }: { trigger: ReactNode }) {
       <SheetTrigger asChild>{trigger}</SheetTrigger>
       <SheetContent className="p-0 gap-0 sm:w-[500px] sm:max-w-none inset-5 start-auto h-auto rounded-lg p-0 sm:max-w-none [&_[data-slot=sheet-close]]:top-4.5 [&_[data-slot=sheet-close]]:end-5">
         <SheetHeader className="mb-0">
-          <SheetTitle className="p-3">
-            Notifications
-          </SheetTitle>
+          <SheetTitle className="p-3">Notifications</SheetTitle>
         </SheetHeader>
         <SheetBody className="grow p-0">
           <ScrollArea className="h-[calc(100vh-10.5rem)]">

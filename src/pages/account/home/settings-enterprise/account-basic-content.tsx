@@ -4,12 +4,12 @@ import { CalendarAccounts } from '../user-profile';
 import {
   Account,
   AuthTwoFactor,
+  CompanyDocuments,
   Connections,
   PaymentHistory,
   SetGoal,
   Upgrade,
   YourCurrentPlan,
-  CompanyDocuments
 } from './components';
 
 export function AccountSettingsEnterpriseContent() {

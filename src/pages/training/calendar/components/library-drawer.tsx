@@ -1,9 +1,16 @@
 import { useMemo } from 'react';
-import { X, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { LibraryWorkout, SportTypeRecord, UserSportSettings } from '@/types/training';
+import { Plus, X } from 'lucide-react';
+import {
+  LibraryWorkout,
+  SportTypeRecord,
+  UserSportSettings,
+} from '@/types/training';
 import { getContrastColor } from '@/services/training/calendar.utils';
-import { getEffortColor, buildSportMap } from '@/services/training/effort-colors';
+import {
+  buildSportMap,
+  getEffortColor,
+} from '@/services/training/effort-colors';
+import { Button } from '@/components/ui/button';
 
 interface LibraryDrawerProps {
   open: boolean;
@@ -34,14 +41,19 @@ export function LibraryDrawer({
   // Group library by sport type
   const groupedLibrary = useMemo(() => {
     const groups = new Map<string, LibraryWorkout[]>();
-    library.forEach(template => {
-      const sportName = template.sportName || sportMap.get(template.sportTypeId)?.name || 'Unknown';
+    library.forEach((template) => {
+      const sportName =
+        template.sportName ||
+        sportMap.get(template.sportTypeId)?.name ||
+        'Unknown';
       if (!groups.has(sportName)) {
         groups.set(sportName, []);
       }
       groups.get(sportName)!.push(template);
     });
-    return Array.from(groups.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    return Array.from(groups.entries()).sort((a, b) =>
+      a[0].localeCompare(b[0]),
+    );
   }, [library, sportMap]);
 
   const handleAddTemplate = (template: LibraryWorkout) => {
@@ -62,7 +74,12 @@ export function LibraryDrawer({
             Target: {selectedDate}
           </p>
         </div>
-        <Button variant="ghost" size="sm" onClick={onClose} className="h-8 w-8 p-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClose}
+          className="h-8 w-8 p-0"
+        >
           <X className="h-5 w-5" />
         </Button>
       </header>
@@ -82,7 +99,11 @@ export function LibraryDrawer({
                 <div className="space-y-2">
                   {templates.map((template) => {
                     const st = sportMap.get(template.sportTypeId);
-                    const bg = getEffortColor(st, template.effortLevel || 1, userSettingsMap.get(template.sportTypeId));
+                    const bg = getEffortColor(
+                      st,
+                      template.effortLevel || 1,
+                      userSettingsMap.get(template.sportTypeId),
+                    );
                     return (
                       <div
                         key={template.id}
@@ -98,7 +119,8 @@ export function LibraryDrawer({
                           </div>
                           <div className="mt-1 text-[10px] opacity-70">
                             {template.plannedDurationMinutes}m
-                            {template.plannedDistanceKilometers > 0 && st?.paceRelevant
+                            {template.plannedDistanceKilometers > 0 &&
+                            st?.paceRelevant
                               ? ` · ${template.plannedDistanceKilometers}${st.distanceUnit || 'km'}`
                               : ''}
                           </div>

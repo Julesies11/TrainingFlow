@@ -8,7 +8,7 @@ interface DragOverInfo {
 
 export function useCalendarDragDrop(
   onWorkoutMove: (workoutId: string, newDate: string, newOrder: number) => void,
-  onEventMove: (eventId: string, newDate: string) => void
+  onEventMove: (eventId: string, newDate: string) => void,
 ) {
   const [isDraggingId, setIsDraggingId] = useState<string | null>(null);
   const [dragOverInfo, setDragOverInfo] = useState<DragOverInfo | null>(null);
@@ -23,7 +23,11 @@ export function useCalendarDragDrop(
     setDragOverInfo(null);
   };
 
-  const handleDragOverCell = (e: React.DragEvent, date: string, itemCount: number) => {
+  const handleDragOverCell = (
+    e: React.DragEvent,
+    date: string,
+    itemCount: number,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
 

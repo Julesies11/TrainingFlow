@@ -1,24 +1,24 @@
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { SportTypeRecord, UserSportSettings, Workout } from '@/types/training';
+import { formatDateToLocalISO } from '@/services/training/calendar.utils';
+import {
+  getEffortColor,
+  getEffortLabel,
+} from '@/services/training/effort-colors';
+import { calculatePace } from '@/services/training/pace-utils';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
+  DialogBody,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogBody,
-  DialogFooter,
 } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Workout, SportTypeRecord, UserSportSettings } from '@/types/training';
-import {
-  formatDateToLocalISO,
-  getContrastColor,
-} from '@/services/training/calendar.utils';
-import { getEffortColor, getEffortLabel } from '@/services/training/effort-colors';
-import { calculatePace } from '@/services/training/pace-utils';
+import { Textarea } from '@/components/ui/textarea';
 
 interface WorkoutDialogProps {
   workout: Partial<Workout>;
@@ -60,9 +60,7 @@ export function WorkoutDialog({
     recurrenceRule: initialWorkout.recurrenceRule,
   }));
 
-  const [isRecurring, setIsRecurring] = useState(
-    !!initialWorkout.recurrenceId,
-  );
+  const [isRecurring, setIsRecurring] = useState(!!initialWorkout.recurrenceId);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showExtendSeries, setShowExtendSeries] = useState(false);
   const [extendWeeks, setExtendWeeks] = useState(4);
@@ -80,13 +78,13 @@ export function WorkoutDialog({
   // Get recurring series info
   const seriesInfo = useMemo(() => {
     if (!workout.recurrenceId) return null;
-    
-    const seriesWorkouts = existingWorkouts.filter(
-      (w) => w.recurrenceId === workout.recurrenceId
-    ).sort((a, b) => a.date.localeCompare(b.date));
-    
+
+    const seriesWorkouts = existingWorkouts
+      .filter((w) => w.recurrenceId === workout.recurrenceId)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
     if (seriesWorkouts.length === 0) return null;
-    
+
     return {
       totalCount: seriesWorkouts.length,
       startDate: seriesWorkouts[0].date,
@@ -107,14 +105,18 @@ export function WorkoutDialog({
     selectedSport,
   ]);
 
-  const headerColor = getEffortColor(selectedSport, workout.effortLevel || 1, userSettings);
+  const headerColor = getEffortColor(
+    selectedSport,
+    workout.effortLevel || 1,
+    userSettings,
+  );
 
   const handleExtendSeries = () => {
     if (!workout.recurrenceId || !seriesInfo) return;
-    
+
     const instances: Partial<Workout>[] = [];
     const lastDate = new Date(seriesInfo.endDate.replace(/-/g, '/'));
-    
+
     for (let i = 1; i <= extendWeeks; i++) {
       const d = new Date(lastDate);
       d.setDate(d.getDate() + i * 7);
@@ -127,7 +129,7 @@ export function WorkoutDialog({
         order: Date.now() + i,
       });
     }
-    
+
     onSaveBulk?.(instances);
     setShowExtendSeries(false);
   };
@@ -172,7 +174,10 @@ export function WorkoutDialog({
     <Dialog open={true} onOpenChange={() => onCancel()}>
       <DialogContent className="max-h-[90vh] w-full max-w-2xl overflow-hidden bg-background p-0">
         {/* Color bar */}
-        <div className="h-2 shrink-0" style={{ backgroundColor: headerColor }} />
+        <div
+          className="h-2 shrink-0"
+          style={{ backgroundColor: headerColor }}
+        />
 
         <div className="flex flex-col overflow-y-auto p-6">
           <DialogHeader>
@@ -212,12 +217,20 @@ export function WorkoutDialog({
                     </div>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
-                        <div className="text-muted-foreground text-[9px] font-bold uppercase">Start</div>
-                        <div className="font-semibold">{new Date(seriesInfo.startDate).toLocaleDateString()}</div>
+                        <div className="text-muted-foreground text-[9px] font-bold uppercase">
+                          Start
+                        </div>
+                        <div className="font-semibold">
+                          {new Date(seriesInfo.startDate).toLocaleDateString()}
+                        </div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground text-[9px] font-bold uppercase">End</div>
-                        <div className="font-semibold">{new Date(seriesInfo.endDate).toLocaleDateString()}</div>
+                        <div className="text-muted-foreground text-[9px] font-bold uppercase">
+                          End
+                        </div>
+                        <div className="font-semibold">
+                          {new Date(seriesInfo.endDate).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
                     <Button
@@ -231,14 +244,18 @@ export function WorkoutDialog({
                     </Button>
                     {showExtendSeries && (
                       <div className="space-y-2">
-                        <Label className="text-[9px] font-bold uppercase">Add weeks</Label>
+                        <Label className="text-[9px] font-bold uppercase">
+                          Add weeks
+                        </Label>
                         <div className="flex gap-2">
                           <Input
                             type="number"
                             min="1"
                             max="52"
                             value={extendWeeks}
-                            onChange={(e) => setExtendWeeks(Number(e.target.value))}
+                            onChange={(e) =>
+                              setExtendWeeks(Number(e.target.value))
+                            }
                             className="flex-1"
                           />
                           <Button
@@ -265,7 +282,9 @@ export function WorkoutDialog({
                       <Button
                         key={st.id}
                         type="button"
-                        variant={workout.sportTypeId === st.id ? 'primary' : 'outline'}
+                        variant={
+                          workout.sportTypeId === st.id ? 'primary' : 'outline'
+                        }
                         size="sm"
                         onClick={() =>
                           setWorkout({ ...workout, sportTypeId: st.id })
@@ -295,7 +314,11 @@ export function WorkoutDialog({
                         <div
                           className="h-2 w-full rounded-full"
                           style={{
-                            backgroundColor: getEffortColor(selectedSport, level, userSettings),
+                            backgroundColor: getEffortColor(
+                              selectedSport,
+                              level,
+                              userSettings,
+                            ),
                           }}
                         />
                         <span className="text-[8px] font-black lowercase tracking-tighter">
@@ -433,7 +456,11 @@ export function WorkoutDialog({
           </DialogBody>
 
           <DialogFooter className="gap-3">
-            <Button variant="outline" onClick={onCancel} className="w-full sm:w-auto">
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              className="w-full sm:w-auto"
+            >
               cancel
             </Button>
 

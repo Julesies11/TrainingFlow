@@ -1,11 +1,11 @@
-import { Trophy, Pencil, Trash2 } from 'lucide-react';
-import { parseISO, format, differenceInDays } from 'date-fns';
+import { differenceInDays, format, parseISO } from 'date-fns';
+import { Pencil, Trash2, Trophy } from 'lucide-react';
 import { Link } from 'react-router';
 import { Event, SportTypeRecord } from '@/types/training';
-import { calculatePace } from '@/services/training/pace-utils';
 import { getEffortColor } from '@/services/training/effort-colors';
-import { getSportIcon } from '@/services/training/sport-icons';
 import { formatEventDuration } from '@/services/training/event-duration';
+import { calculatePace } from '@/services/training/pace-utils';
+import { getSportIcon } from '@/services/training/sport-icons';
 import { Button } from '@/components/ui/button';
 
 const formatMins = (totalMins: number) => {
@@ -23,13 +23,20 @@ interface UpcomingEventsProps {
   events: Event[];
   today: Date;
   sportTypes: SportTypeRecord[];
-  userSettingsMap: Map<string, any>;
+  userSettingsMap: Map<string, UserSportSettings>;
   onEdit?: (event: Event) => void;
   onDelete?: (event: Event) => void;
 }
 
-export function UpcomingEvents({ events, today, sportTypes, userSettingsMap, onEdit, onDelete }: UpcomingEventsProps) {
-  const sportMap = new Map(sportTypes.map(st => [st.id, st]));
+export function UpcomingEvents({
+  events,
+  today,
+  sportTypes,
+  userSettingsMap,
+  onEdit,
+  onDelete,
+}: UpcomingEventsProps) {
+  const sportMap = new Map(sportTypes.map((st) => [st.id, st]));
   return (
     <div className="bg-card overflow-hidden rounded-2xl border shadow-sm">
       <div className="border-b bg-muted/30 px-5 py-4">
@@ -117,37 +124,59 @@ export function UpcomingEvents({ events, today, sportTypes, userSettingsMap, onE
                     <div className="flex flex-col gap-2 p-3">
                       {event.segments!.map((segment, idx) => {
                         const sport = sportMap.get(segment.sportTypeId);
-                        const userSettingsForSport = userSettingsMap.get(segment.sportTypeId);
-                        const color = getEffortColor(sport, segment.effortLevel, userSettingsForSport);
+                        const userSettingsForSport = userSettingsMap.get(
+                          segment.sportTypeId,
+                        );
+                        const color = getEffortColor(
+                          sport,
+                          segment.effortLevel,
+                          userSettingsForSport,
+                        );
                         const duration = segment.plannedDurationMinutes || 0;
                         const distKm = segment.plannedDistanceKilometers || 0;
-                        const dist = sport?.name === 'Swim' ? distKm * 1000 : distKm;
-                        const pace = calculatePace(sport?.name || '', duration, dist);
-                        
-                        const sportName = segment.sportName || sport?.name || 'Unknown';
+                        const dist =
+                          sport?.name === 'Swim' ? distKm * 1000 : distKm;
+                        const pace = calculatePace(
+                          sport?.name || '',
+                          duration,
+                          dist,
+                        );
+
+                        const sportName =
+                          segment.sportName || sport?.name || 'Unknown';
                         const IconComponent = getSportIcon(sportName);
 
                         return (
                           <div
                             key={idx}
                             className="flex items-start gap-2 rounded-lg border p-2"
-                            style={{ borderLeftWidth: '3px', borderLeftColor: color }}
+                            style={{
+                              borderLeftWidth: '3px',
+                              borderLeftColor: color,
+                            }}
                           >
                             {IconComponent && (
                               <IconComponent className="h-4 w-4 shrink-0 text-muted-foreground" />
                             )}
                             <div className="flex flex-col gap-0.5 text-xs">
-                              <span className="font-bold lowercase">{sportName}</span>
+                              <span className="font-bold lowercase">
+                                {sportName}
+                              </span>
                               {duration > 0 && (
-                                <span className="text-muted-foreground">{formatMins(duration)}</span>
+                                <span className="text-muted-foreground">
+                                  {formatMins(duration)}
+                                </span>
                               )}
                               {dist > 0 && sport?.paceRelevant && (
                                 <span className="text-muted-foreground">
-                                  {dist}{sport.distanceUnit || 'km'}
+                                  {dist}
+                                  {sport.distanceUnit || 'km'}
                                 </span>
                               )}
                               {pace && (
-                                <span className="text-muted-foreground">{pace}</span>
+                                <span className="text-muted-foreground">
+                                  {pace}
+                                </span>
                               )}
                             </div>
                           </div>

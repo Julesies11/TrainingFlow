@@ -1,40 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useAuth } from '@/auth/context/auth-context';
 import { UserDropdownMenu } from '@/partials/topbar/user-dropdown-menu';
-import { Menu } from 'lucide-react';
-import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useScrollPosition } from '@/hooks/use-scroll-position';
 import { useProfile } from '@/hooks/use-training-data';
-import { useAuth } from '@/auth/context/auth-context';
-import { Button } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetBody,
-  SheetContent,
-  SheetHeader,
-  SheetTrigger,
-} from '@/components/ui/sheet';
 import { Container } from '@/components/common/container';
-import { SidebarMenu } from './sidebar-menu';
 
 export function Header() {
-  const [isSidebarSheetOpen, setIsSidebarSheetOpen] = useState(false);
   const { data: profile } = useProfile();
   const { user } = useAuth();
 
-  const { pathname } = useLocation();
-  const mobileMode = useIsMobile();
-
   const scrollPosition = useScrollPosition();
   const headerSticky: boolean = scrollPosition > 0;
-
-  // Close sheet when route changes
-  useEffect(() => {
-    setIsSidebarSheetOpen(false);
-  }, [pathname]);
 
   return (
     <header

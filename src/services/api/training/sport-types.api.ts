@@ -1,5 +1,5 @@
-import { supabase } from '@/lib/supabase';
 import { SportTypeRecord } from '@/types/training';
+import { supabase } from '@/lib/supabase';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapDbSportType(s: any): SportTypeRecord {
@@ -24,7 +24,7 @@ function mapDbSportType(s: any): SportTypeRecord {
 export const sportTypesApi = {
   async getAll(): Promise<SportTypeRecord[]> {
     const { data, error } = await supabase
-      .from('sport_types')
+      .from('pf_sport_types')
       .select('*')
       .order('name');
 
@@ -32,9 +32,12 @@ export const sportTypesApi = {
     return (data || []).map(mapDbSportType);
   },
 
-  async create(st: Partial<SportTypeRecord>, userId: string): Promise<SportTypeRecord> {
+  async create(
+    st: Partial<SportTypeRecord>,
+    userId: string,
+  ): Promise<SportTypeRecord> {
     const { data, error } = await supabase
-      .from('sport_types')
+      .from('pf_sport_types')
       .insert({
         name: st.name,
         description: st.description || null,
@@ -61,7 +64,7 @@ export const sportTypesApi = {
 
   async update(st: SportTypeRecord, userId: string): Promise<SportTypeRecord> {
     const { data, error } = await supabase
-      .from('sport_types')
+      .from('pf_sport_types')
       .update({
         name: st.name,
         description: st.description || null,
@@ -89,7 +92,7 @@ export const sportTypesApi = {
 
   async remove(id: string): Promise<void> {
     const { error } = await supabase
-      .from('sport_types')
+      .from('pf_sport_types')
       .delete()
       .eq('id', id);
 

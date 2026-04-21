@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Workout, Event } from '@/types/training';
+import { Event, Workout } from '@/types/training';
 
 type ViewType = 'week' | 'month';
 type SportType = 'Swim' | 'Bike' | 'Run' | 'Strength';
@@ -49,31 +49,33 @@ export function SportDistribution({
       const diff = start.getDate() - (day === 0 ? 6 : day - 1);
       start.setDate(diff);
       start.setHours(0, 0, 0, 0);
-      end.setTime(start.getTime() + (7 * 24 * 60 * 60 * 1000));
+      end.setTime(start.getTime() + 7 * 24 * 60 * 60 * 1000);
     } else {
       start.setDate(1);
       start.setHours(0, 0, 0, 0);
       end.setMonth(start.getMonth() + 1);
     }
 
-    const filteredWorkouts = workouts.filter(w => {
+    const filteredWorkouts = workouts.filter((w) => {
       const d = parseISO(w.date);
       return d >= start && d < end;
     });
 
-    const filteredEvents = events.filter(e => {
+    const filteredEvents = events.filter((e) => {
       const d = parseISO(e.date);
       return d >= start && d < end;
     });
 
     let totalDuration = filteredWorkouts.reduce((sum, w) => {
-      const dur = w.isCompleted ? (w.actualDurationMinutes || 0) : (w.plannedDurationMinutes || 0);
+      const dur = w.isCompleted
+        ? w.actualDurationMinutes || 0
+        : w.plannedDurationMinutes || 0;
       return sum + dur;
     }, 0);
 
-    filteredEvents.forEach(event => {
+    filteredEvents.forEach((event) => {
       if (event.segments && event.segments.length > 0) {
-        event.segments.forEach(seg => {
+        event.segments.forEach((seg) => {
           totalDuration += seg.plannedDurationMinutes || 0;
         });
       }
@@ -81,17 +83,19 @@ export function SportDistribution({
 
     totalDuration = totalDuration || 1;
 
-    return (['Swim', 'Bike', 'Run', 'Strength'] as SportType[]).map(s => {
+    return (['Swim', 'Bike', 'Run', 'Strength'] as SportType[]).map((s) => {
       let sportDuration = filteredWorkouts
-        .filter(w => w.sportName === s)
+        .filter((w) => w.sportName === s)
         .reduce((sum, w) => {
-          const dur = w.isCompleted ? (w.actualDurationMinutes || 0) : (w.plannedDurationMinutes || 0);
+          const dur = w.isCompleted
+            ? w.actualDurationMinutes || 0
+            : w.plannedDurationMinutes || 0;
           return sum + dur;
         }, 0);
 
-      filteredEvents.forEach(event => {
+      filteredEvents.forEach((event) => {
         if (event.segments && event.segments.length > 0) {
-          event.segments.forEach(seg => {
+          event.segments.forEach((seg) => {
             if (seg.sportName === s) {
               sportDuration += seg.plannedDurationMinutes || 0;
             }
@@ -116,7 +120,9 @@ export function SportDistribution({
       start.setDate(diff);
       return `wk of ${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toLowerCase()}`;
     }
-    return distPivotDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).toLowerCase();
+    return distPivotDate
+      .toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      .toLowerCase();
   }, [distViewType, distPivotDate]);
 
   return (

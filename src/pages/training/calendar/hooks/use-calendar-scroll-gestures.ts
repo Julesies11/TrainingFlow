@@ -1,8 +1,8 @@
-import { useEffect, RefObject } from 'react';
+import { RefObject, useEffect } from 'react';
 
 export function useCalendarScrollGestures(
   scrollRef: RefObject<HTMLDivElement>,
-  onStepWeek: (direction: 'up' | 'down') => void
+  onStepWeek: (direction: 'up' | 'down') => void,
 ) {
   useEffect(() => {
     const scrollEl = scrollRef.current;
@@ -36,7 +36,9 @@ export function useCalendarScrollGestures(
     };
 
     scrollEl.addEventListener('wheel', handleWheel, { passive: false });
-    scrollEl.addEventListener('touchstart', handleTouchStart, { passive: true });
+    scrollEl.addEventListener('touchstart', handleTouchStart, {
+      passive: true,
+    });
     scrollEl.addEventListener('touchend', handleTouchEnd, { passive: false });
 
     return () => {

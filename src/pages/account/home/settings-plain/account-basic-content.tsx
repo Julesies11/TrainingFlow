@@ -1,5 +1,5 @@
 import { DeleteAccount } from '../settings-sidebar';
-import { BasicSettings, Password, FilesUpload } from './components';
+import { BasicSettings, FilesUpload, Password } from './components';
 
 export function AccountSettingsPlainContent() {
   return (

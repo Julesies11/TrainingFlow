@@ -1,9 +1,9 @@
 import {
+  BookOpen,
+  Calendar,
   CalendarCheck,
   LayoutGrid,
-  BookOpen,
   Target,
-  Calendar,
 } from 'lucide-react';
 import { type MenuConfig } from './types';
 

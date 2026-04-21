@@ -1,33 +1,35 @@
-import React, { useState, useMemo, useRef } from 'react';
-import FullCalendar from '@fullcalendar/react';
+import React, { useMemo, useState } from 'react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import FullCalendar from '@fullcalendar/react';
 import { BookOpen, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Event, LibraryWorkout, Workout } from '@/types/training';
 import {
-  useWorkouts,
-  useUpdateWorkout,
+  useCreateLibraryWorkout,
   useCreateWorkout,
   useCreateWorkoutsBulk,
+  useDeleteEvent,
+  useDeleteLibraryWorkout,
   useDeleteWorkout,
   useEvents,
-  useUpdateEvent,
-  useDeleteEvent,
   useLibrary,
-  useCreateLibraryWorkout,
-  useUpdateLibraryWorkout,
-  useDeleteLibraryWorkout,
   useSportTypes,
+  useUpdateEvent,
+  useUpdateLibraryWorkout,
+  useUpdateWorkout,
   useUserSportSettings,
+  useWorkouts,
 } from '@/hooks/use-training-data';
-import { Workout, Event, LibraryWorkout } from '@/types/training';
+import { formatDateToLocalISO } from '@/services/training/calendar.utils';
 import {
-  formatDateToLocalISO,
-} from '@/services/training/calendar.utils';
-import { getEffortColor, buildSportMap, buildUserSettingsMap } from '@/services/training/effort-colors';
-import { WorkoutDialog } from './components/workout-dialog';
+  buildSportMap,
+  buildUserSettingsMap,
+  getEffortColor,
+} from '@/services/training/effort-colors';
+import { Button } from '@/components/ui/button';
 import { EventDialog } from './components/event-dialog';
 import { LibraryDrawer } from './components/library-drawer';
+import { WorkoutDialog } from './components/workout-dialog';
 
 export function CalendarViewFC() {
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
@@ -50,18 +52,35 @@ export function CalendarViewFC() {
   const [selectedDate, setSelectedDate] = useState<string>(
     formatDateToLocalISO(new Date()),
   );
-  const [workoutToEdit, setWorkoutToEdit] = useState<Partial<Workout> | null>(null);
-  const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] = useState<Event | null>(null);
+  const [workoutToEdit, setWorkoutToEdit] = useState<Partial<Workout> | null>(
+    null,
+  );
+  const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] =
+    useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
-  const calendarRef = useRef<any>(null);
 
   // Build maps
   const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
-  const userSettingsMap = useMemo(() => buildUserSettingsMap(userSportSettings), [userSportSettings]);
+  const userSettingsMap = useMemo(
+    () => buildUserSettingsMap(userSportSettings),
+    [userSportSettings],
+  );
 
   // Transform workouts and events to FullCalendar events
   const calendarEvents = useMemo(() => {
-    const eventsList: any[] = [];
+    const eventsList: {
+      id: string;
+      title: string;
+      date: string;
+      backgroundColor: string;
+      borderColor: string;
+      textColor: string;
+      display: string;
+      extendedProps: {
+        type: 'workout' | 'event';
+        data: Workout | Event;
+      };
+    }[] = [];
 
     // Add workouts
     workouts.forEach((w) => {
@@ -136,17 +155,20 @@ export function CalendarViewFC() {
   };
 
   // Handle date click
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleDateClick = (info: any) => {
     setSelectedDate(info.dateStr);
   };
 
   // Handle event click
-  const handleEventClick = (info: any) => {
+  const handleEventClick = (info: {
+    event: { extendedProps: { type: string; data: any } };
+  }) => {
     const { extendedProps } = info.event;
     if (extendedProps.type === 'workout') {
-      setWorkoutToEdit(extendedProps.data);
+      setWorkoutToEdit(extendedProps.data as Workout);
     } else if (extendedProps.type === 'event') {
-      setEventWithSegmentsToEdit(extendedProps.data);
+      setEventWithSegmentsToEdit(extendedProps.data as Event);
     }
   };
 
@@ -293,4 +315,3 @@ export function CalendarViewFC() {
     </div>
   );
 }
-

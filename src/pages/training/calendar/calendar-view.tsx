@@ -1,40 +1,43 @@
-import React, { useState, useMemo, useCallback } from 'react';
-import { ChevronLeft, ChevronRight, BookOpen, Plus, Star } from 'lucide-react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { format } from 'date-fns';
-import { Button } from '@/components/ui/button';
+import { BookOpen, ChevronLeft, ChevronRight, Plus, Star } from 'lucide-react';
+import { Event, LibraryWorkout, Workout } from '@/types/training';
+import { useSupabaseUserId } from '@/hooks/use-supabase-user';
 import {
-  useWorkouts,
-  useUpdateWorkout,
+  useCreateLibraryWorkout,
   useCreateWorkout,
   useCreateWorkoutsBulk,
+  useDeleteEvent,
+  useDeleteLibraryWorkout,
   useDeleteWorkout,
   useEvents,
-  useUpdateEvent,
-  useDeleteEvent,
-  useProfile,
   useLibrary,
-  useCreateLibraryWorkout,
-  useUpdateLibraryWorkout,
-  useDeleteLibraryWorkout,
   useSportTypes,
+  useUpdateEvent,
+  useUpdateLibraryWorkout,
+  useUpdateWorkout,
   useUserSportSettings,
+  useWorkouts,
 } from '@/hooks/use-training-data';
-import { useSupabaseUserId } from '@/hooks/use-supabase-user';
-import { Workout, Event, LibraryWorkout } from '@/types/training';
 import {
+  DAY_HEADERS,
   formatDateToLocalISO,
-  getMonday,
   formatMinsShort,
   getContrastColor,
+  getMonday,
   MONTH_NAMES,
-  DAY_HEADERS,
 } from '@/services/training/calendar.utils';
-import { getEffortColor, buildSportMap, buildUserSettingsMap } from '@/services/training/effort-colors';
+import {
+  buildSportMap,
+  buildUserSettingsMap,
+  getEffortColor,
+} from '@/services/training/effort-colors';
 import { calculatePace } from '@/services/training/pace-utils';
 import { getSportIcon } from '@/services/training/sport-icons';
-import { WorkoutDialog } from './components/workout-dialog';
+import { Button } from '@/components/ui/button';
 import { EventDialog } from './components/event-dialog';
 import { LibraryDrawer } from './components/library-drawer';
+import { WorkoutDialog } from './components/workout-dialog';
 
 export function CalendarView() {
   const userId = useSupabaseUserId();
@@ -42,7 +45,8 @@ export function CalendarView() {
   const { data: events = [] } = useEvents();
   const { data: library = [] } = useLibrary();
   const { data: sportTypes = [], isLoading: loadingSports } = useSportTypes();
-  const { data: userSportSettings = [], isLoading: loadingSettings } = useUserSportSettings();
+  const { data: userSportSettings = [], isLoading: loadingSettings } =
+    useUserSportSettings();
 
   const updateWorkout = useUpdateWorkout();
   const createWorkout = useCreateWorkout();
@@ -59,22 +63,32 @@ export function CalendarView() {
     formatDateToLocalISO(new Date()),
   );
   const [viewMode, setViewMode] = useState<'calendar' | 'summary'>('calendar');
-  const [displayMonth, setDisplayMonth] = useState<number>(new Date().getMonth());
-  const [displayYear, setDisplayYear] = useState<number>(new Date().getFullYear());
+  const [displayMonth, setDisplayMonth] = useState<number>(
+    new Date().getMonth(),
+  );
+  const [displayYear, setDisplayYear] = useState<number>(
+    new Date().getFullYear(),
+  );
 
   // Modal state
   const [workoutToEdit, setWorkoutToEdit] = useState<Partial<Workout> | null>(
     null,
   );
-  const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] = useState<Event | null>(null);
+  const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] =
+    useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
 
   // Drag and drop state
   const [isDraggingId, setIsDraggingId] = useState<string | null>(null);
-  const [dragOverInfo, setDragOverInfo] = useState<{ date: string } | null>(null);
+  const [dragOverInfo, setDragOverInfo] = useState<{ date: string } | null>(
+    null,
+  );
 
   const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
-  const userSettingsMap = useMemo(() => buildUserSettingsMap(userSportSettings), [userSportSettings]);
+  const userSettingsMap = useMemo(
+    () => buildUserSettingsMap(userSportSettings),
+    [userSportSettings],
+  );
 
   // Helper: Generate weeks sequentially from a start Monday
   const generateWeeksFrom = useCallback((startMonday: Date, count: number) => {
@@ -95,27 +109,29 @@ export function CalendarView() {
   const weeks = useMemo(() => {
     const firstDay = new Date(displayYear, displayMonth, 1);
     const lastDay = new Date(displayYear, displayMonth + 1, 0);
-    
+
     // Start from the Monday of the week containing the 1st
     const startMonday = getMonday(firstDay);
-    
+
     // Calculate how many weeks we need to display the entire month
     const endMonday = getMonday(lastDay);
-    const daysDiff = Math.ceil((endMonday.getTime() - startMonday.getTime()) / (1000 * 60 * 60 * 24));
+    const daysDiff = Math.ceil(
+      (endMonday.getTime() - startMonday.getTime()) / (1000 * 60 * 60 * 24),
+    );
     const weekCount = Math.ceil(daysDiff / 7) + 1;
-    
+
     return generateWeeksFrom(startMonday, weekCount);
   }, [displayMonth, displayYear, generateWeeksFrom]);
 
   // Navigation helpers - simple state updates, no scroll
   const stepMonth = useCallback((dir: 'up' | 'down') => {
-    setDisplayMonth(prev => {
+    setDisplayMonth((prev) => {
       const newMonth = dir === 'up' ? prev - 1 : prev + 1;
       if (newMonth < 0) {
-        setDisplayYear(y => y - 1);
+        setDisplayYear((y) => y - 1);
         return 11;
       } else if (newMonth > 11) {
-        setDisplayYear(y => y + 1);
+        setDisplayYear((y) => y + 1);
         return 0;
       }
       return newMonth;
@@ -131,10 +147,7 @@ export function CalendarView() {
 
   // Drag & drop handlers
 
-  const handleDragStart = (
-    e: React.DragEvent,
-    item: Workout,
-  ) => {
+  const handleDragStart = (e: React.DragEvent, item: Workout) => {
     e.dataTransfer.setData('text/plain', item.id);
     e.dataTransfer.effectAllowed = 'move';
     setIsDraggingId(item.id);
@@ -156,12 +169,16 @@ export function CalendarView() {
       return;
     }
     // Find the content container (the scrollable div with workout cards)
-    const container = (e.currentTarget as HTMLElement).querySelector('[data-drop-container]') as HTMLElement | null;
+    const container = (e.currentTarget as HTMLElement).querySelector(
+      '[data-drop-container]',
+    ) as HTMLElement | null;
     if (!container) {
       setDragOverInfo({ date: dateStr, index: itemCount });
       return;
     }
-    const children = Array.from(container.querySelectorAll('[data-drop-item]')) as HTMLElement[];
+    const children = Array.from(
+      container.querySelectorAll('[data-drop-item]'),
+    ) as HTMLElement[];
     const mouseY = e.clientY;
     let dropIndex = children.length; // default: after last
     for (let i = 0; i < children.length; i++) {
@@ -189,11 +206,12 @@ export function CalendarView() {
 
   // Week summary
   const calculateWeekSummary = (week: Date[]) => {
-    const sportTotals: Record<string, { distance: number; duration: number }> = {};
+    const sportTotals: Record<string, { distance: number; duration: number }> =
+      {};
     const weekTotals = { distance: 0, duration: 0 };
     week.forEach((date) => {
       const dateStr = formatDateToLocalISO(date);
-      
+
       // Add workout totals
       workouts
         .filter((w) => w.date === dateStr)
@@ -205,14 +223,15 @@ export function CalendarView() {
             ? w.actualDistanceKilometers || 0
             : w.plannedDistanceKilometers || 0;
           const stId = w.sportTypeId || 'unknown';
-          if (!sportTotals[stId]) sportTotals[stId] = { distance: 0, duration: 0 };
+          if (!sportTotals[stId])
+            sportTotals[stId] = { distance: 0, duration: 0 };
           sportTotals[stId].duration += dur;
           sportTotals[stId].distance += dist;
           weekTotals.duration += dur;
           const st = sportMap.get(stId);
           if (st?.paceRelevant) weekTotals.distance += dist;
         });
-      
+
       // Add event segment totals
       events
         .filter((e) => e.date === dateStr)
@@ -222,7 +241,8 @@ export function CalendarView() {
               const dur = seg.plannedDurationMinutes || 0;
               const dist = seg.plannedDistanceKilometers || 0;
               const stId = seg.sportTypeId || 'unknown';
-              if (!sportTotals[stId]) sportTotals[stId] = { distance: 0, duration: 0 };
+              if (!sportTotals[stId])
+                sportTotals[stId] = { distance: 0, duration: 0 };
               sportTotals[stId].duration += dur;
               sportTotals[stId].distance += dist;
               weekTotals.duration += dur;
@@ -269,7 +289,8 @@ export function CalendarView() {
       ? 'grid-cols-7 lg:grid-cols-[repeat(7,minmax(0,1fr))_120px]'
       : 'grid-cols-7';
 
-  const isLoading = !userId || loadingWorkouts || loadingSports || loadingSettings;
+  const isLoading =
+    !userId || loadingWorkouts || loadingSports || loadingSettings;
 
   if (isLoading) {
     return (
@@ -288,8 +309,7 @@ export function CalendarView() {
         <header className="z-[70] flex w-full shrink-0 flex-col items-center justify-between gap-3 overflow-hidden px-4 lg:flex-row lg:px-4">
           <div className="flex w-full shrink-0 items-center justify-between gap-2 lg:w-auto lg:gap-4">
             <h2 className="truncate text-lg font-black lowercase tracking-tighter lg:text-3xl">
-              {MONTH_NAMES[displayMonth]}{' '}
-              {displayYear}
+              {MONTH_NAMES[displayMonth]} {displayYear}
             </h2>
             <div className="bg-muted flex shrink-0 items-center gap-1 rounded-xl border p-1.5 shadow-sm lg:gap-1 lg:p-1">
               <Button
@@ -359,9 +379,7 @@ export function CalendarView() {
         </header>
 
         {/* Calendar Grid */}
-        <div
-          className="relative flex flex-col gap-4 lg:flex-row"
-        >
+        <div className="relative flex flex-col gap-4 lg:flex-row">
           <div className="bg-card relative flex flex-1 flex-col rounded-2xl border shadow-sm">
             {/* Day headers */}
             <div
@@ -385,13 +403,16 @@ export function CalendarView() {
             {/* Weeks */}
             <div>
               <div>
-
                 {weeks.map((week, wIdx) => {
                   const { sportTotals, weekTotals } =
                     calculateWeekSummary(week);
                   const weekStart = formatDateToLocalISO(week[0]);
                   return (
-                    <div key={wIdx} className="flex flex-col lg:contents" data-week-start={weekStart}>
+                    <div
+                      key={wIdx}
+                      className="flex flex-col lg:contents"
+                      data-week-start={weekStart}
+                    >
                       {/* Week grid */}
                       <div
                         className={`grid min-h-[120px] border-b lg:min-h-[160px] ${gridColsClass}`}
@@ -400,17 +421,14 @@ export function CalendarView() {
                           const dateStr = formatDateToLocalISO(date);
                           const dayWorkouts = workouts
                             .filter((w) => w.date === dateStr)
-                            .sort(
-                              (a, b) => (a.order ?? 0) - (b.order ?? 0),
-                            );
+                            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
                           const dayEvents = events.filter(
                             (e) => e.date === dateStr,
                           );
                           const isToday =
                             formatDateToLocalISO(new Date()) === dateStr;
                           const isSelected = selectedDate === dateStr;
-                          const isSameMonth =
-                            date.getMonth() === displayMonth;
+                          const isSameMonth = date.getMonth() === displayMonth;
                           const isFirstOfMonth = date.getDate() === 1;
 
                           return (
@@ -418,7 +436,11 @@ export function CalendarView() {
                               key={dIdx}
                               onClick={() => setSelectedDate(dateStr)}
                               onDragOver={(e) =>
-                                handleDragOverCell(e, dateStr, dayWorkouts.length + dayEvents.length)
+                                handleDragOverCell(
+                                  e,
+                                  dateStr,
+                                  dayWorkouts.length + dayEvents.length,
+                                )
                               }
                               onDragLeave={() => setDragOverInfo(null)}
                               onDrop={(e) => handleDrop(e, dateStr)}
@@ -436,8 +458,8 @@ export function CalendarView() {
                                   {dIdx === 0
                                     ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}`
                                     : isFirstOfMonth
-                                    ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} 1`
-                                    : date.getDate()}
+                                      ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} 1`
+                                      : date.getDate()}
                                 </span>
                               </div>
 
@@ -448,22 +470,28 @@ export function CalendarView() {
                                 {/* Events with segments */}
                                 {dayEvents.map((event, eIdx) => {
                                   const itemIndex = eIdx;
-                                  const hasSegments = event.segments && event.segments.length > 0;
-                                  
+                                  const hasSegments =
+                                    event.segments && event.segments.length > 0;
+
                                   return (
                                     <React.Fragment key={event.id}>
-                                      {dragOverInfo?.date === dateStr && isDraggingId && dragOverInfo.index === itemIndex && (
-                                        <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
-                                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                          <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                        </div>
-                                      )}
+                                      {dragOverInfo?.date === dateStr &&
+                                        isDraggingId &&
+                                        dragOverInfo.index === itemIndex && (
+                                          <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
+                                            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                            <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                          </div>
+                                        )}
                                       <div
                                         data-drop-item
                                         draggable="true"
                                         onDragStart={(e) => {
-                                          e.dataTransfer.setData('eventId', event.id);
+                                          e.dataTransfer.setData(
+                                            'eventId',
+                                            event.id,
+                                          );
                                           setIsDraggingId(event.id);
                                         }}
                                         onDragEnd={handleDragEnd}
@@ -485,38 +513,84 @@ export function CalendarView() {
                                         </div>
                                         {hasSegments && (
                                           <div className="flex flex-col gap-1 p-1">
-                                            {event.segments!.map((seg, segIdx) => {
-                                              const sport = sportMap.get(seg.sportTypeId);
-                                              const userSettingsForSport = userSettingsMap.get(seg.sportTypeId);
-                                              const color = getEffortColor(sport, seg.effortLevel, userSettingsForSport);
-                                              const duration = seg.plannedDurationMinutes || 0;
-                                              const distKm = seg.plannedDistanceKilometers || 0;
-                                              const dist = sport?.name === 'Swim' ? distKm * 1000 : distKm;
-                                              const pace = calculatePace(sport?.name || '', duration, dist);
-                                              
-                                              const sportName = seg.sportName || sport?.name || 'Unknown';
-                                              const IconComponent = getSportIcon(sportName);
+                                            {event.segments!.map(
+                                              (seg, segIdx) => {
+                                                const sport = sportMap.get(
+                                                  seg.sportTypeId,
+                                                );
+                                                const userSettingsForSport =
+                                                  userSettingsMap.get(
+                                                    seg.sportTypeId,
+                                                  );
+                                                const color = getEffortColor(
+                                                  sport,
+                                                  seg.effortLevel,
+                                                  userSettingsForSport,
+                                                );
+                                                const duration =
+                                                  seg.plannedDurationMinutes ||
+                                                  0;
+                                                const distKm =
+                                                  seg.plannedDistanceKilometers ||
+                                                  0;
+                                                const dist =
+                                                  sport?.name === 'Swim'
+                                                    ? distKm * 1000
+                                                    : distKm;
+                                                const pace = calculatePace(
+                                                  sport?.name || '',
+                                                  duration,
+                                                  dist,
+                                                );
 
-                                              return (
-                                                <div
-                                                  key={segIdx}
-                                                  className="flex items-center gap-1 rounded p-1"
-                                                  style={{ borderLeftWidth: '2px', borderLeftColor: color }}
-                                                >
-                                                  {IconComponent && (
-                                                    <IconComponent className="h-2.5 w-2.5 shrink-0 text-muted-foreground lg:h-3 lg:w-3" />
-                                                  )}
-                                                  <div className="flex flex-col gap-0.5 text-[6px] leading-none lg:text-[8px]">
-                                                    <span className="font-bold lowercase">{sportName}</span>
-                                                    {duration > 0 && <span className="text-muted-foreground">{formatMinsShort(duration)}</span>}
-                                                    {dist > 0 && sport?.paceRelevant && (
-                                                      <span className="text-muted-foreground">{dist}{sport.distanceUnit || 'km'}</span>
+                                                const sportName =
+                                                  seg.sportName ||
+                                                  sport?.name ||
+                                                  'Unknown';
+                                                const IconComponent =
+                                                  getSportIcon(sportName);
+
+                                                return (
+                                                  <div
+                                                    key={segIdx}
+                                                    className="flex items-center gap-1 rounded p-1"
+                                                    style={{
+                                                      borderLeftWidth: '2px',
+                                                      borderLeftColor: color,
+                                                    }}
+                                                  >
+                                                    {IconComponent && (
+                                                      <IconComponent className="h-2.5 w-2.5 shrink-0 text-muted-foreground lg:h-3 lg:w-3" />
                                                     )}
-                                                    {pace && <span className="text-muted-foreground">{pace}</span>}
+                                                    <div className="flex flex-col gap-0.5 text-[6px] leading-none lg:text-[8px]">
+                                                      <span className="font-bold lowercase">
+                                                        {sportName}
+                                                      </span>
+                                                      {duration > 0 && (
+                                                        <span className="text-muted-foreground">
+                                                          {formatMinsShort(
+                                                            duration,
+                                                          )}
+                                                        </span>
+                                                      )}
+                                                      {dist > 0 &&
+                                                        sport?.paceRelevant && (
+                                                          <span className="text-muted-foreground">
+                                                            {dist}
+                                                            {sport.distanceUnit ||
+                                                              'km'}
+                                                          </span>
+                                                        )}
+                                                      {pace && (
+                                                        <span className="text-muted-foreground">
+                                                          {pace}
+                                                        </span>
+                                                      )}
+                                                    </div>
                                                   </div>
-                                                </div>
-                                              );
-                                            })}
+                                                );
+                                              },
+                                            )}
                                           </div>
                                         )}
                                       </div>
@@ -528,7 +602,11 @@ export function CalendarView() {
                                 {dayWorkouts.map((w, wIdx) => {
                                   const itemIndex = dayEvents.length + wIdx;
                                   const wSt = sportMap.get(w.sportTypeId);
-                                  const bg = getEffortColor(wSt, w.effortLevel || 1, userSettingsMap.get(w.sportTypeId));
+                                  const bg = getEffortColor(
+                                    wSt,
+                                    w.effortLevel || 1,
+                                    userSettingsMap.get(w.sportTypeId),
+                                  );
                                   const dur = w.isCompleted
                                     ? w.actualDurationMinutes || 0
                                     : w.plannedDurationMinutes || 0;
@@ -536,17 +614,26 @@ export function CalendarView() {
                                     ? w.actualDistanceKilometers || 0
                                     : w.plannedDistanceKilometers || 0;
                                   // Convert km to meters for swimming
-                                  const dist = wSt?.name === 'Swim' ? distKm * 1000 : distKm;
-                                  const pace = calculatePace(wSt?.name || '', dur, dist);
+                                  const dist =
+                                    wSt?.name === 'Swim'
+                                      ? distKm * 1000
+                                      : distKm;
+                                  const pace = calculatePace(
+                                    wSt?.name || '',
+                                    dur,
+                                    dist,
+                                  );
                                   return (
                                     <React.Fragment key={w.id}>
-                                      {dragOverInfo?.date === dateStr && isDraggingId && dragOverInfo.index === itemIndex && (
-                                        <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
-                                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                          <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                        </div>
-                                      )}
+                                      {dragOverInfo?.date === dateStr &&
+                                        isDraggingId &&
+                                        dragOverInfo.index === itemIndex && (
+                                          <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
+                                            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                            <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                          </div>
+                                        )}
                                       <div
                                         data-drop-item
                                         draggable="true"
@@ -570,12 +657,20 @@ export function CalendarView() {
                                             <>
                                               <div className="flex items-center gap-1 truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
                                                 {(() => {
-                                                  const sportName = w.sportName || wSt?.name || 'Unknown';
-                                                  const IconComponent = getSportIcon(sportName);
+                                                  const sportName =
+                                                    w.sportName ||
+                                                    wSt?.name ||
+                                                    'Unknown';
+                                                  const IconComponent =
+                                                    getSportIcon(sportName);
                                                   return (
                                                     <>
-                                                      {IconComponent && <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />}
-                                                      <span className="truncate">{sportName}</span>
+                                                      {IconComponent && (
+                                                        <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />
+                                                      )}
+                                                      <span className="truncate">
+                                                        {sportName}
+                                                      </span>
                                                     </>
                                                   );
                                                 })()}
@@ -585,11 +680,13 @@ export function CalendarView() {
                                                 {formatMinsShort(dur)}
                                               </div>
                                               {/* Distance */}
-                                              {dist > 0 && wSt?.paceRelevant && (
-                                                <div className="text-[8px] opacity-70 lg:text-[10px]">
-                                                  {dist}{wSt.distanceUnit || 'km'}
-                                                </div>
-                                              )}
+                                              {dist > 0 &&
+                                                wSt?.paceRelevant && (
+                                                  <div className="text-[8px] opacity-70 lg:text-[10px]">
+                                                    {dist}
+                                                    {wSt.distanceUnit || 'km'}
+                                                  </div>
+                                                )}
                                               {/* Pace */}
                                               {pace && (
                                                 <div className="text-[8px] opacity-70 lg:text-[10px]">
@@ -602,12 +699,20 @@ export function CalendarView() {
                                             <>
                                               <div className="flex items-center gap-1 truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
                                                 {(() => {
-                                                  const sportName = w.sportName || wSt?.name || 'Unknown';
-                                                  const IconComponent = getSportIcon(sportName);
+                                                  const sportName =
+                                                    w.sportName ||
+                                                    wSt?.name ||
+                                                    'Unknown';
+                                                  const IconComponent =
+                                                    getSportIcon(sportName);
                                                   return (
                                                     <>
-                                                      {IconComponent && <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />}
-                                                      <span className="truncate">{sportName}</span>
+                                                      {IconComponent && (
+                                                        <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />
+                                                      )}
+                                                      <span className="truncate">
+                                                        {sportName}
+                                                      </span>
                                                     </>
                                                   );
                                                 })()}
@@ -631,32 +736,36 @@ export function CalendarView() {
                                 })}
 
                                 {/* Drop zone indicator - after last item */}
-                                {dragOverInfo?.date === dateStr && isDraggingId && dragOverInfo.index >= (dayEvents.length + dayWorkouts.length) && (
-                                  <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
-                                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                    <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                  </div>
-                                )}
+                                {dragOverInfo?.date === dateStr &&
+                                  isDraggingId &&
+                                  dragOverInfo.index >=
+                                    dayEvents.length + dayWorkouts.length && (
+                                    <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
+                                      <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                      <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                      <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                    </div>
+                                  )}
                               </div>
 
                               {/* Daily totals in stats mode */}
-                              {viewMode === 'summary' && dayWorkouts.length > 0 && (
-                                <div className="border-muted mt-auto shrink-0 border-t pt-1">
-                                  <div className="text-muted-foreground text-[8px] lg:text-[10px]">
-                                    {formatMinsShort(
-                                      dayWorkouts.reduce(
-                                        (sum, w) =>
-                                          sum +
-                                          (w.isCompleted
-                                            ? w.actualDurationMinutes || 0
-                                            : w.plannedDurationMinutes || 0),
-                                        0,
-                                      ),
-                                    )}
+                              {viewMode === 'summary' &&
+                                dayWorkouts.length > 0 && (
+                                  <div className="border-muted mt-auto shrink-0 border-t pt-1">
+                                    <div className="text-muted-foreground text-[8px] lg:text-[10px]">
+                                      {formatMinsShort(
+                                        dayWorkouts.reduce(
+                                          (sum, w) =>
+                                            sum +
+                                            (w.isCompleted
+                                              ? w.actualDurationMinutes || 0
+                                              : w.plannedDurationMinutes || 0),
+                                          0,
+                                        ),
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
                             </div>
                           );
                         })}
@@ -668,34 +777,44 @@ export function CalendarView() {
                               {formatMinsShort(weekTotals.duration)}
                             </div>
                             <div className="border-primary/10 space-y-2.5 border-t pt-3">
-                              {Object.entries(sportTotals).map(([stId, sTotal]) => {
-                                if (sTotal.duration === 0) return null;
-                                const st = sportMap.get(stId);
-                                const sportColor = getEffortColor(st, 2, userSettingsMap.get(stId));
-                                return (
-                                  <div key={stId} className="flex flex-col">
-                                    <div className="flex items-center gap-1.5">
-                                      <span
-                                        className="h-2 w-2 shrink-0 rounded-full"
-                                        style={{ backgroundColor: sportColor }}
-                                      />
-                                      <span className="text-muted-foreground text-[10px] font-black lowercase">
-                                        {st?.name || 'Unknown'}
-                                      </span>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5 pl-3.5">
-                                      <span className="text-[10px] font-black leading-none">
-                                        {formatMinsShort(sTotal.duration)}
-                                      </span>
-                                      {sTotal.distance > 0 && st?.paceRelevant && (
-                                        <span className="text-muted-foreground text-[9px] leading-none">
-                                          {sTotal.distance.toFixed(1)}{st.distanceUnit || 'km'}
+                              {Object.entries(sportTotals).map(
+                                ([stId, sTotal]) => {
+                                  if (sTotal.duration === 0) return null;
+                                  const st = sportMap.get(stId);
+                                  const sportColor = getEffortColor(
+                                    st,
+                                    2,
+                                    userSettingsMap.get(stId),
+                                  );
+                                  return (
+                                    <div key={stId} className="flex flex-col">
+                                      <div className="flex items-center gap-1.5">
+                                        <span
+                                          className="h-2 w-2 shrink-0 rounded-full"
+                                          style={{
+                                            backgroundColor: sportColor,
+                                          }}
+                                        />
+                                        <span className="text-muted-foreground text-[10px] font-black lowercase">
+                                          {st?.name || 'Unknown'}
                                         </span>
-                                      )}
+                                      </div>
+                                      <div className="flex flex-col gap-0.5 pl-3.5">
+                                        <span className="text-[10px] font-black leading-none">
+                                          {formatMinsShort(sTotal.duration)}
+                                        </span>
+                                        {sTotal.distance > 0 &&
+                                          st?.paceRelevant && (
+                                            <span className="text-muted-foreground text-[9px] leading-none">
+                                              {sTotal.distance.toFixed(1)}
+                                              {st.distanceUnit || 'km'}
+                                            </span>
+                                          )}
+                                      </div>
                                     </div>
-                                  </div>
-                                );
-                              })}
+                                  );
+                                },
+                              )}
                             </div>
                           </div>
                         )}
@@ -710,39 +829,49 @@ export function CalendarView() {
                             </span>
                           </div>
                           <div className="flex gap-4">
-                            {Object.entries(sportTotals).map(([stId, sTotal]) => {
-                              if (sTotal.duration === 0) return null;
-                              const st = sportMap.get(stId);
-                              const sportColor = getEffortColor(st, 2, userSettingsMap.get(stId));
-                              return (
-                                <div key={stId} className="flex flex-col items-start gap-1">
-                                  <div className="flex items-center gap-1.5">
-                                    <span
-                                      className="h-2 w-2 shrink-0 rounded-full"
-                                      style={{ backgroundColor: sportColor }}
-                                    />
-                                    <span className="text-[10px] font-black lowercase">
-                                      {st?.name || 'Unknown'}
+                            {Object.entries(sportTotals).map(
+                              ([stId, sTotal]) => {
+                                if (sTotal.duration === 0) return null;
+                                const st = sportMap.get(stId);
+                                const sportColor = getEffortColor(
+                                  st,
+                                  2,
+                                  userSettingsMap.get(stId),
+                                );
+                                return (
+                                  <div
+                                    key={stId}
+                                    className="flex flex-col items-start gap-1"
+                                  >
+                                    <div className="flex items-center gap-1.5">
+                                      <span
+                                        className="h-2 w-2 shrink-0 rounded-full"
+                                        style={{ backgroundColor: sportColor }}
+                                      />
+                                      <span className="text-[10px] font-black lowercase">
+                                        {st?.name || 'Unknown'}
+                                      </span>
+                                    </div>
+                                    <span className="text-[10px]">
+                                      {formatMinsShort(sTotal.duration)}
                                     </span>
+                                    {sTotal.distance > 0 &&
+                                      st?.paceRelevant && (
+                                        <span className="text-muted-foreground text-[9px]">
+                                          {sTotal.distance.toFixed(1)}
+                                          {st.distanceUnit || 'km'}
+                                        </span>
+                                      )}
                                   </div>
-                                  <span className="text-[10px]">
-                                    {formatMinsShort(sTotal.duration)}
-                                  </span>
-                                  {sTotal.distance > 0 && st?.paceRelevant && (
-                                    <span className="text-muted-foreground text-[9px]">
-                                      {sTotal.distance.toFixed(1)}{st.distanceUnit || 'km'}
-                                    </span>
-                                  )}
-                                </div>
-                              );
-                            })}
+                                );
+                              },
+                            )}
                           </div>
                         </div>
                       )}
                     </div>
                   );
                 })}
-
               </div>
             </div>
           </div>

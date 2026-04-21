@@ -1,17 +1,12 @@
 import { useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
-import { MENU_SIDEBAR } from '@/config/menu.config';
-import { useMenu } from '@/hooks/use-menu';
+import { Outlet } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSettings } from '@/providers/settings-provider';
-import { Sidebar } from './components/sidebar';
 import { BottomNav } from './components/bottom-nav';
+import { Sidebar } from './components/sidebar';
 
 export function Demo1Layout() {
   const isMobile = useIsMobile();
-  const { pathname } = useLocation();
-  const { getCurrentItem } = useMenu(pathname);
-  const item = getCurrentItem(MENU_SIDEBAR);
   const { settings, setOption } = useSettings();
 
   useEffect(() => {
@@ -55,7 +50,10 @@ export function Demo1Layout() {
       {!isMobile && <Sidebar />}
 
       <div className="wrapper flex grow flex-col">
-        <main className={`grow ${isMobile ? 'pb-20 pt-5' : 'pt-5'}`} role="content">
+        <main
+          className={`grow ${isMobile ? 'pb-20 pt-5' : 'pt-5'}`}
+          role="content"
+        >
           <Outlet />
         </main>
       </div>
