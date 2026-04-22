@@ -27,7 +27,7 @@ import {
   getEffortColor,
 } from '@/services/training/effort-colors';
 import { Button } from '@/components/ui/button';
-import { EventDialog } from './components/event-dialog';
+import { EventDialog } from '../_shared/components/event-dialog';
 import { LibraryDrawer } from './components/library-drawer';
 import { WorkoutDialog } from './components/workout-dialog';
 

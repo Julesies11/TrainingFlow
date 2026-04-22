@@ -17,6 +17,7 @@ import {
   buildUserSettingsMap,
   getEffortColor,
 } from '@/services/training/effort-colors';
+import { isPaceRelevant } from '@/services/training/pace-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LibraryTemplateDialog } from './components/library-template-dialog';
@@ -135,7 +136,7 @@ export function LibraryPage() {
             <Button
               onClick={() =>
                 setTemplateToEdit({
-                  sportTypeId: sportTypes[0]?.id || '',
+                  sportTypeId: sportTypes.length > 0 ? sportTypes[0].id : '',
                   effortLevel: 2,
                   plannedDurationMinutes: 60,
                   plannedDistanceKilometers: 0,
@@ -264,12 +265,16 @@ export function LibraryPage() {
                               )}
                               <div className="mt-2 flex items-center gap-2 text-[10px] font-semibold opacity-80">
                                 <span>{formatMinsShort(dur)}</span>
-                                {dist > 0 && st.paceRelevant && (
-                                  <span>
-                                    · {dist}
-                                    {st.distanceUnit || 'km'}
-                                  </span>
-                                )}
+                                {dist > 0 &&
+                                  isPaceRelevant(
+                                    !!st.paceRelevant,
+                                    st.paceUnit,
+                                  ) && (
+                                    <span>
+                                      · {dist}
+                                      {st.distanceUnit || 'km'}
+                                    </span>
+                                  )}
                                 <span className="opacity-60">
                                   · L{template.effortLevel}
                                 </span>

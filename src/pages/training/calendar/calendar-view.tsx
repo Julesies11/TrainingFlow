@@ -32,10 +32,14 @@ import {
   buildUserSettingsMap,
   getEffortColor,
 } from '@/services/training/effort-colors';
-import { calculatePace } from '@/services/training/pace-utils';
+import {
+  calculatePace,
+  isMetersDistance,
+  isPaceRelevant,
+} from '@/services/training/pace-utils';
 import { getSportIcon } from '@/services/training/sport-icons';
 import { Button } from '@/components/ui/button';
-import { EventDialog } from './components/event-dialog';
+import { EventDialog } from '../_shared/components/event-dialog';
 import { LibraryDrawer } from './components/library-drawer';
 import { WorkoutDialog } from './components/workout-dialog';
 
@@ -229,7 +233,8 @@ export function CalendarView() {
           sportTotals[stId].distance += dist;
           weekTotals.duration += dur;
           const st = sportMap.get(stId);
-          if (st?.paceRelevant) weekTotals.distance += dist;
+          if (isPaceRelevant(!!st?.paceRelevant, st?.paceUnit))
+            weekTotals.distance += dist;
         });
 
       // Add event segment totals
@@ -247,7 +252,8 @@ export function CalendarView() {
               sportTotals[stId].distance += dist;
               weekTotals.duration += dur;
               const st = sportMap.get(stId);
-              if (st?.paceRelevant) weekTotals.distance += dist;
+              if (isPaceRelevant(!!st?.paceRelevant, st?.paceUnit))
+                weekTotals.distance += dist;
             });
           }
         });
@@ -377,7 +383,6 @@ export function CalendarView() {
             </div>
           </div>
         </header>
-
         {/* Calendar Grid */}
         <div className="relative flex flex-col gap-4 lg:flex-row">
           <div className="bg-card relative flex flex-1 flex-col rounded-2xl border shadow-sm">
@@ -533,14 +538,17 @@ export function CalendarView() {
                                                 const distKm =
                                                   seg.plannedDistanceKilometers ||
                                                   0;
-                                                const dist =
-                                                  sport?.name === 'Swim'
-                                                    ? distKm * 1000
-                                                    : distKm;
+                                                const dist = isMetersDistance(
+                                                  sport?.distanceUnit,
+                                                  sport?.name,
+                                                )
+                                                  ? distKm * 1000
+                                                  : distKm;
                                                 const pace = calculatePace(
-                                                  sport?.name || '',
+                                                  sport?.paceUnit,
                                                   duration,
                                                   dist,
+                                                  sport?.name,
                                                 );
 
                                                 const sportName =
@@ -574,7 +582,10 @@ export function CalendarView() {
                                                         </span>
                                                       )}
                                                       {dist > 0 &&
-                                                        sport?.paceRelevant && (
+                                                        isPaceRelevant(
+                                                          !!sport?.paceRelevant,
+                                                          sport?.paceUnit,
+                                                        ) && (
                                                           <span className="text-muted-foreground">
                                                             {dist}
                                                             {sport.distanceUnit ||
@@ -613,15 +624,18 @@ export function CalendarView() {
                                   const distKm = w.isCompleted
                                     ? w.actualDistanceKilometers || 0
                                     : w.plannedDistanceKilometers || 0;
-                                  // Convert km to meters for swimming
-                                  const dist =
-                                    wSt?.name === 'Swim'
-                                      ? distKm * 1000
-                                      : distKm;
+                                  // Convert km to meters if needed
+                                  const dist = isMetersDistance(
+                                    wSt?.distanceUnit,
+                                    wSt?.name,
+                                  )
+                                    ? distKm * 1000
+                                    : distKm;
                                   const pace = calculatePace(
-                                    wSt?.name || '',
+                                    wSt?.paceUnit,
                                     dur,
                                     dist,
+                                    wSt?.name,
                                   );
                                   return (
                                     <React.Fragment key={w.id}>
@@ -681,7 +695,10 @@ export function CalendarView() {
                                               </div>
                                               {/* Distance */}
                                               {dist > 0 &&
-                                                wSt?.paceRelevant && (
+                                                isPaceRelevant(
+                                                  !!wSt?.paceRelevant,
+                                                  wSt?.paceUnit,
+                                                ) && (
                                                   <div className="text-[8px] opacity-70 lg:text-[10px]">
                                                     {dist}
                                                     {wSt.distanceUnit || 'km'}
@@ -717,14 +734,20 @@ export function CalendarView() {
                                                   );
                                                 })()}
                                               </div>
-                                              <div className="truncate text-[9px] lg:text-xs">
+                                              <div className="break-words whitespace-normal text-[9px] lg:text-xs">
                                                 {w.title || 'Untitled'}
                                               </div>
                                               <div className="truncate text-[8px] opacity-70 lg:text-[10px]">
                                                 {formatMinsShort(dur)}
-                                                {dist > 0 && wSt?.paceRelevant
-                                                  ? ` · ${dist}${wSt.distanceUnit || 'km'}`
-                                                  : ''}
+                                                {dist > 0 &&
+                                                isPaceRelevant(
+                                                  !!wSt?.paceRelevant,
+                                                  wSt?.paceUnit,
+                                                )
+                                                  ? ` · ${dist}${
+                                                      wSt.distanceUnit || 'km'
+                                                    }`
+                                                  : ''}{' '}
                                                 {pace ? ` · ${pace}` : ''}
                                               </div>
                                             </>
@@ -804,7 +827,10 @@ export function CalendarView() {
                                           {formatMinsShort(sTotal.duration)}
                                         </span>
                                         {sTotal.distance > 0 &&
-                                          st?.paceRelevant && (
+                                          isPaceRelevant(
+                                            !!st?.paceRelevant,
+                                            st?.paceUnit,
+                                          ) && (
                                             <span className="text-muted-foreground text-[9px] leading-none">
                                               {sTotal.distance.toFixed(1)}
                                               {st.distanceUnit || 'km'}
@@ -856,7 +882,10 @@ export function CalendarView() {
                                       {formatMinsShort(sTotal.duration)}
                                     </span>
                                     {sTotal.distance > 0 &&
-                                      st?.paceRelevant && (
+                                      isPaceRelevant(
+                                        !!st?.paceRelevant,
+                                        st?.paceUnit,
+                                      ) && (
                                         <span className="text-muted-foreground text-[9px]">
                                           {sTotal.distance.toFixed(1)}
                                           {st.distanceUnit || 'km'}
@@ -904,7 +933,6 @@ export function CalendarView() {
             onDeleteLibrary={(id) => deleteLibrary.mutate(id)}
           />
         </div>
-
         {/* Workout Dialog */}
         {workoutToEdit && (
           <WorkoutDialog
@@ -918,7 +946,6 @@ export function CalendarView() {
             onCancel={() => setWorkoutToEdit(null)}
           />
         )}
-
         {/* Floating Add Button */}
         <Button
           variant="primary"
@@ -930,15 +957,18 @@ export function CalendarView() {
         >
           <Plus className="h-6 w-6" />
         </Button>
-
         {/* Event Dialog with Segments */}
         {eventWithSegmentsToEdit && (
           <EventDialog
             event={eventWithSegmentsToEdit}
             sportTypes={sportTypes}
             userSettings={userSportSettings}
-            onSave={(e: Event) => {
-              updateEvent.mutate(e);
+            onSave={(e: Partial<Event>) => {
+              if (e.id) {
+                updateEvent.mutate(e as Event);
+              } else {
+                createEvent.mutate(e);
+              }
               setEventWithSegmentsToEdit(null);
             }}
             onDelete={(id: string) => {
@@ -947,7 +977,7 @@ export function CalendarView() {
             }}
             onCancel={() => setEventWithSegmentsToEdit(null)}
           />
-        )}
+        )}{' '}
       </div>
     </div>
   );

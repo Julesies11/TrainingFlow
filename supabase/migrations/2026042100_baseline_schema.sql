@@ -214,3 +214,12 @@ CREATE POLICY "Anyone can view sport types" ON public.pf_sport_types
   FOR SELECT TO authenticated USING (true);
 CREATE POLICY "Creators can manage their own sport types" ON public.pf_sport_types
   FOR ALL USING (created_by = auth.uid()) WITH CHECK (created_by = auth.uid());
+
+-- Default Seed Data
+INSERT INTO public.pf_sport_types (name, description, pace_relevant, pace_unit, distance_unit, effort1_label, effort1_hex, effort2_label, effort2_hex, effort3_label, effort3_hex, effort4_label, effort4_hex)
+VALUES 
+  ('Swim', 'Swimming workouts', true, 'min/100m', 'm', 'Easy', '#DBEAFE', 'Steady', '#93C5FD', 'Hard', '#3B82F6', 'All Out', '#1E40AF'),
+  ('Bike', 'Cycling workouts', true, 'km/h', 'km', 'Easy', '#FEF9C3', 'Steady', '#FDE047', 'Tempo', '#FACC15', 'Hard', '#ff961f'),
+  ('Run', 'Running workouts', true, 'min/km', 'km', 'Recovery', '#FEE2E2', 'Easy', '#FCA5A5', 'Tempo', '#EF4444', 'Interval', '#991B1B'),
+  ('Strength', 'Strength training', false, null, null, 'Mobility', '#DCFCE7', 'Hypertrophy', '#86EFAC', 'Strength', '#22C55E', 'Power', '#166534')
+ON CONFLICT (name) DO NOTHING;

@@ -4,10 +4,16 @@ import {
   SportTypeRecord,
   UserSportSettings,
 } from '@/types/training';
+import { getContrastColor } from '@/services/training/calendar.utils';
 import {
   getEffortColor,
   getEffortLabel,
 } from '@/services/training/effort-colors';
+import {
+  calculatePace,
+  isMetersDistance,
+  isPaceRelevant,
+} from '@/services/training/pace-utils';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -20,6 +26,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -27,216 +40,268 @@ interface LibraryTemplateDialogProps {
   template: Partial<LibraryWorkout>;
   sportTypes: SportTypeRecord[];
   userSettingsMap: Map<string, UserSportSettings>;
-  onSave: (t: Partial<LibraryWorkout>) => void;
+  onSave: (template: Partial<LibraryWorkout>) => void;
   onCancel: () => void;
 }
 
 export function LibraryTemplateDialog({
-  template: initial,
+  template: initialTemplate,
   sportTypes,
   userSettingsMap,
   onSave,
   onCancel,
 }: LibraryTemplateDialogProps) {
-  const isExisting = !!initial.id;
-
-  const [template, setTemplate] = useState<Partial<LibraryWorkout>>(() => ({
-    id: initial.id,
-    sportTypeId: initial.sportTypeId || sportTypes[0]?.id || '',
-    title: initial.title || '',
-    description: initial.description || '',
-    plannedDurationMinutes: initial.plannedDurationMinutes ?? 60,
-    plannedDistanceKilometers: initial.plannedDistanceKilometers ?? 0,
-    effortLevel: initial.effortLevel ?? 2,
-    isKeyWorkout: initial.isKeyWorkout ?? false,
-  }));
+  const [template, setTemplate] = useState<Partial<LibraryWorkout>>({
+    ...initialTemplate,
+  });
 
   const selectedSport = useMemo(() => {
-    return sportTypes.find((st) => st.id === template.sportTypeId);
+    return sportTypes.find((s) => s.id === template.sportTypeId);
   }, [template.sportTypeId, sportTypes]);
 
-  const userSettings = userSettingsMap.get(template.sportTypeId || '');
-  const headerColor = getEffortColor(
-    selectedSport,
-    template.effortLevel || 1,
-    userSettings,
-  );
+  const userSettings = useMemo(() => {
+    return userSettingsMap.get(template.sportTypeId || '');
+  }, [template.sportTypeId, userSettingsMap]);
 
-  const dialogTitle = isExisting ? 'edit template' : 'new template';
+  const calculatedPace = useMemo(() => {
+    const dur = template.plannedDurationMinutes || 0;
+    const distKm = template.plannedDistanceKilometers || 0;
+    // Convert km to meters if needed
+    const dist = isMetersDistance(
+      selectedSport?.distanceUnit,
+      selectedSport?.name,
+    )
+      ? distKm * 1000
+      : distKm;
+    return calculatePace(
+      selectedSport?.paceUnit,
+      dur,
+      dist,
+      selectedSport?.name,
+    );
+  }, [
+    template.plannedDurationMinutes,
+    template.plannedDistanceKilometers,
+    selectedSport,
+  ]);
 
   return (
-    <Dialog open={true} onOpenChange={() => onCancel()}>
-      <DialogContent className="max-h-[90vh] w-full max-w-2xl overflow-hidden p-0">
-        {/* Color bar */}
-        <div
-          className="h-2 shrink-0"
-          style={{ backgroundColor: headerColor }}
-        />
+    <Dialog open={true} onOpenChange={onCancel}>
+      <DialogContent className="max-w-[500px] max-h-[95vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="shrink-0 p-6 pb-0">
+          <DialogTitle className="text-2xl font-black lowercase tracking-tighter">
+            {template.id ? 'edit template' : 'new template'}
+          </DialogTitle>
+          <DialogDescription className="text-xs font-semibold uppercase tracking-widest opacity-60">
+            workout library blueprint
+          </DialogDescription>
+        </DialogHeader>
 
-        <div className="flex flex-col overflow-y-auto p-6">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-black tracking-tight lowercase">
-              {dialogTitle}
-            </DialogTitle>
-            <DialogDescription className="sr-only">
-              [Description]
-            </DialogDescription>
-          </DialogHeader>
+        <DialogBody className="space-y-6 px-6 py-4 overflow-y-auto scrollable-y grow">
+          {/* Title */}
+          <div className="space-y-2">
+            <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
+              template title
+            </Label>
+            <Input
+              value={template.title || ''}
+              onChange={(e) =>
+                setTemplate({ ...template, title: e.target.value })
+              }
+              placeholder="e.g., long intervals, easy recovery"
+              className="text-sm font-bold"
+            />
+          </div>
 
-          <DialogBody>
-            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-              {/* Left column */}
-              <div className="space-y-6">
-                {/* Sport selector */}
-                <div className="bg-muted/50 space-y-4 rounded-2xl border p-5">
-                  <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
-                    sport & effort level
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {sportTypes.map((st) => (
-                      <Button
-                        key={st.id}
-                        type="button"
-                        variant={
-                          template.sportTypeId === st.id ? 'primary' : 'outline'
-                        }
-                        size="sm"
-                        onClick={() =>
-                          setTemplate({ ...template, sportTypeId: st.id })
-                        }
-                        className="text-[9px] font-black lowercase"
-                      >
-                        {st.name}
-                      </Button>
-                    ))}
-                  </div>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Sport Select */}
+            <div className="space-y-2">
+              <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
+                discipline
+              </Label>
+              <Select
+                value={template.sportTypeId}
+                onValueChange={(val) =>
+                  setTemplate({ ...template, sportTypeId: val })
+                }
+              >
+                <SelectTrigger className="text-xs font-bold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {sportTypes.map((st) => (
+                    <SelectItem key={st.id} value={st.id}>
+                      {st.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                  {/* Effort selector */}
-                  <div className="grid grid-cols-4 gap-2">
-                    {[1, 2, 3, 4].map((level) => (
-                      <button
-                        key={level}
-                        type="button"
-                        onClick={() =>
-                          setTemplate({ ...template, effortLevel: level })
-                        }
-                        className={`flex flex-col items-center gap-1 rounded-xl border p-2 transition-all ${
-                          template.effortLevel === level
-                            ? 'ring-primary/20 border-primary shadow-sm ring-2'
-                            : 'hover:shadow-sm opacity-80 hover:opacity-100'
-                        }`}
-                      >
-                        <div
-                          className="h-2 w-full rounded-full"
-                          style={{
-                            backgroundColor: getEffortColor(
-                              selectedSport,
-                              level,
-                              userSettings,
-                            ),
-                          }}
-                        />
-                        <span className="text-[8px] font-black lowercase tracking-tighter">
-                          {getEffortLabel(selectedSport, level, userSettings)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Key workout toggle */}
-                <div className="flex items-center justify-between rounded-xl border p-3">
-                  <span className="text-[10px] font-black uppercase tracking-widest">
-                    key workout
-                  </span>
-                  <Switch
-                    checked={template.isKeyWorkout}
-                    onCheckedChange={(checked) =>
-                      setTemplate({ ...template, isKeyWorkout: checked })
-                    }
-                  />
-                </div>
-              </div>
-
-              {/* Right column */}
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                      duration (m)
-                    </Label>
-                    <Input
-                      type="number"
-                      value={template.plannedDurationMinutes}
-                      onChange={(e) =>
-                        setTemplate({
-                          ...template,
-                          plannedDurationMinutes: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
-                  {selectedSport?.paceRelevant && (
-                    <div>
-                      <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                        distance ({selectedSport.distanceUnit || 'km'})
-                      </Label>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        value={template.plannedDistanceKilometers}
-                        onChange={(e) =>
-                          setTemplate({
-                            ...template,
-                            plannedDistanceKilometers: Number(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
-                    details
-                  </Label>
-                  <Input
-                    type="text"
-                    placeholder="template title..."
-                    value={template.title}
-                    onChange={(e) =>
-                      setTemplate({ ...template, title: e.target.value })
-                    }
-                  />
-                  <Textarea
-                    value={template.description}
-                    onChange={(e) =>
-                      setTemplate({ ...template, description: e.target.value })
-                    }
-                    placeholder="workout structure or notes..."
-                    rows={5}
-                  />
-                </div>
+            {/* Key Workout Toggle */}
+            <div className="flex flex-col justify-center space-y-2 pl-2">
+              <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
+                priority workout
+              </Label>
+              <div className="flex items-center gap-3 pt-1">
+                <Switch
+                  checked={template.isKeyWorkout}
+                  onCheckedChange={(checked) =>
+                    setTemplate({ ...template, isKeyWorkout: checked })
+                  }
+                />
+                <span className="text-[10px] font-bold uppercase opacity-60">
+                  key session
+                </span>
               </div>
             </div>
-          </DialogBody>
+          </div>
 
-          <DialogFooter className="gap-3">
-            <Button
-              variant="outline"
-              onClick={onCancel}
-              className="w-full sm:w-auto"
-            >
-              cancel
-            </Button>
-            <Button
-              onClick={() => onSave(template)}
-              className="w-full sm:flex-1"
-            >
-              {isExisting ? 'save changes' : 'create template'}
-            </Button>
-          </DialogFooter>
-        </div>
+          {/* Effort Level */}
+          <div className="space-y-3">
+            <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
+              effort intensity
+            </Label>
+            <div className="grid grid-cols-4 gap-2">
+              {[1, 2, 3, 4].map((level) => {
+                const color = getEffortColor(
+                  selectedSport,
+                  level,
+                  userSettings,
+                );
+                const label = getEffortLabel(
+                  selectedSport,
+                  level,
+                  userSettings,
+                );
+                const isSelected = template.effortLevel === level;
+                return (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() =>
+                      setTemplate({ ...template, effortLevel: level })
+                    }
+                    className={`flex flex-col items-center gap-1 rounded-xl p-3 transition-all hover:scale-105 active:scale-95 ${
+                      isSelected
+                        ? 'ring-2 ring-primary ring-offset-2'
+                        : 'opacity-60 grayscale-[40%] hover:grayscale-0'
+                    }`}
+                    style={{ backgroundColor: color }}
+                  >
+                    <span
+                      className={`text-xl font-black ${getContrastColor(color)}`}
+                    >
+                      {level}
+                    </span>
+                    <span
+                      className={`text-[8px] font-black uppercase tracking-tighter ${getContrastColor(color)}`}
+                    >
+                      {label}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            {/* Duration */}
+            <div className="space-y-2">
+              <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
+                duration (min)
+              </Label>
+              <Input
+                type="number"
+                value={template.plannedDurationMinutes}
+                onChange={(e) =>
+                  setTemplate({
+                    ...template,
+                    plannedDurationMinutes: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            {/* Distance */}
+            {isPaceRelevant(
+              !!selectedSport?.paceRelevant,
+              selectedSport?.paceUnit,
+            ) && (
+              <div className="space-y-2">
+                <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
+                  distance ({selectedSport?.distanceUnit || 'km'})
+                </Label>
+                <Input
+                  type="number"
+                  step={
+                    isMetersDistance(
+                      selectedSport?.distanceUnit,
+                      selectedSport?.name,
+                    )
+                      ? '1'
+                      : '0.1'
+                  }
+                  value={(() => {
+                    const val = template.plannedDistanceKilometers || 0;
+                    return isMetersDistance(
+                      selectedSport?.distanceUnit,
+                      selectedSport?.name,
+                    )
+                      ? Math.round(val * 1000)
+                      : val;
+                  })()}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const converted = isMetersDistance(
+                      selectedSport?.distanceUnit,
+                      selectedSport?.name,
+                    )
+                      ? val / 1000
+                      : val;
+                    setTemplate({
+                      ...template,
+                      plannedDistanceKilometers: converted,
+                    });
+                  }}
+                />
+              </div>
+            )}
+          </div>
+
+          {calculatedPace && (
+            <div className="bg-primary/5 flex items-center justify-between rounded-xl border p-3">
+              <span className="text-primary text-[9px] font-black uppercase tracking-widest">
+                calculated pace
+              </span>
+              <span className="text-primary text-sm font-black">
+                {calculatedPace}
+              </span>
+            </div>
+          )}
+
+          {/* Description */}
+          <div className="space-y-2">
+            <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
+              blueprint details
+            </Label>
+            <Textarea
+              value={template.description || ''}
+              onChange={(e) =>
+                setTemplate({ ...template, description: e.target.value })
+              }
+              placeholder="describe the main set or focus of this workout..."
+              className="min-h-[100px] text-sm leading-relaxed"
+            />
+          </div>
+        </DialogBody>
+
+        <DialogFooter className="shrink-0 p-6 pt-0">
+          <Button variant="outline" onClick={onCancel}>
+            discard
+          </Button>
+          <Button onClick={() => onSave(template)}>save to library</Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

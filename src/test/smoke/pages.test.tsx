@@ -1,24 +1,31 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, waitFor } from '../test-utils';
-import { DashboardPage } from '@/pages/dashboard';
 import { ProfilePage } from '@/pages/account/profile';
-import { EventsPage } from '@/pages/training/events';
-import { LibraryPage } from '@/pages/training/library';
+import { DashboardPage } from '@/pages/dashboard';
 import {
   CalendarView,
   CalendarViewFC,
   CalendarViewKit,
   CalendarViewMonth,
 } from '@/pages/training/calendar';
+import { EventsPage } from '@/pages/training/events';
+import { LibraryPage } from '@/pages/training/library';
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '../test-utils';
 
 // Mock all training data hooks to return data immediately
+vi.mock('@/hooks/use-supabase-user', () => ({
+  useSupabaseUserId: vi.fn().mockReturnValue('test-user-id'),
+}));
+
 vi.mock('@/hooks/use-training-data', () => ({
   useWorkouts: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useEvents: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useLibrary: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useSportTypes: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useUserSportSettings: vi.fn().mockReturnValue({ data: [], isLoading: false }),
-  useProfile: vi.fn().mockReturnValue({ data: { theme: 'light', effort_settings: {} }, isLoading: false }),
+  useProfile: vi.fn().mockReturnValue({
+    data: { theme: 'light', effort_settings: {} },
+    isLoading: false,
+  }),
   useUpdateProfile: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useUpdateWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useCreateWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
@@ -36,9 +43,12 @@ vi.mock('@/hooks/use-training-data', () => ({
 describe('Smoke Test: Main Pages', () => {
   it('renders Dashboard page without crashing', async () => {
     render(<DashboardPage />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading dashboard/i)).toBeNull();
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/loading dashboard/i)).toBeNull();
+      },
+      { timeout: 5000 },
+    );
     // Look for the lowercase header text
     expect(screen.getByText(/athlete dashboard/i)).toBeDefined();
   });
@@ -66,9 +76,12 @@ describe('Smoke Test: Main Pages', () => {
 
   it('renders CalendarView page without crashing', async () => {
     render(<CalendarView />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading training data/i)).toBeNull();
-    }, { timeout: 5000 });
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/loading training data/i)).toBeNull();
+      },
+      { timeout: 5000 },
+    );
     // Match any instance of 2026
     expect(screen.getAllByText(/2026/)).toBeDefined();
   });

@@ -8,6 +8,10 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 - **Component Library**: Uses **ReUI** (Metronic's React component library) found in `src/components/ui/`.
 - **Layout System**: Supports multiple Metronic layouts (Demo 1-10) located in `src/layouts/`.
 
+## Specialized Logic
+- **Image Processing**: Client-side compression and resizing are handled by `browser-image-compression` in `src/lib/utils/image.ts`. All uploads are orchestrated via `src/lib/api/storage.ts` to ensure consistent optimization.
+- **Data-Driven Sport Logic**: Training math (pace, speed, distance conversion) is based on the `pace_unit` and `distance_unit` defined in the `pf_sport_types` table. Use `src/services/training/pace-utils.ts` for all calculations.
+
 ## Data Fetching & Mutations
 - All external data flows through **Supabase**.
 - Services are located in `src/services/` and should be used within TanStack Query hooks.

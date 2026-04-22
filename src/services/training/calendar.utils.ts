@@ -1,4 +1,5 @@
-import { SportType } from '@/types/training';
+import { SportTypeRecord } from '@/types/training';
+import { isBikeSport, isRunSport, isSwimSport } from './pace-utils';
 
 export function formatDateToLocalISO(date: Date): string {
   const y = date.getFullYear();
@@ -35,24 +36,24 @@ export function getContrastColor(hex: string): string {
 }
 
 export function getWorkoutPace(
-  sport: SportType,
+  sport: SportTypeRecord | undefined,
   durationMinutes: number,
   distanceKm: number,
 ): string {
-  if (distanceKm <= 0 || durationMinutes <= 0) return '';
-  if (sport === 'Swim') {
+  if (!sport || distanceKm <= 0 || durationMinutes <= 0) return '';
+  if (isSwimSport(sport.name, sport.paceUnit)) {
     const per100m = (durationMinutes * 60) / (distanceKm * 10);
     const mins = Math.floor(per100m / 60);
     const secs = Math.round(per100m % 60);
     return `${mins}:${String(secs).padStart(2, '0')}/100m`;
   }
-  if (sport === 'Run') {
+  if (isRunSport(sport.name, sport.paceUnit)) {
     const perKm = durationMinutes / distanceKm;
     const mins = Math.floor(perKm);
     const secs = Math.round((perKm - mins) * 60);
     return `${mins}:${String(secs).padStart(2, '0')}/km`;
   }
-  if (sport === 'Bike') {
+  if (isBikeSport(sport.name, sport.paceUnit)) {
     const speed = distanceKm / (durationMinutes / 60);
     return `${speed.toFixed(1)} km/h`;
   }

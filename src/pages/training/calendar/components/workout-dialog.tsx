@@ -5,7 +5,11 @@ import {
   getEffortColor,
   getEffortLabel,
 } from '@/services/training/effort-colors';
-import { calculatePace } from '@/services/training/pace-utils';
+import {
+  calculatePace,
+  isMetersDistance,
+  isPaceRelevant,
+} from '@/services/training/pace-utils';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -97,9 +101,19 @@ export function WorkoutDialog({
   const calculatedPace = useMemo(() => {
     const dur = workout.plannedDurationMinutes || 0;
     const distKm = workout.plannedDistanceKilometers || 0;
-    // Convert km to meters for swimming
-    const dist = selectedSport?.name === 'Swim' ? distKm * 1000 : distKm;
-    return calculatePace(selectedSport?.name || '', dur, dist);
+    // Convert km to meters if needed
+    const dist = isMetersDistance(
+      selectedSport?.distanceUnit,
+      selectedSport?.name,
+    )
+      ? distKm * 1000
+      : distKm;
+    return calculatePace(
+      selectedSport?.paceUnit,
+      dur,
+      dist,
+      selectedSport?.name,
+    );
   }, [
     workout.plannedDurationMinutes,
     workout.plannedDistanceKilometers,
@@ -173,15 +187,15 @@ export function WorkoutDialog({
 
   return (
     <Dialog open={true} onOpenChange={() => onCancel()}>
-      <DialogContent className="max-h-[90vh] w-full max-w-2xl overflow-hidden bg-background p-0">
+      <DialogContent className="max-h-[95vh] w-full max-w-2xl overflow-hidden bg-background p-0 flex flex-col">
         {/* Color bar */}
         <div
           className="h-2 shrink-0"
           style={{ backgroundColor: headerColor }}
         />
 
-        <div className="flex flex-col overflow-y-auto p-6">
-          <DialogHeader>
+        <div className="flex flex-col grow overflow-hidden">
+          <DialogHeader className="shrink-0 p-6 pb-0">
             <DialogTitle className="text-2xl font-black tracking-tight lowercase">
               {dialogTitle}
             </DialogTitle>
@@ -190,7 +204,7 @@ export function WorkoutDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <DialogBody>
+          <DialogBody className="grow overflow-y-auto scrollable-y p-6 py-4">
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
               {/* Left column */}
               <div className="space-y-6">
@@ -278,29 +292,48 @@ export function WorkoutDialog({
 
                 {/* Sport selector */}
                 <div className="bg-muted/50 space-y-4 rounded-2xl border p-5">
-                  <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
-                    sport & effort level
-                  </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {sportTypes.map((st) => (
-                      <Button
-                        key={st.id}
-                        type="button"
-                        variant={
-                          workout.sportTypeId === st.id ? 'primary' : 'outline'
-                        }
-                        size="sm"
-                        onClick={() =>
-                          setWorkout({ ...workout, sportTypeId: st.id })
-                        }
-                        className="text-[9px] font-black lowercase"
-                      >
-                        {st.name}
-                      </Button>
-                    ))}
+                  <div className="flex items-center justify-between">
+                    <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
+                      sport type
+                    </Label>
+                    {sportTypes.length === 0 && (
+                      <span className="text-[9px] text-red-500 font-bold lowercase">
+                        no sports found
+                      </span>
+                    )}
                   </div>
 
-                  {/* Effort selector */}
+                  <div className="flex flex-wrap gap-2">
+                    {sportTypes.length > 0 ? (
+                      sportTypes.map((st) => (
+                        <Button
+                          key={st.id}
+                          type="button"
+                          variant={
+                            workout.sportTypeId === st.id
+                              ? 'primary'
+                              : 'outline'
+                          }
+                          size="sm"
+                          onClick={() =>
+                            setWorkout({ ...workout, sportTypeId: st.id })
+                          }
+                          className="text-[9px] font-black lowercase"
+                        >
+                          {st.name}
+                        </Button>
+                      ))
+                    ) : (
+                      <div className="text-[10px] py-2 text-muted-foreground italic">
+                        Please define sport types in settings first.
+                      </div>
+                    )}
+                  </div>
+
+                  <Label className="text-muted-foreground mt-4 block text-[10px] font-black uppercase tracking-widest">
+                    effort level
+                  </Label>
+
                   <div className="grid grid-cols-4 gap-2">
                     {[1, 2, 3, 4].map((level) => (
                       <button
@@ -390,21 +423,46 @@ export function WorkoutDialog({
                       }
                     />
                   </div>
-                  {selectedSport?.paceRelevant && (
+                  {isPaceRelevant(
+                    !!selectedSport?.paceRelevant,
+                    selectedSport?.paceUnit,
+                  ) && (
                     <div>
                       <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                        distance ({selectedSport.distanceUnit || 'km'})
+                        distance ({selectedSport?.distanceUnit || 'km'})
                       </Label>
                       <Input
                         type="number"
-                        step="0.1"
-                        value={workout.plannedDistanceKilometers}
-                        onChange={(e) =>
+                        step={
+                          isMetersDistance(
+                            selectedSport?.distanceUnit,
+                            selectedSport?.name,
+                          )
+                            ? '1'
+                            : '0.1'
+                        }
+                        value={(() => {
+                          const val = workout.plannedDistanceKilometers || 0;
+                          return isMetersDistance(
+                            selectedSport?.distanceUnit,
+                            selectedSport?.name,
+                          )
+                            ? Math.round(val * 1000)
+                            : val;
+                        })()}
+                        onChange={(e) => {
+                          const val = Number(e.target.value);
+                          const converted = isMetersDistance(
+                            selectedSport?.distanceUnit,
+                            selectedSport?.name,
+                          )
+                            ? val / 1000
+                            : val;
                           setWorkout({
                             ...workout,
-                            plannedDistanceKilometers: Number(e.target.value),
-                          })
-                        }
+                            plannedDistanceKilometers: converted,
+                          });
+                        }}
                       />
                     </div>
                   )}
@@ -459,7 +517,7 @@ export function WorkoutDialog({
             </div>
           </DialogBody>
 
-          <DialogFooter className="gap-3">
+          <DialogFooter className="shrink-0 p-6 pt-0 gap-3">
             <Button
               variant="outline"
               onClick={onCancel}

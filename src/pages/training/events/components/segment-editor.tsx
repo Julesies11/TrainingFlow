@@ -5,7 +5,10 @@ import {
   getEffortColor,
   getEffortLabel,
 } from '@/services/training/effort-colors';
-import { calculatePace } from '@/services/training/pace-utils';
+import {
+  calculatePace,
+  isMetersDistance,
+} from '@/services/training/pace-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -100,15 +103,15 @@ export function SegmentEditor({
         <div className="space-y-3">
           {segments.map((segment, index) => {
             const sport = sportTypes.find((s) => s.id === segment.sportTypeId);
-            // Convert km to meters for swimming, keep km for other sports
-            const distance =
-              sport?.name === 'Swim'
-                ? (segment.plannedDistanceKilometers || 0) * 1000
-                : segment.plannedDistanceKilometers || 0;
+            // Convert km to meters if needed
+            const distance = isMetersDistance(sport?.distanceUnit, sport?.name)
+              ? (segment.plannedDistanceKilometers || 0) * 1000
+              : segment.plannedDistanceKilometers || 0;
             const pace = calculatePace(
-              sport?.name || '',
+              sport?.paceUnit,
               segment.plannedDurationMinutes || 0,
               distance,
+              sport?.name,
             );
 
             return (
@@ -150,7 +153,7 @@ export function SegmentEditor({
                       }
                     >
                       <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
+                        <SelectValue placeholder="Select sport" />
                       </SelectTrigger>
                       <SelectContent>
                         {sportTypes.map((st) => (
@@ -170,7 +173,7 @@ export function SegmentEditor({
                       </Label>
                       <Input
                         type="number"
-                        value={segment.plannedDurationMinutes || ''}
+                        value={segment.plannedDurationMinutes ?? ''}
                         onChange={(e) =>
                           handleUpdateSegment(index, {
                             plannedDurationMinutes: e.target.value
@@ -184,21 +187,45 @@ export function SegmentEditor({
                     </div>
                     <div>
                       <Label className="text-muted-foreground mb-1 text-[9px] font-black uppercase tracking-widest">
-                        distance (km)
+                        distance ({sport?.distanceUnit || 'km'})
                       </Label>
                       <Input
                         type="number"
-                        value={segment.plannedDistanceKilometers || ''}
-                        onChange={(e) =>
-                          handleUpdateSegment(index, {
-                            plannedDistanceKilometers: e.target.value
-                              ? Number(e.target.value)
-                              : undefined,
-                          })
+                        value={
+                          (() => {
+                            const val = segment.plannedDistanceKilometers ?? 0;
+                            return isMetersDistance(
+                              sport?.distanceUnit,
+                              sport?.name,
+                            )
+                              ? Math.round(val * 1000)
+                              : val;
+                          })() ?? ''
                         }
+                        onChange={(e) => {
+                          const val = e.target.value
+                            ? Number(e.target.value)
+                            : undefined;
+                          const converted =
+                            val !== undefined
+                              ? isMetersDistance(
+                                  sport?.distanceUnit,
+                                  sport?.name,
+                                )
+                                ? val / 1000
+                                : val
+                              : undefined;
+                          handleUpdateSegment(index, {
+                            plannedDistanceKilometers: converted,
+                          });
+                        }}
                         className="h-8 text-xs"
                         min={0}
-                        step={0.1}
+                        step={
+                          isMetersDistance(sport?.distanceUnit, sport?.name)
+                            ? '1'
+                            : '0.1'
+                        }
                       />
                     </div>
                   </div>
@@ -213,12 +240,12 @@ export function SegmentEditor({
                         const levelColor = getEffortColor(
                           sport,
                           level,
-                          userSettings,
+                          userSettingsMap.get(segment.sportTypeId || ''),
                         );
                         const levelLabel = getEffortLabel(
                           sport,
                           level,
-                          userSettings,
+                          userSettingsMap.get(segment.sportTypeId || ''),
                         );
                         const isSelected = segment.effortLevel === level;
 

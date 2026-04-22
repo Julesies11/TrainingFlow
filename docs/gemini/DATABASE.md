@@ -17,6 +17,9 @@ User profiles are stored in the `public.pf_profiles` table, which is linked to S
 ## Authentication
 Authentication is managed via Supabase Auth (`auth.users`).
 
+## Storage Buckets
+- `pf_avatars`: Public bucket for user profile pictures. Images are compressed to 256px JPEG before upload.
+
 ## Data Rules
 - **Row Level Security (RLS)**: RLS is enabled on all tables.
   - `pf_profiles`: Restricted to `id = auth.uid()`.

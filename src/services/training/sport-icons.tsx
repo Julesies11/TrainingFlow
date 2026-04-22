@@ -1,4 +1,5 @@
 import { Bike, Dumbbell, Footprints, LucideIcon, Waves } from 'lucide-react';
+import { isBikeSport, isRunSport, isSwimSport } from './pace-utils';
 
 /**
  * Get the icon component for a sport name
@@ -7,16 +8,11 @@ import { Bike, Dumbbell, Footprints, LucideIcon, Waves } from 'lucide-react';
 export function getSportIcon(sportName: string | undefined): LucideIcon | null {
   if (!sportName) return null;
 
-  const normalized = sportName.toLowerCase().trim();
+  if (isSwimSport(sportName)) return Waves;
+  if (isBikeSport(sportName)) return Bike;
+  if (isRunSport(sportName)) return Footprints;
 
-  if (normalized === 'swim' || normalized === 'swimming') return Waves;
-  if (
-    normalized === 'bike' ||
-    normalized === 'cycling' ||
-    normalized === 'biking'
-  )
-    return Bike;
-  if (normalized === 'run' || normalized === 'running') return Footprints;
+  const normalized = sportName.toLowerCase().trim();
   if (
     normalized === 'strength' ||
     normalized === 'weights' ||

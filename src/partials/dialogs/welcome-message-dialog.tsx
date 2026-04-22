@@ -21,7 +21,9 @@ export function WelcomeMessageDialog({
       <DialogContent className="max-w-[500px]">
         <DialogHeader className="border-0">
           <DialogTitle></DialogTitle>
-          <DialogDescription className="sr-only">[Description]</DialogDescription>
+          <DialogDescription className="sr-only">
+            [Description]
+          </DialogDescription>
         </DialogHeader>
         <DialogBody className="flex flex-col items-center pt-10 pb-10">
           <div className="mb-10">

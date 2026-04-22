@@ -17,12 +17,16 @@ import {
   getEffortColor,
 } from '@/services/training/effort-colors';
 import { formatEventDuration } from '@/services/training/event-duration';
-import { calculatePace } from '@/services/training/pace-utils';
+import {
+  calculatePace,
+  isMetersDistance,
+  isPaceRelevant,
+} from '@/services/training/pace-utils';
 import { getSportIcon } from '@/services/training/sport-icons';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmOverlay } from '../_shared/components/delete-confirm-overlay';
+import { EventDialog } from '../_shared/components/event-dialog';
 import { getPriorityColor, getTypeIcon } from '../_shared/utils/event-helpers';
-import { EventDialog } from './components/event-dialog';
 
 export function EventsPage() {
   const { data: events = [], isLoading } = useEvents();
@@ -198,12 +202,17 @@ export function EventsPage() {
                     );
                     const duration = segment.plannedDurationMinutes || 0;
                     const distKm = segment.plannedDistanceKilometers || 0;
-                    const dist =
-                      sport?.name === 'Swim' ? distKm * 1000 : distKm;
+                    const dist = isMetersDistance(
+                      sport?.distanceUnit,
+                      sport?.name,
+                    )
+                      ? distKm * 1000
+                      : distKm;
                     const pace = calculatePace(
-                      sport?.name || '',
+                      sport?.paceUnit,
                       duration,
                       dist,
+                      sport?.name,
                     );
 
                     const sportName =
@@ -232,12 +241,16 @@ export function EventsPage() {
                                 {formatMinsShort(duration)}
                               </span>
                             )}
-                            {dist > 0 && sport?.paceRelevant && (
-                              <span className="text-xs text-muted-foreground">
-                                {dist}
-                                {sport.distanceUnit || 'km'}
-                              </span>
-                            )}
+                            {dist > 0 &&
+                              isPaceRelevant(
+                                !!sport?.paceRelevant,
+                                sport?.paceUnit,
+                              ) && (
+                                <span className="text-xs text-muted-foreground">
+                                  {dist}
+                                  {sport.distanceUnit || 'km'}
+                                </span>
+                              )}
                             {pace && (
                               <span className="text-xs text-muted-foreground">
                                 {pace}
@@ -349,6 +362,10 @@ export function EventsPage() {
           sportTypes={sportTypes}
           userSettings={userSettings}
           onSave={handleSave}
+          onDelete={(id) => {
+            deleteEvent.mutate(id);
+            setDialogEvent(null);
+          }}
           onCancel={() => {
             setDialogEvent(null);
             setIsCreating(false);

@@ -2,16 +2,15 @@ import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/auth/context/auth-context';
 import { Camera, Lock, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
-import { supabase } from '@/lib/supabase';
-import { useProfile, useUpdateProfile } from '@/hooks/use-training-data';
+import { handleAvatarRemove, handleAvatarUpload } from '@/lib/api/profiles';
+import { useProfile } from '@/hooks/use-training-data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 export function ProfilePage() {
   const { user, resetPassword } = useAuth();
-  const { data: profile, isLoading } = useProfile();
-  const updateProfile = useUpdateProfile();
+  const { data: profile, isLoading, refetch: refetchProfile } = useProfile();
   const { theme, setTheme } = useTheme();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -19,6 +18,7 @@ export function ProfilePage() {
   const [newPassword, setNewPassword] = useState<string>('');
   const [confirmPassword, setConfirmPassword] = useState<string>('');
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
   const [message, setMessage] = useState<{
     type: 'success' | 'error';
     text: string;
@@ -34,107 +34,57 @@ export function ProfilePage() {
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user?.id) return;
+    if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      setMessage({ type: 'error', text: 'Image must be under 2MB.' });
-      return;
-    }
+    setUploadLoading(true);
+    setMessage(null);
 
     try {
-      // Delete old avatar if exists
-      if (avatarUrl) {
-        const urlParts = avatarUrl.split('/');
-        const fileNameWithQuery = urlParts[urlParts.length - 1];
-        const oldFileName = fileNameWithQuery.split('?')[0];
-        if (oldFileName) {
-          await supabase.storage
-            .from('avatars')
-            .remove([`${user.id}/${oldFileName}`]);
-        }
-      }
+      const newAvatarUrl = await handleAvatarUpload(file);
+      setAvatarUrl(newAvatarUrl);
 
-      // Upload new avatar with timestamp to avoid caching issues
-      const timestamp = Date.now();
-      const fileExt = file.name.split('.').pop();
-      const originalName = file.name.replace(`.${fileExt}`, '');
-      const fileName = `${originalName}_${timestamp}.${fileExt}`;
-      const filePath = `${user.id}/${fileName}`;
+      // Invalidate profile query to update UI everywhere
+      await refetchProfile();
 
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file, { upsert: true });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('avatars').getPublicUrl(filePath);
-
-      // Update profile with new URL
-      setAvatarUrl(publicUrl);
-      updateProfile.mutate(
-        { avatar_url: publicUrl },
-        {
-          onSuccess: () => {
-            setMessage({ type: 'success', text: 'Profile picture updated.' });
-            setTimeout(() => setMessage(null), 3000);
-          },
-          onError: () => {
-            setMessage({ type: 'error', text: 'Failed to update profile.' });
-          },
-        },
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+      setMessage({ type: 'success', text: 'Profile picture updated.' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to upload image.';
       setMessage({
         type: 'error',
-        text: error.message || 'Failed to upload image.',
+        text: errorMessage,
       });
+    } finally {
+      setUploadLoading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
   const removeAvatar = async () => {
-    if (!user?.id || !avatarUrl) return;
+    if (!avatarUrl) return;
 
+    setUploadLoading(true);
     try {
-      // Delete from storage
-      const urlParts = avatarUrl.split('/');
-      const fileNameWithQuery = urlParts[urlParts.length - 1];
-      const oldFileName = fileNameWithQuery.split('?')[0];
-      if (oldFileName) {
-        await supabase.storage
-          .from('avatars')
-          .remove([`${user.id}/${oldFileName}`]);
-      }
-
-      // Update profile
+      await handleAvatarRemove();
       setAvatarUrl('');
-      updateProfile.mutate(
-        { avatar_url: '' },
-        {
-          onSuccess: () => {
-            setMessage({ type: 'success', text: 'Profile picture removed.' });
-            setTimeout(() => setMessage(null), 3000);
-          },
-          onError: () => {
-            setMessage({
-              type: 'error',
-              text: 'Failed to remove profile picture.',
-            });
-          },
-        },
-      );
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (error: any) {
+
+      // Invalidate profile query
+      await refetchProfile();
+
+      setMessage({ type: 'success', text: 'Profile picture removed.' });
+      setTimeout(() => setMessage(null), 3000);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : 'Failed to remove image.';
       setMessage({
         type: 'error',
-        text: error.message || 'Failed to remove image.',
+        text: errorMessage,
       });
+    } finally {
+      setUploadLoading(false);
     }
   };
-
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
@@ -222,7 +172,8 @@ export function ProfilePage() {
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/40 rounded-2xl backdrop-blur-sm">
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-3 bg-white text-primary rounded-full shadow-lg active:scale-90 transition-transform"
+                  disabled={uploadLoading}
+                  className="p-3 bg-white text-primary rounded-full shadow-lg active:scale-90 transition-transform disabled:opacity-50"
                 >
                   <Camera className="w-6 h-6" />
                 </button>
@@ -234,6 +185,7 @@ export function ProfilePage() {
                 className="hidden"
                 accept="image/*"
                 onChange={handleAvatarChange}
+                disabled={uploadLoading}
               />
             </div>
 
@@ -251,16 +203,18 @@ export function ProfilePage() {
                 <Button
                   onClick={() => fileInputRef.current?.click()}
                   size="sm"
+                  disabled={uploadLoading}
                   className="text-[10px] font-black uppercase tracking-widest"
                 >
-                  change photo
+                  {uploadLoading ? 'processing...' : 'change photo'}
                 </Button>
                 {avatarUrl && (
                   <Button
                     onClick={removeAvatar}
                     size="sm"
                     variant="outline"
-                    className="text-[10px] font-black uppercase tracking-widest text-red-600 hover:text-red-700"
+                    disabled={uploadLoading}
+                    className="text-[10px] font-black uppercase tracking-widest text-red-600 hover:text-red-700 disabled:text-red-300"
                   >
                     remove
                   </Button>

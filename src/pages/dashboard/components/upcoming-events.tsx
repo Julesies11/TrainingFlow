@@ -4,7 +4,10 @@ import { Link } from 'react-router-dom';
 import { Event, SportTypeRecord } from '@/types/training';
 import { getEffortColor } from '@/services/training/effort-colors';
 import { formatEventDuration } from '@/services/training/event-duration';
-import { calculatePace } from '@/services/training/pace-utils';
+import {
+  calculatePace,
+  isMetersDistance,
+} from '@/services/training/pace-utils';
 import { getSportIcon } from '@/services/training/sport-icons';
 import { Button } from '@/components/ui/button';
 
@@ -134,12 +137,17 @@ export function UpcomingEvents({
                         );
                         const duration = segment.plannedDurationMinutes || 0;
                         const distKm = segment.plannedDistanceKilometers || 0;
-                        const dist =
-                          sport?.name === 'Swim' ? distKm * 1000 : distKm;
+                        const dist = isMetersDistance(
+                          sport?.distanceUnit,
+                          sport?.name,
+                        )
+                          ? distKm * 1000
+                          : distKm;
                         const pace = calculatePace(
-                          sport?.name || '',
+                          sport?.paceUnit,
                           duration,
                           dist,
+                          sport?.name,
                         );
 
                         const sportName =

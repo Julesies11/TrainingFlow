@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { SegmentEditor } from '@/pages/training/events/components/segment-editor';
 import { format } from 'date-fns';
 import { Event, SportTypeRecord, UserSportSettings } from '@/types/training';
 import { buildUserSettingsMap } from '@/services/training/effort-colors';
@@ -22,13 +23,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { SegmentEditor } from './segment-editor';
 
 interface EventDialogProps {
   event?: Event;
   sportTypes: SportTypeRecord[];
   userSettings: UserSportSettings[];
   onSave: (event: Partial<Event>) => void;
+  onDelete?: (id: string) => void;
   onCancel: () => void;
 }
 
@@ -37,6 +38,7 @@ export function EventDialog({
   sportTypes,
   userSettings,
   onSave,
+  onDelete,
   onCancel,
 }: EventDialogProps) {
   const isEdit = !!event?.id;
@@ -56,6 +58,21 @@ export function EventDialog({
     segments: event?.segments || [],
   });
 
+  // Sync formData when event prop changes (e.g. when opening a different event)
+  useEffect(() => {
+    if (event) {
+      setFormData({
+        id: event.id,
+        title: event.title || '',
+        date: event.date || format(new Date(), 'yyyy-MM-dd'),
+        type: event.type || 'Race',
+        priority: event.priority || 'B',
+        description: event.description || '',
+        segments: event.segments || [],
+      });
+    }
+  }, [event]);
+
   const handleSubmit = () => {
     if (!formData.title?.trim()) {
       alert('Title is required');
@@ -65,14 +82,15 @@ export function EventDialog({
       alert('Date is required');
       return;
     }
-    onSave(formData);
+    onSave(formData as Event);
   };
 
   return (
     <Dialog open={true} onOpenChange={() => onCancel()}>
-      <DialogContent className="max-h-[90vh] w-full max-w-3xl overflow-hidden p-0">
-        <div className="flex flex-col overflow-y-auto p-6">
-          <DialogHeader>
+      <DialogContent className="max-h-[95vh] w-full max-w-3xl overflow-hidden p-0 flex flex-col">
+        <div className="h-2 shrink-0 bg-indigo-600" />
+        <div className="flex flex-col grow overflow-hidden">
+          <DialogHeader className="shrink-0 p-6 pb-0">
             <DialogTitle className="text-2xl font-black lowercase tracking-tight">
               {isEdit ? 'edit event' : 'new event'}
             </DialogTitle>
@@ -81,7 +99,7 @@ export function EventDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <DialogBody>
+          <DialogBody className="grow overflow-y-auto scrollable-y p-6 py-4">
             <div className="space-y-6">
               {/* Title */}
               <div>
@@ -125,7 +143,7 @@ export function EventDialog({
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Race">Race</SelectItem>
@@ -146,7 +164,7 @@ export function EventDialog({
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select priority" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="A">A - High Priority</SelectItem>
@@ -203,11 +221,24 @@ export function EventDialog({
             </div>
           </DialogBody>
 
-          <DialogFooter className="gap-3">
-            <Button variant="outline" onClick={onCancel}>
+          <DialogFooter className="shrink-0 p-6 pt-0 gap-3">
+            {isEdit && onDelete && (
+              <Button
+                variant="outline"
+                onClick={() => onDelete(formData.id!)}
+                className="w-full text-red-500 hover:bg-red-500/10 sm:w-auto"
+              >
+                delete
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              onClick={onCancel}
+              className="w-full sm:w-auto"
+            >
               cancel
             </Button>
-            <Button onClick={handleSubmit} className="flex-1">
+            <Button onClick={handleSubmit} className="w-full sm:flex-1">
               {isEdit ? 'save changes' : 'create event'}
             </Button>
           </DialogFooter>

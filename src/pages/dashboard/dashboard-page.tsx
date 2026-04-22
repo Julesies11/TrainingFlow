@@ -7,6 +7,8 @@ import {
   useDeleteWorkout,
   useEvents,
   useSportTypes,
+  useUpdateEvent,
+  useUpdateWorkout,
   useUserSportSettings,
   useWorkouts,
 } from '@/hooks/use-training-data';
@@ -14,8 +16,8 @@ import {
   buildSportMap,
   buildUserSettingsMap,
 } from '@/services/training/effort-colors';
+import { EventDialog } from '../training/_shared/components/event-dialog';
 import { WorkoutDialog } from '../training/calendar/components/workout-dialog';
-import { EventDialog } from '../training/events/components/event-dialog';
 import { SportDistribution } from './components/sport-distribution';
 import { TodaysSession } from './components/todays-session';
 import { UpcomingEvents } from './components/upcoming-events';
@@ -30,6 +32,8 @@ export function DashboardPage() {
   const { data: events = [], isLoading: loadingEvents } = useEvents();
   const { data: sportTypes = [] } = useSportTypes();
   const { data: userSettings = [] } = useUserSportSettings();
+  const updateWorkout = useUpdateWorkout();
+  const updateEvent = useUpdateEvent();
   const deleteWorkout = useDeleteWorkout();
   const deleteEvent = useDeleteEvent();
 
@@ -290,7 +294,10 @@ export function DashboardPage() {
           sportTypes={sportTypes}
           userSettingsMap={settingsMap}
           existingWorkouts={workouts}
-          onSave={() => setWorkoutToEdit(null)}
+          onSave={(w) => {
+            updateWorkout.mutate(w as Workout);
+            setWorkoutToEdit(null);
+          }}
           onSaveBulk={() => setWorkoutToEdit(null)}
           onDelete={() => setWorkoutToEdit(null)}
           onCancel={() => setWorkoutToEdit(null)}
@@ -303,7 +310,18 @@ export function DashboardPage() {
           event={eventToEdit}
           sportTypes={sportTypes}
           userSettings={userSettings}
-          onSave={() => setEventToEdit(null)}
+          onSave={(e: Partial<Event>) => {
+            if (e.id) {
+              updateEvent.mutate(e as Event);
+            } else {
+              createEvent.mutate(e);
+            }
+            setEventToEdit(null);
+          }}
+          onDelete={(id) => {
+            deleteEvent.mutate(id);
+            setEventToEdit(null);
+          }}
           onCancel={() => setEventToEdit(null)}
         />
       )}
