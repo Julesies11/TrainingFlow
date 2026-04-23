@@ -4,10 +4,16 @@ PeakForm is designed as a management platform with the following core modules:
 
 ## 1. Authentication & Identity
 - Supabase-powered login/registration.
-- Role-based access control (stored in user metadata).
-- Profile management (avatar, personal details).
+- Role-based access control (stored in `pf_profiles` table: `admin`, `developer`, `user`).
+- Profile management (avatar, personal details, theme).
 
-## 2. Participant Management
+## 2. Training Management
+- **Interactive Calendar**: Drag-and-drop workout planning.
+- **Session Duplication**: Quickly copy and paste workouts to different dates via the "Duplicate" feature.
+- **Dynamic Lookups**: Manage custom Event Types and Priorities with administrative overrides for global defaults.
+- **Workout Library**: Save and reuse workout templates.
+
+## 3. Participant Management
 - *Status:* Planned/In-Progress.
 - Tracking participant data and individual requirements.
 
