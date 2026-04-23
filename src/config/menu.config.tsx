@@ -1,10 +1,4 @@
-import {
-  BookOpen,
-  Calendar,
-  CalendarCheck,
-  LayoutGrid,
-  Target,
-} from 'lucide-react';
+import { BookOpen, CalendarCheck, LayoutGrid, Target } from 'lucide-react';
 import { type MenuConfig } from './types';
 
 export const MENU_SIDEBAR: MenuConfig = [
@@ -17,21 +11,6 @@ export const MENU_SIDEBAR: MenuConfig = [
     title: 'Calendar',
     icon: CalendarCheck,
     path: '/training/calendar',
-  },
-  {
-    title: 'Calendar (New)',
-    icon: Calendar,
-    path: '/training/calendar-new',
-  },
-  {
-    title: 'Calendar (Kit)',
-    icon: Calendar,
-    path: '/training/calendar-kit',
-  },
-  {
-    title: 'Calendar (Month)',
-    icon: Calendar,
-    path: '/training/calendar-month',
   },
   {
     title: 'Workout Library',

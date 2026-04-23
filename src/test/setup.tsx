@@ -30,12 +30,6 @@ vi.mock('react-apexcharts', () => ({
   default: () => <div data-testid="mock-apexchart" />,
 }));
 
-// Mock FullCalendar (it can be heavy and cause issues in jsdom)
-vi.mock('@fullcalendar/react', () => ({
-  __esModule: true,
-  default: () => <div data-testid="mock-fullcalendar" />,
-}));
-
 // Runs a cleanup after each test case (e.g. clearing jsdom)
 afterEach(() => {
   cleanup();

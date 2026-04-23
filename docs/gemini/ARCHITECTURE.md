@@ -17,6 +17,16 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 - Services are located in `src/services/` and should be used within TanStack Query hooks.
 - **Zod** is used for runtime validation and type inference.
 
+## UI Patterns
+- **Lookup Master Pattern**: Standard values (Event Types, Priorities) are database-backed. Standard users can personalize their experience by managing private custom entries via master dialogs, while administrators can manage global "System" defaults via a dedicated admin interface.
+- **Lazy Profile Creation**: On first login, the `SupabaseAdapter` ensures a relational record exists in `pf_profiles` for the authenticated user, synchronizing essential metadata.
+
+## Security & RBAC
+- **Role-Based Access Control**: Managed via the `role` column in `pf_profiles`. 
+    - `user`: Standard access to personal data.
+    - `admin` / `developer`: Elevated permissions to manage system-wide lookups and settings.
+- **Row Level Security**: Enforced at the database level to isolate user data and protect global system entries.
+
 ## Important Constraints
 - **React 19**: Ensure compatibility with React 19 features (e.g., `use` hook, improved `ref` handling).
 - **Tailwind 4**: Use modern Tailwind 4 utility classes and configuration.

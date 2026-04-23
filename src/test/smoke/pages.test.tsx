@@ -2,12 +2,7 @@ import { ProfilePage } from '@/pages/account/profile';
 import { EventPrioritiesAdminPage } from '@/pages/admin/event-priorities';
 import { EventTypesAdminPage } from '@/pages/admin/event-types';
 import { DashboardPage } from '@/pages/dashboard';
-import {
-  CalendarView,
-  CalendarViewFC,
-  CalendarViewKit,
-  CalendarViewMonth,
-} from '@/pages/training/calendar';
+import { CalendarView } from '@/pages/training/calendar';
 import { EventsPage } from '@/pages/training/events';
 import { LibraryPage } from '@/pages/training/library';
 import { describe, expect, it, vi } from 'vitest';
@@ -107,24 +102,6 @@ describe('Smoke Test: Main Pages', () => {
       { timeout: 5000 },
     );
     // Match any instance of 2026
-    expect(screen.getAllByText(/2026/)).toBeDefined();
-  });
-
-  it('renders CalendarViewFC page without crashing', async () => {
-    render(<CalendarViewFC />);
-    await waitFor(() => {
-      expect(screen.queryByText(/loading training data/i)).toBeNull();
-    });
-    expect(screen.getByText(/Training Calendar/i)).toBeDefined();
-  });
-
-  it('renders CalendarViewKit page without crashing', async () => {
-    render(<CalendarViewKit />);
-    expect(screen.getAllByText(/2026/)).toBeDefined();
-  });
-
-  it('renders CalendarViewMonth page without crashing', async () => {
-    render(<CalendarViewMonth />);
     expect(screen.getAllByText(/2026/)).toBeDefined();
   });
 });
