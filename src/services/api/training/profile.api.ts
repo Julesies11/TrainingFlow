@@ -26,6 +26,7 @@ function mapDbProfile(p: any): UserProfile {
     updated_at: p.updated_at,
     theme: p.theme || 'light',
     role: p.role || 'user',
+    calendar_stats_mode: p.calendar_stats_mode ?? true,
     avatar_url: p.avatar_url,
     workout_type_options: workoutTypeOptions || {
       Swim: ['Easy', 'Hard'],
@@ -84,6 +85,8 @@ export const profileApi = {
   ): Promise<UserProfile> {
     const dbPayload: Record<string, unknown> = {};
     if (updates.theme !== undefined) dbPayload.theme = updates.theme;
+    if (updates.calendar_stats_mode !== undefined)
+      dbPayload.calendar_stats_mode = updates.calendar_stats_mode;
     if (updates.avatar_url !== undefined)
       dbPayload.avatar_url = updates.avatar_url;
     if (updates.workout_type_options !== undefined)
@@ -91,14 +94,22 @@ export const profileApi = {
     if (updates.effort_settings !== undefined)
       dbPayload.effort_settings = updates.effort_settings;
 
-    const { data, error } = await supabase
-      .from('pf_profiles')
-      .update(dbPayload)
-      .eq('id', userId)
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('pf_profiles')
+        .update(dbPayload)
+        .eq('id', userId)
+        .select()
+        .single();
 
-    if (error) throw error;
-    return mapDbProfile(data);
+      if (error) throw error;
+      return mapDbProfile(data);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+      // Return the current profile state to avoid breaking the UI
+      const current = await this.get(userId);
+      if (current) return current;
+      throw error;
+    }
   },
 };

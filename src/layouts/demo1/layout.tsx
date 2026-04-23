@@ -7,17 +7,7 @@ import { Sidebar } from './components/sidebar';
 
 export function Demo1Layout() {
   const isMobile = useIsMobile();
-  const { settings, setOption } = useSettings();
-
-  useEffect(() => {
-    const bodyClass = document.body.classList;
-
-    if (settings.layouts.demo1.sidebarCollapse) {
-      bodyClass.add('sidebar-collapse');
-    } else {
-      bodyClass.remove('sidebar-collapse');
-    }
-  }, [settings]); // Runs only on settings update
+  const { setOption } = useSettings();
 
   useEffect(() => {
     // Set current layout

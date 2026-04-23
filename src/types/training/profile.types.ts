@@ -5,6 +5,7 @@ export interface UserProfile {
   updated_at?: string;
   theme: 'light' | 'dark';
   role: 'admin' | 'user' | 'developer';
+  calendar_stats_mode: boolean;
   avatar_url?: string;
   workout_type_options: WorkoutTypeOptions;
   effort_settings: IntensitySettings;

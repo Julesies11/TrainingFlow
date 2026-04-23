@@ -12,6 +12,9 @@ PeakForm is designed as a management platform with the following core modules:
 - **Session Duplication**: Quickly copy and paste workouts to different dates via the "Duplicate" feature.
 - **Dynamic Lookups**: Manage custom Event Types and Priorities with administrative overrides for global defaults.
 - **Workout Library**: Save and reuse workout templates.
+- **Weekly Stats & Metrics**: Persistent toggle to show/hide detailed weekly summaries and sport-specific totals.
+- **Mobile-Optimized Experience**: Enhanced calendar views for mobile devices with compact stats and intuitive navigation.
+- **Data Casing Preservation**: Ensures all user-entered workout and event titles preserve original capitalization for improved readability and personalization.
 
 ## 3. Participant Management
 - *Status:* Planned/In-Progress.

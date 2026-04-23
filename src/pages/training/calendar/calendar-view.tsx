@@ -1,5 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
-import { format } from 'date-fns';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { BookOpen, ChevronLeft, ChevronRight, Plus, Star } from 'lucide-react';
 import { Event, LibraryWorkout, Workout } from '@/types/training';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';
@@ -12,9 +11,11 @@ import {
   useDeleteWorkout,
   useEvents,
   useLibrary,
+  useProfile,
   useSportTypes,
   useUpdateEvent,
   useUpdateLibraryWorkout,
+  useUpdateProfile,
   useUpdateWorkout,
   useUserSportSettings,
   useWorkouts,
@@ -39,6 +40,7 @@ import {
 } from '@/services/training/pace-utils';
 import { getSportIcon } from '@/services/training/sport-icons';
 import { Button } from '@/components/ui/button';
+import { Switch, SwitchWrapper } from '@/components/ui/switch';
 import { EventDialog } from '../_shared/components/event-dialog';
 import { getEventTypeTheme } from '../_shared/utils/event-theme';
 import { LibraryDrawer } from './components/library-drawer';
@@ -52,7 +54,9 @@ export function CalendarView() {
   const { data: sportTypes = [], isLoading: loadingSports } = useSportTypes();
   const { data: userSportSettings = [], isLoading: loadingSettings } =
     useUserSportSettings();
+  const { data: profile } = useProfile();
 
+  const updateProfile = useUpdateProfile();
   const updateWorkout = useUpdateWorkout();
   const createWorkout = useCreateWorkout();
   const createWorkoutsBulk = useCreateWorkoutsBulk();
@@ -67,13 +71,27 @@ export function CalendarView() {
   const [selectedDate, setSelectedDate] = useState<string>(
     formatDateToLocalISO(new Date()),
   );
-  const [viewMode, setViewMode] = useState<'calendar' | 'summary'>('calendar');
+  const [showStats, setShowStats] = useState<boolean>(true);
+
+  // Sync showStats with profile
+  useEffect(() => {
+    if (profile?.calendar_stats_mode !== undefined) {
+      setShowStats(profile.calendar_stats_mode);
+    }
+  }, [profile?.calendar_stats_mode]);
+
   const [displayMonth, setDisplayMonth] = useState<number>(
     new Date().getMonth(),
   );
   const [displayYear, setDisplayYear] = useState<number>(
     new Date().getFullYear(),
   );
+
+  // Toggle helper
+  const handleToggleStats = (checked: boolean) => {
+    setShowStats(checked);
+    updateProfile.mutate({ calendar_stats_mode: checked });
+  };
 
   // Modal state
   const [workoutToEdit, setWorkoutToEdit] = useState<Partial<Workout> | null>(
@@ -291,10 +309,9 @@ export function CalendarView() {
     setWorkoutToEdit(null);
   };
 
-  const gridColsClass =
-    viewMode === 'summary'
-      ? 'grid-cols-7 lg:grid-cols-[repeat(7,minmax(0,1fr))_120px]'
-      : 'grid-cols-7';
+  const gridColsClass = showStats
+    ? 'grid-cols-7 lg:grid-cols-[repeat(7,minmax(0,1fr))_120px]'
+    : 'grid-cols-7';
 
   const isLoading =
     !userId || loadingWorkouts || loadingSports || loadingSettings;
@@ -310,7 +327,7 @@ export function CalendarView() {
   }
 
   return (
-    <div className="container-fixed">
+    <div className="container-fixed pb-10 lg:pb-8">
       <div className="flex flex-col space-y-4">
         {/* Header */}
         <header className="z-[70] flex w-full shrink-0 flex-col items-center justify-between gap-3 overflow-hidden px-4 lg:flex-row lg:px-4">
@@ -321,11 +338,11 @@ export function CalendarView() {
             <div className="bg-muted flex shrink-0 items-center gap-1 rounded-xl border p-1.5 shadow-sm lg:gap-1 lg:p-1">
               <Button
                 variant="ghost"
-                size="sm"
+                mode="icon"
                 onClick={() => stepMonth('up')}
-                className="h-14 w-14 p-0 lg:h-10 lg:w-10"
+                className="h-14 w-14 lg:h-10 lg:w-10"
               >
-                <ChevronLeft className="h-7 w-7 lg:h-5 lg:w-5" />
+                <ChevronLeft className="size-10 lg:size-7 opacity-100" />
               </Button>
               <Button
                 variant="ghost"
@@ -337,33 +354,26 @@ export function CalendarView() {
               </Button>
               <Button
                 variant="ghost"
-                size="sm"
+                mode="icon"
                 onClick={() => stepMonth('down')}
-                className="h-14 w-14 p-0 lg:h-10 lg:w-10"
+                className="h-14 w-14 lg:h-10 lg:w-10"
               >
-                <ChevronRight className="h-7 w-7 lg:h-5 lg:w-5" />
+                <ChevronRight className="size-10 lg:size-7 opacity-100" />
               </Button>
             </div>
           </div>
 
           <div className="flex w-full justify-between gap-1.5 lg:w-auto lg:justify-end lg:gap-3">
-            <div className="bg-muted flex rounded-xl p-0.5 shadow-sm lg:p-1">
-              <Button
-                variant={viewMode === 'calendar' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('calendar')}
-                className="text-[10px] font-black uppercase"
-              >
-                grid
-              </Button>
-              <Button
-                variant={viewMode === 'summary' ? 'primary' : 'ghost'}
-                size="sm"
-                onClick={() => setViewMode('summary')}
-                className="text-[10px] font-black uppercase"
-              >
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
                 stats
-              </Button>
+              </span>
+              <SwitchWrapper>
+                <Switch
+                  checked={showStats}
+                  onCheckedChange={handleToggleStats}
+                />
+              </SwitchWrapper>
             </div>
 
             <div className="flex items-center gap-1.5 lg:gap-2">
@@ -394,12 +404,12 @@ export function CalendarView() {
               {DAY_HEADERS.map((day) => (
                 <div
                   key={day}
-                  className="text-muted-foreground py-2 text-center text-[8px] font-black uppercase tracking-widest lg:text-[9px]"
+                  className="text-muted-foreground py-2 text-center text-[9px] font-black uppercase tracking-widest lg:text-[10px]"
                 >
                   {day}
                 </div>
               ))}
-              {viewMode === 'summary' && (
+              {showStats && (
                 <div className="text-primary hidden py-2 text-center text-[9px] font-black lowercase tracking-widest lg:block">
                   totals
                 </div>
@@ -407,481 +417,421 @@ export function CalendarView() {
             </div>
 
             {/* Weeks */}
-            <div>
-              <div>
-                {weeks.map((week, wIdx) => {
-                  const { sportTotals, weekTotals } =
-                    calculateWeekSummary(week);
-                  const weekStart = formatDateToLocalISO(week[0]);
-                  return (
+            <div className="flex flex-col gap-2 p-2 lg:block lg:p-0">
+              {weeks.map((week, wIdx) => {
+                const { sportTotals, weekTotals } = calculateWeekSummary(week);
+                const weekStart = formatDateToLocalISO(week[0]);
+                return (
+                  <div
+                    key={wIdx}
+                    className="flex flex-col rounded-xl border bg-card shadow-sm overflow-hidden lg:contents"
+                    data-week-start={weekStart}
+                  >
+                    {/* Week grid */}
                     <div
-                      key={wIdx}
-                      className="flex flex-col lg:contents"
-                      data-week-start={weekStart}
+                      className={`grid min-h-[120px] lg:border-b lg:min-h-[160px] ${gridColsClass}`}
                     >
-                      {/* Week grid */}
-                      <div
-                        className={`grid min-h-[120px] border-b lg:min-h-[160px] ${gridColsClass}`}
-                      >
-                        {week.map((date, dIdx) => {
-                          const dateStr = formatDateToLocalISO(date);
-                          const dayWorkouts = workouts
-                            .filter((w) => w.date === dateStr)
-                            .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-                          const dayEvents = events.filter(
-                            (e) => e.date === dateStr,
-                          );
-                          const isToday =
-                            formatDateToLocalISO(new Date()) === dateStr;
-                          const isSelected = selectedDate === dateStr;
-                          const isSameMonth = date.getMonth() === displayMonth;
-                          const isFirstOfMonth = date.getDate() === 1;
+                      {week.map((date, dIdx) => {
+                        const dateStr = formatDateToLocalISO(date);
+                        const dayWorkouts = workouts
+                          .filter((w) => w.date === dateStr)
+                          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+                        const dayEvents = events.filter(
+                          (e) => e.date === dateStr,
+                        );
+                        const isToday =
+                          formatDateToLocalISO(new Date()) === dateStr;
+                        const isSelected = selectedDate === dateStr;
+                        const isSameMonth = date.getMonth() === displayMonth;
+                        const isFirstOfMonth = date.getDate() === 1;
 
-                          return (
-                            <div
-                              key={dIdx}
-                              onClick={() => setSelectedDate(dateStr)}
-                              onDragOver={(e) =>
-                                handleDragOverCell(
-                                  e,
-                                  dateStr,
-                                  dayWorkouts.length + dayEvents.length,
-                                )
-                              }
-                              onDragLeave={() => setDragOverInfo(null)}
-                              onDrop={(e) => handleDrop(e, dateStr)}
-                              className={`group/cell relative flex flex-col overflow-hidden border-r p-1 transition-all last:border-r-0 lg:p-2
+                        return (
+                          <div
+                            key={dIdx}
+                            onClick={() => setSelectedDate(dateStr)}
+                            onDragOver={(e) =>
+                              handleDragOverCell(
+                                e,
+                                dateStr,
+                                dayWorkouts.length + dayEvents.length,
+                              )
+                            }
+                            onDragLeave={() => setDragOverInfo(null)}
+                            onDrop={(e) => handleDrop(e, dateStr)}
+                            className={`group/cell relative flex flex-col overflow-hidden border-r p-1 transition-all last:border-r-0 lg:p-2
                                 ${!isSameMonth ? 'bg-muted/20' : ''}
                                 ${isSelected ? 'bg-primary/10 dark:bg-primary/30 ring-primary/50 dark:ring-primary/70 z-10 shadow-md ring-2 ring-inset' : ''}
                                 ${dragOverInfo?.date === dateStr && isDraggingId ? 'ring-2 ring-inset ring-primary bg-primary/10 dark:bg-primary/20' : ''}`}
-                            >
-                              <div className="mb-1 flex shrink-0 items-start justify-between">
-                                <span
-                                  className={`flex h-5 items-center justify-center rounded-full px-1.5 text-[9px] font-black transition-all lg:h-6 lg:text-xs
+                          >
+                            <div className="mb-1 flex shrink-0 items-start justify-between">
+                              <span
+                                className={`flex h-5 items-center justify-center rounded-full px-1.5 text-[9px] font-black transition-all lg:h-6 lg:text-xs
                                     ${isToday ? 'bg-primary text-primary-foreground shadow-lg' : isSelected ? 'text-primary font-black' : 'text-muted-foreground'}
                                     ${!isSameMonth ? 'opacity-30' : ''}`}
-                                >
-                                  {dIdx === 0
-                                    ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}`
-                                    : isFirstOfMonth
-                                      ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} 1`
-                                      : date.getDate()}
-                                </span>
-                              </div>
-
-                              <div
-                                className="relative flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pb-6 [scrollbar-width:none]"
-                                data-drop-container
                               >
-                                {/* Events with segments */}
-                                {dayEvents.map((event, eIdx) => {
-                                  const itemIndex = eIdx;
-                                  const hasSegments =
-                                    event.segments && event.segments.length > 0;
+                                {dIdx === 0
+                                  ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}`
+                                  : isFirstOfMonth
+                                    ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} 1`
+                                    : date.getDate()}
+                              </span>
+                            </div>
 
-                                  return (
-                                    <React.Fragment key={event.id}>
-                                      {dragOverInfo?.date === dateStr &&
-                                        isDraggingId &&
-                                        dragOverInfo.index === itemIndex && (
-                                          <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
-                                            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                            <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                          </div>
-                                        )}
-                                      {(() => {
-                                        const theme = getEventTypeTheme(
-                                          event.eventTypeColorTheme,
-                                          event.eventTypeIcon,
-                                        );
-                                        const IconComp = theme.icon;
+                            <div
+                              className="relative flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto pb-6 [scrollbar-width:none]"
+                              data-drop-container
+                            >
+                              {/* Events with segments */}
+                              {dayEvents.map((event, eIdx) => {
+                                const itemIndex = eIdx;
+                                const hasSegments =
+                                  event.segments && event.segments.length > 0;
 
-                                        return (
+                                return (
+                                  <React.Fragment key={event.id}>
+                                    {dragOverInfo?.date === dateStr &&
+                                      isDraggingId &&
+                                      dragOverInfo.index === itemIndex && (
+                                        <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
+                                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                          <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                        </div>
+                                      )}
+                                    {(() => {
+                                      const theme = getEventTypeTheme(
+                                        event.eventTypeColorTheme,
+                                        event.eventTypeIcon,
+                                      );
+                                      const IconComp = theme.icon;
+
+                                      return (
+                                        <div
+                                          data-drop-item
+                                          draggable="true"
+                                          onDragStart={(e) => {
+                                            e.dataTransfer.setData(
+                                              'eventId',
+                                              event.id,
+                                            );
+                                            setIsDraggingId(event.id);
+                                          }}
+                                          onDragEnd={handleDragEnd}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEventWithSegmentsToEdit(event);
+                                          }}
+                                          className={`cursor-grab overflow-hidden rounded-lg border shadow-sm transition-all hover:shadow-md active:cursor-grabbing ${theme.bg} ${theme.border} ${isDraggingId === event.id ? 'opacity-20 grayscale' : ''}`}
+                                        >
                                           <div
-                                            data-drop-item
-                                            draggable="true"
-                                            onDragStart={(e) => {
-                                              e.dataTransfer.setData(
-                                                'eventId',
-                                                event.id,
-                                              );
-                                              setIsDraggingId(event.id);
-                                            }}
-                                            onDragEnd={handleDragEnd}
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setEventWithSegmentsToEdit(event);
-                                            }}
-                                            className={`cursor-grab overflow-hidden rounded-lg border shadow-sm transition-all hover:shadow-md active:cursor-grabbing ${theme.bg} ${theme.border} ${isDraggingId === event.id ? 'opacity-20 grayscale' : ''}`}
+                                            className={`flex items-start gap-1.5 border-b px-2 py-1 ${theme.border}`}
                                           >
+                                            <IconComp
+                                              className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${theme.text}`}
+                                            />
                                             <div
-                                              className={`flex items-center gap-1.5 border-b px-2 py-1 ${theme.border}`}
+                                              className={`flex-1 min-w-0 break-words whitespace-normal text-[10px] lg:text-xs lg:font-bold ${theme.text}`}
                                             >
-                                              <IconComp
-                                                className={`h-3.5 w-3.5 shrink-0 ${theme.text}`}
-                                              />
-                                              <span
-                                                className={`truncate text-[6px] font-black uppercase tracking-tight lg:text-[8px] ${theme.text}`}
-                                              >
-                                                {event.title}
-                                              </span>
+                                              {event.title}
                                             </div>
-                                            {hasSegments && (
-                                              <div className="flex flex-col gap-1 p-1">
-                                                {event.segments!.map(
-                                                  (seg, segIdx) => {
-                                                    const sport = sportMap.get(
+                                          </div>
+                                          {hasSegments && (
+                                            <div className="flex flex-col gap-1 p-1">
+                                              {event.segments!.map(
+                                                (seg, segIdx) => {
+                                                  const sport = sportMap.get(
+                                                    seg.sportTypeId,
+                                                  );
+                                                  const userSettingsForSport =
+                                                    userSettingsMap.get(
                                                       seg.sportTypeId,
                                                     );
-                                                    const userSettingsForSport =
-                                                      userSettingsMap.get(
-                                                        seg.sportTypeId,
-                                                      );
-                                                    const color =
-                                                      getEffortColor(
-                                                        sport,
-                                                        seg.effortLevel,
-                                                        userSettingsForSport,
-                                                      );
-                                                    const duration =
-                                                      seg.plannedDurationMinutes ||
-                                                      0;
-                                                    const distKm =
-                                                      seg.plannedDistanceKilometers ||
-                                                      0;
-                                                    const dist =
-                                                      isMetersDistance(
-                                                        sport?.distanceUnit,
-                                                        sport?.name,
-                                                      )
-                                                        ? distKm * 1000
-                                                        : distKm;
-                                                    const pace = calculatePace(
-                                                      sport?.paceUnit,
-                                                      duration,
-                                                      dist,
-                                                      sport?.name,
-                                                    );
+                                                  const color = getEffortColor(
+                                                    sport,
+                                                    seg.effortLevel,
+                                                    userSettingsForSport,
+                                                  );
+                                                  const duration =
+                                                    seg.plannedDurationMinutes ||
+                                                    0;
+                                                  const distKm =
+                                                    seg.plannedDistanceKilometers ||
+                                                    0;
+                                                  const dist = isMetersDistance(
+                                                    sport?.distanceUnit,
+                                                    sport?.name,
+                                                  )
+                                                    ? distKm * 1000
+                                                    : distKm;
+                                                  const pace = calculatePace(
+                                                    sport?.paceUnit,
+                                                    duration,
+                                                    dist,
+                                                    sport?.name,
+                                                  );
 
-                                                    const sportName =
-                                                      seg.sportName ||
-                                                      sport?.name ||
-                                                      'Unknown';
-                                                    const IconComponent =
-                                                      getSportIcon(sportName);
-
-                                                    return (
-                                                      <div
-                                                        key={segIdx}
-                                                        className="flex items-center gap-1 rounded p-1"
-                                                        style={{
-                                                          borderLeftWidth:
-                                                            '2px',
-                                                          borderLeftColor:
-                                                            color,
-                                                        }}
-                                                      >
-                                                        {IconComponent && (
-                                                          <IconComponent className="h-2.5 w-2.5 shrink-0 text-muted-foreground lg:h-3 lg:w-3" />
-                                                        )}
-                                                        <div className="flex flex-col gap-0.5 text-[6px] leading-none lg:text-[8px]">
-                                                          <span className="font-bold lowercase">
-                                                            {sportName}
-                                                          </span>
-                                                          {duration > 0 && (
-                                                            <span className="text-muted-foreground">
-                                                              {formatMinsShort(
-                                                                duration,
-                                                              )}
-                                                            </span>
-                                                          )}
-                                                          {dist > 0 &&
-                                                            isPaceRelevant(
-                                                              !!sport?.paceRelevant,
-                                                              sport?.paceUnit,
-                                                            ) && (
-                                                              <span className="text-muted-foreground">
-                                                                {dist}
-                                                                {sport.distanceUnit ||
-                                                                  'km'}
-                                                              </span>
-                                                            )}
-                                                          {pace && (
-                                                            <span className="text-muted-foreground">
-                                                              {pace}
-                                                            </span>
-                                                          )}
-                                                        </div>
-                                                      </div>
-                                                    );
-                                                  },
-                                                )}
-                                              </div>
-                                            )}
-                                            <div className="flex justify-end px-1 pb-1">
-                                              <span
-                                                className={`flex h-3 w-3 shrink-0 items-center justify-center rounded-full text-[5px] lg:h-3.5 lg:w-3.5 lg:text-[6px] ${event.eventPriorityName === 'A' ? 'bg-red-500 text-white' : event.eventPriorityName === 'B' ? 'bg-amber-400 text-white' : event.eventPriorityName === 'C' ? 'bg-blue-400 text-white' : 'bg-gray-400 text-white'}`}
-                                              >
-                                                {event.eventPriorityName?.slice(
-                                                  0,
-                                                  1,
-                                                ) || event.priority}
-                                              </span>
-                                            </div>
-                                          </div>
-                                        );
-                                      })()}
-                                    </React.Fragment>
-                                  );
-                                })}
-
-                                {/* Workouts */}
-                                {dayWorkouts.map((w, wIdx) => {
-                                  const itemIndex = dayEvents.length + wIdx;
-                                  const wSt = sportMap.get(w.sportTypeId);
-                                  const bg = getEffortColor(
-                                    wSt,
-                                    w.effortLevel || 1,
-                                    userSettingsMap.get(w.sportTypeId),
-                                  );
-                                  const dur = w.isCompleted
-                                    ? w.actualDurationMinutes || 0
-                                    : w.plannedDurationMinutes || 0;
-                                  const distKm = w.isCompleted
-                                    ? w.actualDistanceKilometers || 0
-                                    : w.plannedDistanceKilometers || 0;
-                                  // Convert km to meters if needed
-                                  const dist = isMetersDistance(
-                                    wSt?.distanceUnit,
-                                    wSt?.name,
-                                  )
-                                    ? distKm * 1000
-                                    : distKm;
-                                  const pace = calculatePace(
-                                    wSt?.paceUnit,
-                                    dur,
-                                    dist,
-                                    wSt?.name,
-                                  );
-                                  return (
-                                    <React.Fragment key={w.id}>
-                                      {dragOverInfo?.date === dateStr &&
-                                        isDraggingId &&
-                                        dragOverInfo.index === itemIndex && (
-                                          <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
-                                            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                            <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                            <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                          </div>
-                                        )}
-                                      <div
-                                        data-drop-item
-                                        draggable="true"
-                                        onDragStart={(e) =>
-                                          handleDragStart(e, w)
-                                        }
-                                        onDragEnd={handleDragEnd}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setWorkoutToEdit(w);
-                                        }}
-                                        className={`relative cursor-grab overflow-hidden rounded-lg p-1 shadow-sm transition-all hover:shadow-md active:scale-95 active:cursor-grabbing lg:p-2 ${getContrastColor(bg)} ${w.isKeyWorkout ? 'border-l-[3px] border-l-white/80 dark:border-l-white/90 shadow-md' : ''} ${isDraggingId === w.id ? 'scale-95 opacity-20' : ''}`}
-                                        style={{ backgroundColor: bg }}
-                                      >
-                                        {w.isKeyWorkout && (
-                                          <Star className="absolute top-0.5 right-0.5 h-2.5 w-2.5 fill-white/90 text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] lg:h-3 lg:w-3" />
-                                        )}
-                                        <div className="pointer-events-none flex flex-col gap-0.5 leading-none">
-                                          {viewMode === 'summary' ? (
-                                            // Stats view: icon + sport type on top, stacked metrics below
-                                            <>
-                                              <div className="flex items-center gap-1 truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
-                                                {(() => {
                                                   const sportName =
-                                                    w.sportName ||
-                                                    wSt?.name ||
+                                                    seg.sportName ||
+                                                    sport?.name ||
                                                     'Unknown';
                                                   const IconComponent =
                                                     getSportIcon(sportName);
+
                                                   return (
-                                                    <>
+                                                    <div
+                                                      key={segIdx}
+                                                      className="flex items-center gap-1 rounded p-1"
+                                                      style={{
+                                                        borderLeftWidth: '2px',
+                                                        borderLeftColor: color,
+                                                      }}
+                                                    >
                                                       {IconComponent && (
-                                                        <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />
+                                                        <IconComponent className="h-3.5 w-3.5 shrink-0 text-muted-foreground lg:h-4 lg:w-4" />
                                                       )}
-                                                      <span className="truncate">
-                                                        {sportName}
-                                                      </span>
-                                                    </>
+                                                      <div className="flex flex-col gap-0.5 text-[10px] leading-none lg:text-xs">
+                                                        <span className="font-bold">
+                                                          {sportName}
+                                                        </span>
+                                                        {duration > 0 && (
+                                                          <span className="text-muted-foreground">
+                                                            {formatMinsShort(
+                                                              duration,
+                                                            )}
+                                                          </span>
+                                                        )}
+                                                        {dist > 0 &&
+                                                          isPaceRelevant(
+                                                            !!sport?.paceRelevant,
+                                                            sport?.paceUnit,
+                                                          ) && (
+                                                            <span className="text-muted-foreground">
+                                                              {dist}
+                                                              {sport.distanceUnit ||
+                                                                'km'}
+                                                            </span>
+                                                          )}
+                                                        {pace && (
+                                                          <span className="text-muted-foreground">
+                                                            {pace}
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                    </div>
                                                   );
-                                                })()}
-                                              </div>
-                                              {/* Duration */}
-                                              <div className="text-[9px] lg:text-xs">
-                                                {formatMinsShort(dur)}
-                                              </div>
-                                              {/* Distance */}
-                                              {dist > 0 &&
-                                                isPaceRelevant(
-                                                  !!wSt?.paceRelevant,
-                                                  wSt?.paceUnit,
-                                                ) && (
-                                                  <div className="text-[8px] opacity-70 lg:text-[10px]">
-                                                    {dist}
-                                                    {wSt.distanceUnit || 'km'}
-                                                  </div>
-                                                )}
-                                              {/* Pace */}
-                                              {pace && (
-                                                <div className="text-[8px] opacity-70 lg:text-[10px]">
-                                                  {pace}
+                                                },
+                                              )}
+                                            </div>
+                                          )}
+                                          <div className="flex justify-end px-1 pb-1">
+                                            <span
+                                              className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[8px] lg:h-5 lg:w-5 lg:text-[10px] ${event.eventPriorityName === 'A' ? 'bg-red-500 text-white' : event.eventPriorityName === 'B' ? 'bg-amber-400 text-white' : event.eventPriorityName === 'C' ? 'bg-blue-400 text-white' : 'bg-gray-400 text-white'}`}
+                                            >
+                                              {event.eventPriorityName?.slice(
+                                                0,
+                                                1,
+                                              ) || event.priority}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      );
+                                    })()}
+                                  </React.Fragment>
+                                );
+                              })}
+
+                              {/* Workouts */}
+                              {dayWorkouts.map((w, wIdx) => {
+                                const itemIndex = dayEvents.length + wIdx;
+                                const wSt = sportMap.get(w.sportTypeId);
+                                const bg = getEffortColor(
+                                  wSt,
+                                  w.effortLevel || 1,
+                                  userSettingsMap.get(w.sportTypeId),
+                                );
+                                const dur = w.isCompleted
+                                  ? w.actualDurationMinutes || 0
+                                  : w.plannedDurationMinutes || 0;
+                                const distKm = w.isCompleted
+                                  ? w.actualDistanceKilometers || 0
+                                  : w.plannedDistanceKilometers || 0;
+                                // Convert km to meters if needed
+                                const dist = isMetersDistance(
+                                  wSt?.distanceUnit,
+                                  wSt?.name,
+                                )
+                                  ? distKm * 1000
+                                  : distKm;
+                                const pace = calculatePace(
+                                  wSt?.paceUnit,
+                                  dur,
+                                  dist,
+                                  wSt?.name,
+                                );
+                                return (
+                                  <React.Fragment key={w.id}>
+                                    {dragOverInfo?.date === dateStr &&
+                                      isDraggingId &&
+                                      dragOverInfo.index === itemIndex && (
+                                        <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
+                                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                          <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                          <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                        </div>
+                                      )}
+                                    <div
+                                      data-drop-item
+                                      draggable="true"
+                                      onDragStart={(e) => handleDragStart(e, w)}
+                                      onDragEnd={handleDragEnd}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setWorkoutToEdit(w);
+                                      }}
+                                      className={`relative cursor-grab overflow-hidden rounded-lg p-1 shadow-sm transition-all hover:shadow-md active:scale-95 active:cursor-grabbing lg:p-2 ${getContrastColor(bg)} ${w.isKeyWorkout ? 'border-l-[3px] border-l-white/80 dark:border-l-white/90 shadow-md' : ''} ${isDraggingId === w.id ? 'scale-95 opacity-20' : ''}`}
+                                      style={{ backgroundColor: bg }}
+                                    >
+                                      {w.isKeyWorkout && (
+                                        <Star className="absolute top-0.5 right-0.5 h-3 w-3 fill-white/90 text-white/90 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] lg:h-4 lg:w-4" />
+                                      )}
+                                      <div className="pointer-events-none flex flex-col gap-0.5 leading-none">
+                                        {showStats ? (
+                                          // Stats view: icon + sport type on top, stacked metrics below
+                                          <>
+                                            <div className="flex items-center gap-1 truncate text-[10px] opacity-70 lg:text-xs">
+                                              {(() => {
+                                                const sportName =
+                                                  w.sportName ||
+                                                  wSt?.name ||
+                                                  'Unknown';
+                                                const IconComponent =
+                                                  getSportIcon(sportName);
+                                                return (
+                                                  <>
+                                                    {IconComponent && (
+                                                      <IconComponent className="h-3 w-3 shrink-0 lg:h-4 lg:w-4" />
+                                                    )}
+                                                    <span className="truncate">
+                                                      {sportName}
+                                                    </span>
+                                                  </>
+                                                );
+                                              })()}
+                                            </div>
+                                            {/* Title */}
+                                            <div className="break-words whitespace-normal text-[10px] lg:text-xs lg:font-bold">
+                                              {w.title || 'Untitled'}
+                                            </div>
+                                            {/* Duration */}
+                                            <div className="text-[10px] lg:text-xs">
+                                              {formatMinsShort(dur)}
+                                            </div>
+                                            {/* Distance */}
+                                            {dist > 0 &&
+                                              isPaceRelevant(
+                                                !!wSt?.paceRelevant,
+                                                wSt?.paceUnit,
+                                              ) && (
+                                                <div className="text-[9px] opacity-70 lg:text-[11px]">
+                                                  {dist}
+                                                  {wSt.distanceUnit || 'km'}
                                                 </div>
                                               )}
-                                            </>
-                                          ) : (
-                                            // Calendar view: icon + sport, title, and inline metrics
-                                            <>
-                                              <div className="flex items-center gap-1 truncate text-[8px] opacity-70 lowercase lg:text-[10px]">
-                                                {(() => {
-                                                  const sportName =
-                                                    w.sportName ||
-                                                    wSt?.name ||
-                                                    'Unknown';
-                                                  const IconComponent =
-                                                    getSportIcon(sportName);
-                                                  return (
-                                                    <>
-                                                      {IconComponent && (
-                                                        <IconComponent className="h-2.5 w-2.5 shrink-0 lg:h-3 lg:w-3" />
-                                                      )}
-                                                      <span className="truncate">
-                                                        {sportName}
-                                                      </span>
-                                                    </>
-                                                  );
-                                                })()}
+                                            {/* Pace */}
+                                            {pace && (
+                                              <div className="text-[9px] opacity-70 lg:text-[11px]">
+                                                {pace}
                                               </div>
-                                              <div className="break-words whitespace-normal text-[9px] lg:text-xs">
-                                                {w.title || 'Untitled'}
-                                              </div>
-                                              <div className="truncate text-[8px] opacity-70 lg:text-[10px]">
-                                                {formatMinsShort(dur)}
-                                                {dist > 0 &&
-                                                isPaceRelevant(
-                                                  !!wSt?.paceRelevant,
-                                                  wSt?.paceUnit,
-                                                )
-                                                  ? ` · ${dist}${
-                                                      wSt.distanceUnit || 'km'
-                                                    }`
-                                                  : ''}{' '}
-                                                {pace ? ` · ${pace}` : ''}
-                                              </div>
-                                            </>
-                                          )}
-                                        </div>
+                                            )}
+                                          </>
+                                        ) : (
+                                          // Calendar view: icon + sport, title, and inline metrics
+                                          <>
+                                            <div className="flex items-center gap-1 truncate text-[10px] opacity-70 lg:text-xs">
+                                              {(() => {
+                                                const sportName =
+                                                  w.sportName ||
+                                                  wSt?.name ||
+                                                  'Unknown';
+                                                const IconComponent =
+                                                  getSportIcon(sportName);
+                                                return (
+                                                  <>
+                                                    {IconComponent && (
+                                                      <IconComponent className="h-3 w-3 shrink-0 lg:h-4 lg:w-4" />
+                                                    )}
+                                                    <span className="truncate">
+                                                      {sportName}
+                                                    </span>
+                                                  </>
+                                                );
+                                              })()}
+                                            </div>
+                                            <div className="break-words whitespace-normal text-[10px] lg:text-xs">
+                                              {w.title || 'Untitled'}
+                                            </div>
+                                            <div className="truncate text-[10px] opacity-70 lg:text-xs">
+                                              {formatMinsShort(dur)}
+                                              {dist > 0 &&
+                                              isPaceRelevant(
+                                                !!wSt?.paceRelevant,
+                                                wSt?.paceUnit,
+                                              )
+                                                ? ` · ${dist}${
+                                                    wSt.distanceUnit || 'km'
+                                                  }`
+                                                : ''}{' '}
+                                              {pace ? ` · ${pace}` : ''}
+                                            </div>
+                                          </>
+                                        )}
                                       </div>
-                                    </React.Fragment>
-                                  );
-                                })}
-
-                                {/* Drop zone indicator - after last item */}
-                                {dragOverInfo?.date === dateStr &&
-                                  isDraggingId &&
-                                  dragOverInfo.index >=
-                                    dayEvents.length + dayWorkouts.length && (
-                                    <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
-                                      <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                      <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                                      <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
                                     </div>
-                                  )}
-                              </div>
+                                  </React.Fragment>
+                                );
+                              })}
 
-                              {/* Daily totals in stats mode */}
-                              {viewMode === 'summary' &&
-                                dayWorkouts.length > 0 && (
-                                  <div className="border-muted mt-auto shrink-0 border-t pt-1">
-                                    <div className="text-muted-foreground text-[8px] lg:text-[10px]">
-                                      {formatMinsShort(
-                                        dayWorkouts.reduce(
-                                          (sum, w) =>
-                                            sum +
-                                            (w.isCompleted
-                                              ? w.actualDurationMinutes || 0
-                                              : w.plannedDurationMinutes || 0),
-                                          0,
-                                        ),
-                                      )}
-                                    </div>
+                              {/* Drop zone indicator - after last item */}
+                              {dragOverInfo?.date === dateStr &&
+                                isDraggingId &&
+                                dragOverInfo.index >=
+                                  dayEvents.length + dayWorkouts.length && (
+                                  <div className="mx-0.5 flex shrink-0 items-center gap-0.5 py-1">
+                                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                    <div className="h-[3px] flex-1 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
+                                    <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
                                   </div>
                                 )}
                             </div>
-                          );
-                        })}
 
-                        {/* Week summary column - desktop only */}
-                        {viewMode === 'summary' && (
-                          <div className="bg-primary/5 hidden flex-col gap-3 border-l p-3 lg:flex">
-                            <div className="text-primary text-xl font-black leading-none">
-                              {formatMinsShort(weekTotals.duration)}
-                            </div>
-                            <div className="border-primary/10 space-y-2.5 border-t pt-3">
-                              {Object.entries(sportTotals).map(
-                                ([stId, sTotal]) => {
-                                  if (sTotal.duration === 0) return null;
-                                  const st = sportMap.get(stId);
-                                  const sportColor = getEffortColor(
-                                    st,
-                                    2,
-                                    userSettingsMap.get(stId),
-                                  );
-                                  return (
-                                    <div key={stId} className="flex flex-col">
-                                      <div className="flex items-center gap-1.5">
-                                        <span
-                                          className="h-2 w-2 shrink-0 rounded-full"
-                                          style={{
-                                            backgroundColor: sportColor,
-                                          }}
-                                        />
-                                        <span className="text-muted-foreground text-[10px] font-black lowercase">
-                                          {st?.name || 'Unknown'}
-                                        </span>
-                                      </div>
-                                      <div className="flex flex-col gap-0.5 pl-3.5">
-                                        <span className="text-[10px] font-black leading-none">
-                                          {formatMinsShort(sTotal.duration)}
-                                        </span>
-                                        {sTotal.distance > 0 &&
-                                          isPaceRelevant(
-                                            !!st?.paceRelevant,
-                                            st?.paceUnit,
-                                          ) && (
-                                            <span className="text-muted-foreground text-[9px] leading-none">
-                                              {sTotal.distance.toFixed(1)}
-                                              {st.distanceUnit || 'km'}
-                                            </span>
-                                          )}
-                                      </div>
-                                    </div>
-                                  );
-                                },
-                              )}
-                            </div>
+                            {/* Daily totals in stats mode */}
+                            {showStats && dayWorkouts.length > 0 && (
+                              <div className="border-muted mt-auto shrink-0 border-t pt-1">
+                                <div className="text-muted-foreground text-[10px] lg:text-xs">
+                                  {formatMinsShort(
+                                    dayWorkouts.reduce(
+                                      (sum, w) =>
+                                        sum +
+                                        (w.isCompleted
+                                          ? w.actualDurationMinutes || 0
+                                          : w.plannedDurationMinutes || 0),
+                                      0,
+                                    ),
+                                  )}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        )}
-                      </div>
+                        );
+                      })}
 
-                      {/* Week summary row - mobile only */}
-                      {viewMode === 'summary' && (
-                        <div className="bg-primary/5 border-b p-3 lg:hidden">
-                          <div className="mb-3">
-                            <span className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
-                              Week of {format(week[0], 'MMM d')}
-                            </span>
+                      {/* Week summary column - desktop only */}
+                      {showStats && (
+                        <div className="bg-primary/5 hidden flex-col gap-3 border-l p-3 lg:flex">
+                          <div className="text-primary text-xl font-black leading-none">
+                            {formatMinsShort(weekTotals.duration)}
                           </div>
-                          <div className="flex gap-4">
+                          <div className="border-primary/10 space-y-2.5 border-t pt-3">
                             {Object.entries(sportTotals).map(
                               ([stId, sTotal]) => {
                                 if (sTotal.duration === 0) return null;
@@ -892,32 +842,33 @@ export function CalendarView() {
                                   userSettingsMap.get(stId),
                                 );
                                 return (
-                                  <div
-                                    key={stId}
-                                    className="flex flex-col items-start gap-1"
-                                  >
+                                  <div key={stId} className="flex flex-col">
                                     <div className="flex items-center gap-1.5">
                                       <span
                                         className="h-2 w-2 shrink-0 rounded-full"
-                                        style={{ backgroundColor: sportColor }}
+                                        style={{
+                                          backgroundColor: sportColor,
+                                        }}
                                       />
-                                      <span className="text-[10px] font-black lowercase">
+                                      <span className="text-muted-foreground text-[10px] font-bold">
                                         {st?.name || 'Unknown'}
                                       </span>
                                     </div>
-                                    <span className="text-[10px]">
-                                      {formatMinsShort(sTotal.duration)}
-                                    </span>
-                                    {sTotal.distance > 0 &&
-                                      isPaceRelevant(
-                                        !!st?.paceRelevant,
-                                        st?.paceUnit,
-                                      ) && (
-                                        <span className="text-muted-foreground text-[9px]">
-                                          {sTotal.distance.toFixed(1)}
-                                          {st.distanceUnit || 'km'}
-                                        </span>
-                                      )}
+                                    <div className="flex flex-col gap-0.5 pl-3.5">
+                                      <span className="text-[10px] font-bold leading-none">
+                                        {formatMinsShort(sTotal.duration)}
+                                      </span>
+                                      {sTotal.distance > 0 &&
+                                        isPaceRelevant(
+                                          !!st?.paceRelevant,
+                                          st?.paceUnit,
+                                        ) && (
+                                          <span className="text-muted-foreground text-[9px] leading-none">
+                                            {sTotal.distance.toFixed(1)}
+                                            {st.distanceUnit || 'km'}
+                                          </span>
+                                        )}
+                                    </div>
                                   </div>
                                 );
                               },
@@ -926,9 +877,72 @@ export function CalendarView() {
                         </div>
                       )}
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Week summary row - mobile only */}
+                    {showStats && (
+                      <div className="bg-primary/5 px-3 py-2 lg:hidden border-t">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-2">
+                            {Object.entries(sportTotals).map(
+                              ([stId, sTotal]) => {
+                                if (sTotal.duration === 0) return null;
+                                const st = sportMap.get(stId);
+                                const sportName = st?.name || 'Unknown';
+                                const IconComponent = getSportIcon(sportName);
+                                const sportColor = getEffortColor(
+                                  st,
+                                  2,
+                                  userSettingsMap.get(stId),
+                                );
+
+                                return (
+                                  <div
+                                    key={stId}
+                                    className="flex items-center gap-1.5"
+                                  >
+                                    <div className="flex items-center gap-1">
+                                      {IconComponent && (
+                                        <IconComponent
+                                          className="h-3 w-3 shrink-0"
+                                          style={{ color: sportColor }}
+                                        />
+                                      )}
+                                      <span className="text-[10px] font-bold opacity-70">
+                                        {sportName}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-baseline gap-1">
+                                      <span className="text-[10px] font-bold leading-none">
+                                        {formatMinsShort(sTotal.duration)}
+                                      </span>
+                                      {sTotal.distance > 0 &&
+                                        isPaceRelevant(
+                                          !!st?.paceRelevant,
+                                          st?.paceUnit,
+                                        ) && (
+                                          <span className="text-muted-foreground text-[9px] font-bold leading-none italic">
+                                            {sTotal.distance.toFixed(1)}
+                                            {st.distanceUnit || 'km'}
+                                          </span>
+                                        )}
+                                    </div>
+                                  </div>
+                                );
+                              },
+                            )}
+                          </div>
+
+                          <div className="shrink-0 border-l border-primary/10 pl-3 pt-0.5">
+                            <span className="text-primary text-xs font-bold">
+                              {formatMinsShort(weekTotals.duration)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

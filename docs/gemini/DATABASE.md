@@ -6,7 +6,7 @@ PeakForm utilizes the default `public` PostgreSQL schema to manage its entities,
 User profiles are stored in the `public.pf_profiles` table, which is linked to Supabase's `auth.users` via a foreign key on the `id` column.
 
 ### Core Tables
-- `pf_profiles`: Stores user preferences (theme, avatar_url, effort_settings, role).
+- `pf_profiles`: Stores user preferences (theme, avatar_url, effort_settings, calendar_stats_mode, role).
 - `pf_sport_types`: Defines available sports and their default effort level configurations.
 - `pf_user_sport_settings`: User-specific overrides for sport effort levels.
 - `pf_workouts`: Individual training sessions planned or completed by the user.
