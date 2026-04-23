@@ -27,6 +27,7 @@ This guide outlines the local development workflow, project-specific scripts, an
 
 - `npm run dev`: Starts the Vite development server.
 - `npm run build`: Type-checks and builds the project for production.
+- `npm run type-check`: Runs TypeScript type checking without emitting files.
 - `npm run lint`: Runs ESLint with auto-fix.
 - `npm run format`: Formats all files with Prettier.
 - `npm run test`: Runs unit tests with Vitest.
