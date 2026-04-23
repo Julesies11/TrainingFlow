@@ -13,7 +13,7 @@ The application uses a set of dedicated tables to manage its core entities.
 
 ### Baseline Migration
 
-The initial database schema is defined in `supabase/migrations/2026042100_baseline_schema.sql`.
+The current database schema is consolidated into a single baseline migration in `supabase/migrations/2026042304_baseline_v2.sql`. This file includes all table definitions, RLS policies, indexes, storage buckets, and initial seed data.
 
 ## Authentication Flow
 
