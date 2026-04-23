@@ -40,18 +40,23 @@ function mapDbSegment(s: any): EventSegment {
 function mapDbEvent(e: {
   id: string;
   date: string;
-  type: string;
+  event_type_id: string;
+  pf_event_types?: { name: string } | null;
+  priority_id: string;
+  pf_event_priorities?: { name: string } | null;
   title: string;
-  priority: string;
   description?: string;
   segments?: DbSegmentWithSportName[];
 }): Event {
   return {
     id: e.id,
     date: e.date,
-    type: e.type as Event['type'],
+    eventTypeId: e.event_type_id,
+    eventTypeName: e.pf_event_types?.name,
+    eventPriorityId: e.priority_id,
+    eventPriorityName: e.pf_event_priorities?.name,
     title: e.title,
-    priority: e.priority as Event['priority'],
+    priority: (e.pf_event_priorities?.name || 'B') as Event['priority'],
     description: e.description,
     segments: e.segments ? e.segments.map(mapDbSegment) : [],
   };
@@ -64,6 +69,8 @@ export const eventsApi = {
       .select(
         `
         *,
+        pf_event_types(name),
+        pf_event_priorities(name),
         segments:pf_event_segments(
           id,
           event_id,
@@ -96,9 +103,9 @@ export const eventsApi = {
       .insert({
         user_id: userId,
         date: event.date,
-        type: event.type,
+        event_type_id: event.eventTypeId,
+        priority_id: event.eventPriorityId,
         title: event.title,
-        priority: event.priority,
         description: event.description,
       })
       .select()
@@ -128,6 +135,8 @@ export const eventsApi = {
       .select(
         `
         *,
+        pf_event_types(name),
+        pf_event_priorities(name),
         segments:pf_event_segments(
           id,
           event_id,
@@ -160,9 +169,9 @@ export const eventsApi = {
       .from('pf_events')
       .update({
         date: event.date,
-        type: event.type,
+        event_type_id: event.eventTypeId,
+        priority_id: event.eventPriorityId,
         title: event.title,
-        priority: event.priority,
         description: event.description,
       })
       .eq('id', event.id)
@@ -228,6 +237,8 @@ export const eventsApi = {
       .select(
         `
         *,
+        pf_event_types(name),
+        pf_event_priorities(name),
         segments:pf_event_segments(
           id,
           event_id,

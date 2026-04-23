@@ -4,3 +4,5 @@ export { eventsApi } from './events.api';
 export { profileApi } from './profile.api';
 export { sportTypesApi } from './sport-types.api';
 export { userSportSettingsApi } from './user-sport-settings.api';
+export { eventTypesApi } from './event-types.api';
+export { eventPrioritiesApi } from './event-priorities.api';

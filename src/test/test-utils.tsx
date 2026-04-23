@@ -106,15 +106,6 @@ const queryClient = new QueryClient({
 });
 
 export function AllTheProviders({ children }: { children: ReactNode }) {
-  const mockUser = {
-    id: 'test-user-id',
-    email: 'test@example.com',
-    user_metadata: {
-      first_name: 'Test',
-      last_name: 'User',
-    },
-  };
-
   return (
     <SettingsProvider>
       <ThemeProvider>

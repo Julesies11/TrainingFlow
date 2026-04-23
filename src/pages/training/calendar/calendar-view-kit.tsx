@@ -489,9 +489,12 @@ export function CalendarViewKit() {
                                     >
                                       <div className="flex items-center gap-1.5 border-b border-indigo-400/20 bg-indigo-600 px-2 py-1">
                                         <span
-                                          className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[5px] lg:h-4 lg:w-4 lg:text-[7px] ${event.priority === 'A' ? 'bg-red-500' : event.priority === 'B' ? 'bg-amber-400' : 'bg-blue-400'}`}
+                                          className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[5px] lg:h-4 lg:w-4 lg:text-[7px] ${event.eventPriorityName === 'A' ? 'bg-red-500' : event.eventPriorityName === 'B' ? 'bg-amber-400' : event.eventPriorityName === 'C' ? 'bg-blue-400' : 'bg-gray-400'}`}
                                         >
-                                          {event.priority}
+                                          {event.eventPriorityName?.slice(
+                                            0,
+                                            1,
+                                          ) || event.priority}
                                         </span>
                                         <span className="truncate text-[6px] font-black uppercase tracking-tight text-white lg:text-[8px]">
                                           {event.title}

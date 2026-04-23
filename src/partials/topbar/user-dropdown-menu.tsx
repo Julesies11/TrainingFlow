@@ -78,12 +78,29 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
         </DropdownMenuItem>
 
         {isDeveloper && (
-          <DropdownMenuItem asChild>
-            <Link to="/admin/sport-types" className="flex items-center gap-2">
-              <ShieldCheck />
-              Sport Types Admin
-            </Link>
-          </DropdownMenuItem>
+          <>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/sport-types" className="flex items-center gap-2">
+                <ShieldCheck />
+                Sport Types Admin
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/admin/event-types" className="flex items-center gap-2">
+                <ShieldCheck />
+                Event Types Admin
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                to="/admin/event-priorities"
+                className="flex items-center gap-2"
+              >
+                <ShieldCheck />
+                Event Priorities Admin
+              </Link>
+            </DropdownMenuItem>
+          </>
         )}
 
         <DropdownMenuSeparator />

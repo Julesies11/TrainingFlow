@@ -1,4 +1,6 @@
 import { ProfilePage } from '@/pages/account/profile';
+import { EventPrioritiesAdminPage } from '@/pages/admin/event-priorities';
+import { EventTypesAdminPage } from '@/pages/admin/event-types';
 import { DashboardPage } from '@/pages/dashboard';
 import {
   CalendarView,
@@ -16,11 +18,17 @@ vi.mock('@/hooks/use-supabase-user', () => ({
   useSupabaseUserId: vi.fn().mockReturnValue('test-user-id'),
 }));
 
+vi.mock('@/hooks/use-is-developer', () => ({
+  useIsDeveloper: vi.fn().mockReturnValue(true),
+}));
+
 vi.mock('@/hooks/use-training-data', () => ({
   useWorkouts: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useEvents: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useLibrary: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useSportTypes: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useEventTypes: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useEventPriorities: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useUserSportSettings: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useProfile: vi.fn().mockReturnValue({
     data: { theme: 'light', effort_settings: {} },
@@ -37,6 +45,12 @@ vi.mock('@/hooks/use-training-data', () => ({
   useUpdateLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useDeleteLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useCreateEvent: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useCreateEventType: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useUpdateEventType: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useDeleteEventType: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useCreateEventPriority: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useUpdateEventPriority: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useDeleteEventPriority: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useUpsertUserSportSettings: vi.fn().mockReturnValue({ mutate: vi.fn() }),
 }));
 
@@ -67,6 +81,16 @@ describe('Smoke Test: Main Pages', () => {
       expect(screen.queryByText(/loading events/i)).toBeNull();
     });
     expect(screen.getByText(/events & goals/i)).toBeDefined();
+  });
+
+  it('renders Event Types Admin page without crashing', async () => {
+    render(<EventTypesAdminPage />);
+    expect(screen.getByText(/event types admin/i)).toBeDefined();
+  });
+
+  it('renders Event Priorities Admin page without crashing', async () => {
+    render(<EventPrioritiesAdminPage />);
+    expect(screen.getByText(/event priorities admin/i)).toBeDefined();
   });
 
   it('renders Library page without crashing', async () => {

@@ -157,13 +157,20 @@ export function EventsPage() {
                   <div className="flex items-center gap-2">
                     <div className="text-muted-foreground">
                       {(() => {
-                        const Icon = getTypeIcon(event.type);
+                        const Icon = getTypeIcon(event.eventTypeName);
                         return <Icon className="h-4 w-4" />;
                       })()}
                     </div>
-                    <h3 className="text-lg font-black tracking-tight">
-                      {event.title}
-                    </h3>
+                    <div className="flex flex-col">
+                      <h3 className="text-lg font-black tracking-tight">
+                        {event.title}
+                      </h3>
+                      {event.eventTypeName && (
+                        <span className="text-[10px] font-bold uppercase text-primary/70">
+                          {event.eventTypeName}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <p className="text-muted-foreground mt-1 text-xs font-semibold">
                     {formatEventDuration(
@@ -174,9 +181,9 @@ export function EventsPage() {
 
                 <div className="flex items-center gap-2">
                   <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${getPriorityColor(event.priority)}`}
+                    className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${getPriorityColor(event.eventPriorityName)}`}
                   >
-                    {event.priority}
+                    {event.eventPriorityName || event.priority}
                   </span>
                 </div>
               </div>

@@ -4,6 +4,7 @@ export interface UserProfile {
   id: string;
   updated_at?: string;
   theme: 'light' | 'dark';
+  role: 'admin' | 'user' | 'developer';
   avatar_url?: string;
   workout_type_options: WorkoutTypeOptions;
   effort_settings: IntensitySettings;

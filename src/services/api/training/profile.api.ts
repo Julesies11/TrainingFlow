@@ -25,6 +25,7 @@ function mapDbProfile(p: any): UserProfile {
     id: p.id,
     updated_at: p.updated_at,
     theme: p.theme || 'light',
+    role: p.role || 'user',
     avatar_url: p.avatar_url,
     workout_type_options: workoutTypeOptions || {
       Swim: ['Easy', 'Hard'],

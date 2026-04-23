@@ -67,6 +67,7 @@ export function WorkoutDialog({
 
   const [isRecurring, setIsRecurring] = useState(!!initialWorkout.recurrenceId);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDuplicated, setIsDuplicated] = useState(false);
   const [showExtendSeries, setShowExtendSeries] = useState(false);
   const [extendWeeks, setExtendWeeks] = useState(4);
   const [recurrenceConfig, setRecurrenceConfig] = useState<{
@@ -82,7 +83,7 @@ export function WorkoutDialog({
 
   // Get recurring series info
   const seriesInfo = useMemo(() => {
-    if (!workout.recurrenceId) return null;
+    if (!workout.recurrenceId || isDuplicated) return null;
 
     const seriesWorkouts = existingWorkouts
       .filter((w) => w.recurrenceId === workout.recurrenceId)
@@ -96,7 +97,7 @@ export function WorkoutDialog({
       endDate: seriesWorkouts[seriesWorkouts.length - 1].date,
       currentIndex: seriesWorkouts.findIndex((w) => w.id === workout.id) + 1,
     };
-  }, [workout.recurrenceId, workout.id, existingWorkouts]);
+  }, [workout.recurrenceId, workout.id, existingWorkouts, isDuplicated]);
 
   const calculatedPace = useMemo(() => {
     const dur = workout.plannedDurationMinutes || 0;
@@ -125,6 +126,19 @@ export function WorkoutDialog({
     workout.effortLevel || 1,
     userSettings,
   );
+
+  const handleDuplicate = () => {
+    setWorkout({
+      ...workout,
+      id: undefined,
+      recurrenceId: undefined,
+      recurrenceRule: undefined,
+      isCompleted: false,
+      order: Date.now(),
+    });
+    setIsRecurring(false);
+    setIsDuplicated(true);
+  };
 
   const handleExtendSeries = () => {
     if (!workout.recurrenceId || !seriesInfo) return;
@@ -183,7 +197,11 @@ export function WorkoutDialog({
     }
   };
 
-  const dialogTitle = isExisting ? 'edit session' : 'new session';
+  const dialogTitle = isDuplicated
+    ? 'duplicate session'
+    : isExisting
+      ? 'edit session'
+      : 'new session';
 
   return (
     <Dialog open={true} onOpenChange={() => onCancel()}>
@@ -205,6 +223,15 @@ export function WorkoutDialog({
           </DialogHeader>
 
           <DialogBody className="grow overflow-y-auto scrollable-y p-6 py-4">
+            {isDuplicated && (
+              <div className="mb-6 rounded-xl border border-primary/30 bg-primary/10 p-4 text-center">
+                <p className="text-primary text-xs font-bold lowercase">
+                  this is a duplicated session. please select a new date and
+                  save.
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
               {/* Left column */}
               <div className="space-y-6">
@@ -216,6 +243,11 @@ export function WorkoutDialog({
                   <Input
                     type="date"
                     value={workout.date}
+                    className={
+                      isDuplicated
+                        ? 'border-primary ring-primary/20 ring-2'
+                        : ''
+                    }
                     onChange={(e) =>
                       setWorkout({ ...workout, date: e.target.value })
                     }
@@ -526,7 +558,17 @@ export function WorkoutDialog({
               cancel
             </Button>
 
-            {isExisting && onDelete && (
+            {isExisting && !isDuplicated && (
+              <Button
+                variant="outline"
+                onClick={handleDuplicate}
+                className="w-full sm:w-auto"
+              >
+                duplicate
+              </Button>
+            )}
+
+            {isExisting && !isDuplicated && onDelete && (
               <div className="relative w-full sm:w-auto">
                 <Button
                   variant="destructive"

@@ -111,7 +111,7 @@ export function CalendarViewFC() {
     events.forEach((e) => {
       eventsList.push({
         id: `event-${e.id}`,
-        title: e.title || 'Untitled Event',
+        title: `[${e.eventPriorityName || e.priority}] ${e.title || 'Untitled Event'}`,
         date: e.date,
         backgroundColor: '#8b5cf6',
         borderColor: '#8b5cf6',

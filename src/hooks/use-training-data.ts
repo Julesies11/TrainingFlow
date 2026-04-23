@@ -1,13 +1,17 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Event,
+  EventPriorityRecord,
+  EventTypeRecord,
   LibraryWorkout,
   SportTypeRecord,
   UserProfile,
   Workout,
 } from '@/types/training';
 import {
+  eventPrioritiesApi,
   eventsApi,
+  eventTypesApi,
   libraryApi,
   profileApi,
   sportTypesApi,
@@ -24,6 +28,8 @@ const KEYS = {
   profile: (uid: string) => ['profile', uid] as const,
   sportTypes: ['sportTypes'] as const,
   userSportSettings: (uid: string) => ['userSportSettings', uid] as const,
+  eventTypes: ['eventTypes'] as const,
+  eventPriorities: ['eventPriorities'] as const,
 };
 
 // ─── Profile ─────────────────────────────────────────────────
@@ -58,6 +64,92 @@ export function useSportTypes() {
     queryFn: () => sportTypesApi.getAll(),
     enabled: !!userId,
     staleTime: 10 * 60 * 1000,
+  });
+}
+
+// ─── Event Types (lookup master) ─────────────────────────────
+export function useEventTypes() {
+  const userId = useSupabaseUserId();
+  return useQuery({
+    queryKey: KEYS.eventTypes,
+    queryFn: () => eventTypesApi.getAll(),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateEventType() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (et: Partial<EventTypeRecord>) =>
+      eventTypesApi.create(et, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.eventTypes });
+    },
+  });
+}
+
+export function useUpdateEventType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (et: EventTypeRecord) => eventTypesApi.update(et),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.eventTypes });
+    },
+  });
+}
+
+export function useDeleteEventType() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) => eventTypesApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.eventTypes });
+    },
+  });
+}
+
+// ─── Event Priorities (lookup master) ────────────────────────
+export function useEventPriorities() {
+  const userId = useSupabaseUserId();
+  return useQuery({
+    queryKey: KEYS.eventPriorities,
+    queryFn: () => eventPrioritiesApi.getAll(),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateEventPriority() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ep: Partial<EventPriorityRecord>) =>
+      eventPrioritiesApi.create(ep, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.eventPriorities });
+    },
+  });
+}
+
+export function useUpdateEventPriority() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (ep: EventPriorityRecord) => eventPrioritiesApi.update(ep),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.eventPriorities });
+    },
+  });
+}
+
+export function useDeleteEventPriority() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id }: { id: string }) => eventPrioritiesApi.remove(id),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.eventPriorities });
+    },
   });
 }
 

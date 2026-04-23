@@ -1,4 +1,5 @@
 import { AuthModel, UserModel } from '@/auth/lib/models';
+import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
 /**
@@ -12,7 +13,7 @@ export const SupabaseAdapter = {
    * Private-ish helper to ensure a record exists in pf_profiles.
    * Performs an upsert to bridge users from shared auth.users.
    */
-  async _ensureProfileExists(user: any): Promise<void> {
+  async _ensureProfileExists(user: User): Promise<void> {
     const metadata = user.user_metadata || {};
 
     const { error } = await supabase.from('pf_profiles').upsert(

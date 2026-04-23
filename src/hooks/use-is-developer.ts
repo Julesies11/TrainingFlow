@@ -1,22 +1,39 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
-const DEVELOPER_EMAILS = ['julian_@hotmail.com'];
-
 export function useIsDeveloper(): boolean {
   const [isDeveloper, setIsDeveloper] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      const email = data.user?.email?.toLowerCase();
-      setIsDeveloper(email ? DEVELOPER_EMAILS.includes(email) : false);
-    });
+    async function checkRole() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setIsDeveloper(false);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('pf_profiles')
+        .select('role')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      const role = profile?.role;
+      setIsDeveloper(role === 'admin' || role === 'developer');
+    }
+
+    checkRole();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      const email = session?.user?.email?.toLowerCase();
-      setIsDeveloper(email ? DEVELOPER_EMAILS.includes(email) : false);
+      if (session?.user) {
+        checkRole();
+      } else {
+        setIsDeveloper(false);
+      }
     });
 
     return () => subscription.unsubscribe();

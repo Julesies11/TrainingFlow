@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { SegmentEditor } from '@/pages/training/events/components/segment-editor';
 import { format } from 'date-fns';
 import { Event, SportTypeRecord, UserSportSettings } from '@/types/training';
+import { useEventPriorities, useEventTypes } from '@/hooks/use-training-data';
 import { buildUserSettingsMap } from '@/services/training/effort-colors';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,10 +20,13 @@ import {
   Select,
   SelectContent,
   SelectItem,
+  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { EventPriorityMasterDialog } from './event-priority-master-dialog';
+import { EventTypeMasterDialog } from './event-type-master-dialog';
 
 interface EventDialogProps {
   event?: Event;
@@ -42,6 +46,11 @@ export function EventDialog({
   onCancel,
 }: EventDialogProps) {
   const isEdit = !!event?.id;
+  const { data: eventTypes = [] } = useEventTypes();
+  const { data: eventPriorities = [] } = useEventPriorities();
+  const [showMasterDialog, setShowMasterDialog] = useState(false);
+  const [showPriorityMasterDialog, setShowPriorityMasterDialog] =
+    useState(false);
 
   const userSettingsMap = useMemo(
     () => buildUserSettingsMap(userSettings),
@@ -52,8 +61,8 @@ export function EventDialog({
     id: event?.id,
     title: event?.title || '',
     date: event?.date || format(new Date(), 'yyyy-MM-dd'),
-    type: event?.type || 'Race',
-    priority: event?.priority || 'B',
+    eventTypeId: event?.eventTypeId || '',
+    eventPriorityId: event?.eventPriorityId || '',
     description: event?.description || '',
     segments: event?.segments || [],
   });
@@ -65,13 +74,31 @@ export function EventDialog({
         id: event.id,
         title: event.title || '',
         date: event.date || format(new Date(), 'yyyy-MM-dd'),
-        type: event.type || 'Race',
-        priority: event.priority || 'B',
+        eventTypeId: event.eventTypeId || '',
+        eventPriorityId: event.eventPriorityId || '',
         description: event.description || '',
         segments: event.segments || [],
       });
     }
   }, [event]);
+
+  // Ensure default event type is selected if none is set
+  useEffect(() => {
+    if (!formData.eventTypeId && eventTypes.length > 0) {
+      const defaultType =
+        eventTypes.find((et) => et.name === 'Race') || eventTypes[0];
+      setFormData((prev) => ({ ...prev, eventTypeId: defaultType.id }));
+    }
+  }, [eventTypes, formData.eventTypeId]);
+
+  // Ensure default priority is selected if none is set
+  useEffect(() => {
+    if (!formData.eventPriorityId && eventPriorities.length > 0) {
+      const defaultPriority =
+        eventPriorities.find((ep) => ep.name === 'B') || eventPriorities[0];
+      setFormData((prev) => ({ ...prev, eventPriorityId: defaultPriority.id }));
+    }
+  }, [eventPriorities, formData.eventPriorityId]);
 
   const handleSubmit = () => {
     if (!formData.title?.trim()) {
@@ -82,7 +109,20 @@ export function EventDialog({
       alert('Date is required');
       return;
     }
-    onSave(formData as Event);
+
+    // Include names for optimistic UI updates
+    const selectedType = eventTypes.find(
+      (et) => et.id === formData.eventTypeId,
+    );
+    const selectedPriority = eventPriorities.find(
+      (ep) => ep.id === formData.eventPriorityId,
+    );
+    onSave({
+      ...formData,
+      eventTypeName: selectedType?.name,
+      eventPriorityName: selectedPriority?.name,
+      priority: (selectedPriority?.name || 'B') as Event['priority'],
+    } as Event);
   };
 
   return (
@@ -137,18 +177,31 @@ export function EventDialog({
                     type
                   </Label>
                   <Select
-                    value={formData.type}
-                    onValueChange={(value: 'Race' | 'Goal' | 'Test') =>
-                      setFormData({ ...formData, type: value })
-                    }
+                    value={formData.eventTypeId}
+                    onValueChange={(value) => {
+                      if (value === '_manage') {
+                        setShowMasterDialog(true);
+                      } else {
+                        setFormData({ ...formData, eventTypeId: value });
+                      }
+                    }}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Race">Race</SelectItem>
-                      <SelectItem value="Goal">Goal</SelectItem>
-                      <SelectItem value="Test">Test</SelectItem>
+                      {eventTypes.map((et) => (
+                        <SelectItem key={et.id} value={et.id}>
+                          {et.name}
+                        </SelectItem>
+                      ))}
+                      <SelectSeparator />
+                      <SelectItem
+                        value="_manage"
+                        className="text-primary font-bold"
+                      >
+                        manage list...
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -157,21 +210,39 @@ export function EventDialog({
                   <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
                     priority
                   </Label>
-                  <Select
-                    value={formData.priority}
-                    onValueChange={(value: 'A' | 'B' | 'C') =>
-                      setFormData({ ...formData, priority: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="A">A - High Priority</SelectItem>
-                      <SelectItem value="B">B - Medium Priority</SelectItem>
-                      <SelectItem value="C">C - Low Priority</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={formData.eventPriorityId}
+                      onValueChange={(value) => {
+                        if (value === '_manage') {
+                          setShowPriorityMasterDialog(true);
+                        } else {
+                          setFormData({
+                            ...formData,
+                            eventPriorityId: value,
+                          });
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select priority" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {eventPriorities.map((ep) => (
+                          <SelectItem key={ep.id} value={ep.id}>
+                            {ep.name}
+                          </SelectItem>
+                        ))}
+                        <SelectSeparator />
+                        <SelectItem
+                          value="_manage"
+                          className="text-primary font-bold"
+                        >
+                          manage list...
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
@@ -243,6 +314,16 @@ export function EventDialog({
             </Button>
           </DialogFooter>
         </div>
+        {/* Event Type Master Dialog */}
+        <EventTypeMasterDialog
+          open={showMasterDialog}
+          onOpenChange={setShowMasterDialog}
+        />
+        {/* Event Priority Master Dialog */}
+        <EventPriorityMasterDialog
+          open={showPriorityMasterDialog}
+          onOpenChange={setShowPriorityMasterDialog}
+        />
       </DialogContent>
     </Dialog>
   );
