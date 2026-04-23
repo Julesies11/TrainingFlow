@@ -45,6 +45,7 @@ import {
 import { getSportIcon } from '@/services/training/sport-icons';
 import { Button } from '@/components/ui/button';
 import { EventDialog } from '../_shared/components/event-dialog';
+import { getEventTypeTheme } from '../_shared/utils/event-theme';
 import { LibraryDrawer } from './components/library-drawer';
 import { WorkoutDialog } from './components/workout-dialog';
 
@@ -470,124 +471,144 @@ export function CalendarViewKit() {
                                           <div className="h-2.5 w-2.5 shrink-0 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
                                         </div>
                                       )}
-                                    <div
-                                      data-drop-item
-                                      draggable="true"
-                                      onDragStart={(e) => {
-                                        e.dataTransfer.setData(
-                                          'eventId',
-                                          event.id,
-                                        );
-                                        setIsDraggingId(event.id);
-                                      }}
-                                      onDragEnd={handleDragEnd}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setEventWithSegmentsToEdit(event);
-                                      }}
-                                      className={`cursor-grab overflow-hidden rounded-lg border border-indigo-400/30 bg-indigo-600/10 shadow-sm transition-all hover:shadow-md active:cursor-grabbing ${isDraggingId === event.id ? 'opacity-20 grayscale' : ''}`}
-                                    >
-                                      <div className="flex items-center gap-1.5 border-b border-indigo-400/20 bg-indigo-600 px-2 py-1">
-                                        <span
-                                          className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[5px] lg:h-4 lg:w-4 lg:text-[7px] ${event.eventPriorityName === 'A' ? 'bg-red-500' : event.eventPriorityName === 'B' ? 'bg-amber-400' : event.eventPriorityName === 'C' ? 'bg-blue-400' : 'bg-gray-400'}`}
+                                    {(() => {
+                                      const theme = getEventTypeTheme(
+                                        event.eventTypeColorTheme,
+                                        event.eventTypeIcon,
+                                      );
+                                      const IconComp = theme.icon;
+
+                                      return (
+                                        <div
+                                          data-drop-item
+                                          draggable="true"
+                                          onDragStart={(e) => {
+                                            e.dataTransfer.setData(
+                                              'eventId',
+                                              event.id,
+                                            );
+                                            setIsDraggingId(event.id);
+                                          }}
+                                          onDragEnd={handleDragEnd}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setEventWithSegmentsToEdit(event);
+                                          }}
+                                          className={`cursor-grab overflow-hidden rounded-lg border shadow-sm transition-all hover:shadow-md active:cursor-grabbing ${theme.bg} ${theme.border} ${isDraggingId === event.id ? 'opacity-20 grayscale' : ''}`}
                                         >
-                                          {event.eventPriorityName?.slice(
-                                            0,
-                                            1,
-                                          ) || event.priority}
-                                        </span>
-                                        <span className="truncate text-[6px] font-black uppercase tracking-tight text-white lg:text-[8px]">
-                                          {event.title}
-                                        </span>
-                                      </div>
-                                      {hasSegments && (
-                                        <div className="flex flex-col gap-1 p-1">
-                                          {event.segments!.map(
-                                            (seg, segIdx) => {
-                                              const sport = sportMap.get(
-                                                seg.sportTypeId,
-                                              );
-                                              const userSettingsForSport =
-                                                userSettingsMap.get(
-                                                  seg.sportTypeId,
-                                                );
-                                              const color = getEffortColor(
-                                                sport,
-                                                seg.effortLevel,
-                                                userSettingsForSport,
-                                              );
-                                              const duration =
-                                                seg.plannedDurationMinutes || 0;
-                                              const distKm =
-                                                seg.plannedDistanceKilometers ||
-                                                0;
-                                              const dist = isMetersDistance(
-                                                sport?.distanceUnit,
-                                                sport?.name,
-                                              )
-                                                ? distKm * 1000
-                                                : distKm;
-                                              const pace = calculatePace(
-                                                sport?.paceUnit,
-                                                duration,
-                                                dist,
-                                                sport?.name,
-                                              );
+                                          <div
+                                            className={`flex items-center gap-1.5 border-b px-2 py-1 ${theme.border}`}
+                                          >
+                                            <IconComp
+                                              className={`h-3.5 w-3.5 shrink-0 ${theme.text}`}
+                                            />
+                                            <span
+                                              className={`truncate text-[6px] font-black uppercase tracking-tight lg:text-[8px] ${theme.text}`}
+                                            >
+                                              {event.title}
+                                            </span>
+                                          </div>
+                                          {hasSegments && (
+                                            <div className="flex flex-col gap-1 p-1">
+                                              {event.segments!.map(
+                                                (seg, segIdx) => {
+                                                  const sport = sportMap.get(
+                                                    seg.sportTypeId,
+                                                  );
+                                                  const userSettingsForSport =
+                                                    userSettingsMap.get(
+                                                      seg.sportTypeId,
+                                                    );
+                                                  const color = getEffortColor(
+                                                    sport,
+                                                    seg.effortLevel,
+                                                    userSettingsForSport,
+                                                  );
+                                                  const duration =
+                                                    seg.plannedDurationMinutes ||
+                                                    0;
+                                                  const distKm =
+                                                    seg.plannedDistanceKilometers ||
+                                                    0;
+                                                  const dist = isMetersDistance(
+                                                    sport?.distanceUnit,
+                                                    sport?.name,
+                                                  )
+                                                    ? distKm * 1000
+                                                    : distKm;
+                                                  const pace = calculatePace(
+                                                    sport?.paceUnit,
+                                                    duration,
+                                                    dist,
+                                                    sport?.name,
+                                                  );
 
-                                              const sportName =
-                                                seg.sportName ||
-                                                sport?.name ||
-                                                'Unknown';
-                                              const IconComponent =
-                                                getSportIcon(sportName);
+                                                  const sportName =
+                                                    seg.sportName ||
+                                                    sport?.name ||
+                                                    'Unknown';
+                                                  const IconComponent =
+                                                    getSportIcon(sportName);
 
-                                              return (
-                                                <div
-                                                  key={segIdx}
-                                                  className="flex items-center gap-1 rounded p-1"
-                                                  style={{
-                                                    borderLeftWidth: '2px',
-                                                    borderLeftColor: color,
-                                                  }}
-                                                >
-                                                  {IconComponent && (
-                                                    <IconComponent className="h-2.5 w-2.5 shrink-0 text-muted-foreground lg:h-3 lg:w-3" />
-                                                  )}
-                                                  <div className="flex flex-col gap-0.5 text-[6px] leading-none lg:text-[8px]">
-                                                    <span className="font-bold lowercase">
-                                                      {sportName}
-                                                    </span>
-                                                    {duration > 0 && (
-                                                      <span className="text-muted-foreground">
-                                                        {formatMinsShort(
-                                                          duration,
-                                                        )}
-                                                      </span>
-                                                    )}
-                                                    {dist > 0 &&
-                                                      isPaceRelevant(
-                                                        !!sport?.paceRelevant,
-                                                        sport?.paceUnit,
-                                                      ) && (
-                                                        <span className="text-muted-foreground">
-                                                          {dist}
-                                                          {sport.distanceUnit ||
-                                                            'km'}
-                                                        </span>
+                                                  return (
+                                                    <div
+                                                      key={segIdx}
+                                                      className="flex items-center gap-1 rounded p-1"
+                                                      style={{
+                                                        borderLeftWidth: '2px',
+                                                        borderLeftColor: color,
+                                                      }}
+                                                    >
+                                                      {IconComponent && (
+                                                        <IconComponent className="h-2.5 w-2.5 shrink-0 text-muted-foreground lg:h-3 lg:w-3" />
                                                       )}
-                                                    {pace && (
-                                                      <span className="text-muted-foreground">
-                                                        {pace}
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                </div>
-                                              );
-                                            },
+                                                      <div className="flex flex-col gap-0.5 text-[6px] leading-none lg:text-[8px]">
+                                                        <span className="font-bold lowercase">
+                                                          {sportName}
+                                                        </span>
+                                                        {duration > 0 && (
+                                                          <span className="text-muted-foreground">
+                                                            {formatMinsShort(
+                                                              duration,
+                                                            )}
+                                                          </span>
+                                                        )}
+                                                        {dist > 0 &&
+                                                          isPaceRelevant(
+                                                            !!sport?.paceRelevant,
+                                                            sport?.paceUnit,
+                                                          ) && (
+                                                            <span className="text-muted-foreground">
+                                                              {dist}
+                                                              {sport.distanceUnit ||
+                                                                'km'}
+                                                            </span>
+                                                          )}
+                                                        {pace && (
+                                                          <span className="text-muted-foreground">
+                                                            {pace}
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                  );
+                                                },
+                                              )}
+                                            </div>
                                           )}
+                                          <div className="flex justify-end px-1 pb-1">
+                                            <span
+                                              className={`flex h-3 w-3 shrink-0 items-center justify-center rounded-full text-[5px] lg:h-3.5 lg:w-3.5 lg:text-[6px] ${event.eventPriorityName === 'A' ? 'bg-red-500 text-white' : event.eventPriorityName === 'B' ? 'bg-amber-400 text-white' : event.eventPriorityName === 'C' ? 'bg-blue-400 text-white' : 'bg-gray-400 text-white'}`}
+                                            >
+                                              {event.eventPriorityName?.slice(
+                                                0,
+                                                1,
+                                              ) || event.priority}
+                                            </span>
+                                          </div>
                                         </div>
-                                      )}
-                                    </div>
+                                      );
+                                    })()}
                                   </React.Fragment>
                                 );
                               })}

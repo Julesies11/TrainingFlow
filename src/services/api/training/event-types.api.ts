@@ -22,6 +22,8 @@ export const eventTypesApi = {
       .insert({
         name: eventType.name,
         is_system: eventType.is_system ?? false,
+        icon_name: eventType.icon_name || 'Info',
+        color_theme: eventType.color_theme || 'other',
         created_by: userId,
       })
       .select()
@@ -38,6 +40,8 @@ export const eventTypesApi = {
         name: eventType.name,
         is_active: eventType.is_active,
         is_system: eventType.is_system,
+        icon_name: eventType.icon_name,
+        color_theme: eventType.color_theme,
       })
       .eq('id', eventType.id)
       .select()

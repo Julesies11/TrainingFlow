@@ -3,6 +3,8 @@ export interface EventTypeRecord {
   name: string;
   is_active: boolean;
   is_system: boolean;
+  icon_name: string;
+  color_theme: string;
   created_by?: string;
 }
 
@@ -30,10 +32,12 @@ export interface Event {
   date: string;
   eventTypeId: string;
   eventTypeName?: string;
+  eventTypeIcon?: string;
+  eventTypeColorTheme?: string;
   eventPriorityId: string;
   eventPriorityName?: string;
   title: string;
-  priority: 'A' | 'B' | 'C'; // Temporarily keeping for backward compatibility during migration if needed, but updating UI to use ID
+  priority: 'A' | 'B' | 'C'; // Temporarily keeping for backward compatibility
   description?: string;
   segments?: EventSegment[];
 }

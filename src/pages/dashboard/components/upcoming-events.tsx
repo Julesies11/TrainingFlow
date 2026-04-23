@@ -1,3 +1,5 @@
+import { getPriorityColor } from '@/pages/training/_shared/utils/event-helpers';
+import { getEventTypeTheme } from '@/pages/training/_shared/utils/event-theme';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { Pencil, Trash2, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -67,14 +69,23 @@ export function UpcomingEvents({
             {events.map((event) => {
               const daysUntil = differenceInDays(parseISO(event.date), today);
               const hasSegments = event.segments && event.segments.length > 0;
+              const theme = getEventTypeTheme(
+                event.eventTypeColorTheme,
+                event.eventTypeIcon,
+              );
+              const IconComp = theme.icon;
 
               return (
                 <div
                   key={event.id}
-                  className="rounded-xl border overflow-hidden hover:shadow-sm transition-shadow"
+                  className={`rounded-xl border overflow-hidden hover:shadow-sm transition-shadow ${theme.border}`}
                 >
-                  <div className="flex items-start gap-3 bg-muted/30 p-3">
-                    <div className="bg-primary/10 text-primary flex shrink-0 flex-col items-center rounded-lg p-2">
+                  <div
+                    className={`flex items-start gap-3 p-3 ${theme.bg} border-b ${theme.border} opacity-90`}
+                  >
+                    <div
+                      className={`flex shrink-0 flex-col items-center rounded-lg p-2 ${theme.bg} ${theme.text} border ${theme.border} shadow-sm`}
+                    >
                       <span className="text-lg font-black">
                         {format(parseISO(event.date), 'd')}
                       </span>
@@ -84,15 +95,29 @@ export function UpcomingEvents({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex-1">
-                        <h4 className="text-sm font-black tracking-tight truncate">
-                          {event.title}
-                        </h4>
-                        <p className="text-muted-foreground text-xs">
-                          {formatEventDuration(daysUntil)}
-                        </p>
+                        <div className="flex items-center gap-1.5">
+                          <IconComp
+                            className={`h-4 w-4 shrink-0 ${theme.text}`}
+                          />
+                          <h4
+                            className={`text-sm font-black tracking-tight truncate ${theme.text}`}
+                          >
+                            {event.title}
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-muted-foreground text-[10px] font-bold">
+                            {formatEventDuration(daysUntil)}
+                          </p>
+                          <span
+                            className={`rounded-full border px-1.5 py-0 text-[8px] font-black ${getPriorityColor(event.eventPriorityName)}`}
+                          >
+                            {event.eventPriorityName || event.priority}
+                          </span>
+                        </div>
                       </div>
                       {(onEdit || onDelete) && (
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 mt-1">
                           {onEdit && (
                             <Button
                               variant="ghost"
@@ -101,7 +126,7 @@ export function UpcomingEvents({
                                 e.stopPropagation();
                                 onEdit(event);
                               }}
-                              className="h-7 w-7 p-0"
+                              className="h-6 w-6 p-0"
                             >
                               <Pencil className="h-3 w-3" />
                             </Button>
@@ -114,7 +139,7 @@ export function UpcomingEvents({
                                 e.stopPropagation();
                                 onDelete(event);
                               }}
-                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                              className="h-6 w-6 p-0 text-destructive hover:text-destructive"
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>
@@ -124,7 +149,7 @@ export function UpcomingEvents({
                     </div>
                   </div>
                   {hasSegments && (
-                    <div className="flex flex-col gap-2 p-3">
+                    <div className="flex flex-col gap-2 p-3 bg-card">
                       {event.segments!.map((segment, idx) => {
                         const sport = sportMap.get(segment.sportTypeId);
                         const userSettingsForSport = userSettingsMap.get(

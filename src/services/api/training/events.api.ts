@@ -41,7 +41,11 @@ function mapDbEvent(e: {
   id: string;
   date: string;
   event_type_id: string;
-  pf_event_types?: { name: string } | null;
+  pf_event_types?: {
+    name: string;
+    icon_name: string;
+    color_theme: string;
+  } | null;
   priority_id: string;
   pf_event_priorities?: { name: string } | null;
   title: string;
@@ -53,6 +57,8 @@ function mapDbEvent(e: {
     date: e.date,
     eventTypeId: e.event_type_id,
     eventTypeName: e.pf_event_types?.name,
+    eventTypeIcon: e.pf_event_types?.icon_name,
+    eventTypeColorTheme: e.pf_event_types?.color_theme,
     eventPriorityId: e.priority_id,
     eventPriorityName: e.pf_event_priorities?.name,
     title: e.title,
@@ -69,7 +75,7 @@ export const eventsApi = {
       .select(
         `
         *,
-        pf_event_types(name),
+        pf_event_types(name, icon_name, color_theme),
         pf_event_priorities(name),
         segments:pf_event_segments(
           id,
@@ -135,7 +141,7 @@ export const eventsApi = {
       .select(
         `
         *,
-        pf_event_types(name),
+        pf_event_types(name, icon_name, color_theme),
         pf_event_priorities(name),
         segments:pf_event_segments(
           id,
@@ -237,7 +243,7 @@ export const eventsApi = {
       .select(
         `
         *,
-        pf_event_types(name),
+        pf_event_types(name, icon_name, color_theme),
         pf_event_priorities(name),
         segments:pf_event_segments(
           id,

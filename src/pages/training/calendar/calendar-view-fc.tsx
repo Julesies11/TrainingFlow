@@ -28,6 +28,7 @@ import {
 } from '@/services/training/effort-colors';
 import { Button } from '@/components/ui/button';
 import { EventDialog } from '../_shared/components/event-dialog';
+import { getEventTypeTheme } from '../_shared/utils/event-theme';
 import { LibraryDrawer } from './components/library-drawer';
 import { WorkoutDialog } from './components/workout-dialog';
 
@@ -109,12 +110,13 @@ export function CalendarViewFC() {
 
     // Add events
     events.forEach((e) => {
+      const theme = getEventTypeTheme(e.eventTypeColorTheme, e.eventTypeIcon);
       eventsList.push({
         id: `event-${e.id}`,
         title: `[${e.eventPriorityName || e.priority}] ${e.title || 'Untitled Event'}`,
         date: e.date,
-        backgroundColor: '#8b5cf6',
-        borderColor: '#8b5cf6',
+        backgroundColor: theme.hex,
+        borderColor: theme.hex,
         textColor: '#fff',
         display: 'block',
         extendedProps: {

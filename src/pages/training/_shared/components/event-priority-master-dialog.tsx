@@ -178,13 +178,17 @@ export function EventPriorityMasterDialog({
                           {editingId === ep.id ? (
                             <>
                               <Button
-                                variant="ghost"
+                                variant="success"
                                 size="sm"
-                                className="h-8 w-8 p-0 text-success"
+                                className="h-8 px-2 flex items-center gap-1 shadow-sm"
                                 onClick={() => handleUpdate(ep)}
                               >
                                 <Check className="h-4 w-4" />
+                                <span className="text-[10px] font-black uppercase">
+                                  save
+                                </span>
                               </Button>
+
                               <Button
                                 variant="ghost"
                                 size="sm"

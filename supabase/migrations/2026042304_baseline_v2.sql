@@ -51,6 +51,8 @@ CREATE TABLE public.pf_event_types (
     name text NOT NULL,
     is_active boolean NOT NULL DEFAULT true,
     is_system boolean NOT NULL DEFAULT false,
+    icon_name text NOT NULL DEFAULT 'Info',
+    color_theme text NOT NULL DEFAULT 'other',
     created_by uuid,
     created_at timestamp with time zone DEFAULT now(),
     CONSTRAINT event_types_pkey PRIMARY KEY (id),
@@ -256,11 +258,11 @@ VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- 4.2 Event Types
-INSERT INTO public.pf_event_types (name, is_system, created_by)
+INSERT INTO public.pf_event_types (name, is_system, icon_name, color_theme, created_by)
 VALUES 
-    ('Race', true, null),
-    ('Goal', true, null),
-    ('Test', true, null)
+    ('Race', true, 'Flag', 'afternoon', null),
+    ('Goal', true, 'Target', 'morning', null),
+    ('Test', true, 'Trophy', 'day', null)
 ON CONFLICT DO NOTHING;
 
 -- 4.3 Event Priorities

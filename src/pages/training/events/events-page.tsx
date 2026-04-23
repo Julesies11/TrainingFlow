@@ -26,7 +26,8 @@ import { getSportIcon } from '@/services/training/sport-icons';
 import { Button } from '@/components/ui/button';
 import { DeleteConfirmOverlay } from '../_shared/components/delete-confirm-overlay';
 import { EventDialog } from '../_shared/components/event-dialog';
-import { getPriorityColor, getTypeIcon } from '../_shared/utils/event-helpers';
+import { getPriorityColor } from '../_shared/utils/event-helpers';
+import { getEventTypeTheme } from '../_shared/utils/event-theme';
 
 export function EventsPage() {
   const { data: events = [], isLoading } = useEvents();
@@ -122,10 +123,16 @@ export function EventsPage() {
   const renderEventCard = (event: Event) => {
     const totals = getEventTotals(event);
 
+    const theme = getEventTypeTheme(
+      event.eventTypeColorTheme,
+      event.eventTypeIcon,
+    );
+    const IconComp = theme.icon;
+
     return (
       <div
         key={event.id}
-        className="bg-card group relative overflow-hidden rounded-2xl border shadow-sm transition-all hover:shadow-md"
+        className={`bg-card group relative overflow-hidden rounded-2xl border shadow-sm transition-all hover:shadow-md ${theme.border}`}
       >
         {deleteConfirmId === event.id && (
           <DeleteConfirmOverlay
@@ -138,14 +145,16 @@ export function EventsPage() {
         <div className="p-5">
           <div className="flex items-start gap-4">
             {/* Date badge */}
-            <div className="bg-primary/10 text-primary flex shrink-0 flex-col items-center rounded-xl p-3">
+            <div
+              className={`flex shrink-0 flex-col items-center rounded-xl p-3 ${theme.bg} ${theme.text}`}
+            >
               <span className="text-2xl font-black">
                 {format(parseISO(event.date), 'd')}
               </span>
               <span className="text-[9px] font-black uppercase tracking-widest">
                 {format(parseISO(event.date), 'MMM')}
               </span>
-              <span className="text-muted-foreground mt-1 text-[8px] font-semibold">
+              <span className="mt-1 text-[8px] font-semibold opacity-70">
                 {format(parseISO(event.date), 'yyyy')}
               </span>
             </div>
@@ -155,21 +164,27 @@ export function EventsPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <div className="text-muted-foreground">
-                      {(() => {
-                        const Icon = getTypeIcon(event.eventTypeName);
-                        return <Icon className="h-4 w-4" />;
-                      })()}
+                    <div className={`${theme.text}`}>
+                      <IconComp className="h-5 w-5" />
                     </div>
                     <div className="flex flex-col">
                       <h3 className="text-lg font-black tracking-tight">
                         {event.title}
                       </h3>
-                      {event.eventTypeName && (
-                        <span className="text-[10px] font-bold uppercase text-primary/70">
-                          {event.eventTypeName}
+                      <div className="flex items-center gap-2">
+                        {event.eventTypeName && (
+                          <span
+                            className={`text-[10px] font-bold uppercase ${theme.text}`}
+                          >
+                            {event.eventTypeName}
+                          </span>
+                        )}
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${getPriorityColor(event.eventPriorityName)}`}
+                        >
+                          {event.eventPriorityName || event.priority}
                         </span>
-                      )}
+                      </div>
                     </div>
                   </div>
                   <p className="text-muted-foreground mt-1 text-xs font-semibold">
@@ -177,14 +192,6 @@ export function EventsPage() {
                       differenceInDays(parseISO(event.date), today),
                     )}
                   </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`rounded-full border px-2 py-0.5 text-[10px] font-bold ${getPriorityColor(event.eventPriorityName)}`}
-                  >
-                    {event.eventPriorityName || event.priority}
-                  </span>
                 </div>
               </div>
 
