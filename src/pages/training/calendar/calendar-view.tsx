@@ -524,17 +524,20 @@ export function CalendarView() {
                                           className={`cursor-grab overflow-hidden rounded-lg border shadow-sm transition-all hover:shadow-md active:cursor-grabbing ${theme.bg} ${theme.border} ${isDraggingId === event.id ? 'opacity-20 grayscale' : ''}`}
                                         >
                                           <div
-                                            className={`flex items-start gap-1.5 border-b px-2 py-1 ${theme.border}`}
+                                            className={`flex flex-col gap-0.5 border-b px-2 py-1 ${theme.border}`}
                                           >
-                                            <IconComp
-                                              className={`h-3.5 w-3.5 shrink-0 mt-0.5 ${theme.text}`}
-                                            />
                                             <div
-                                              className={`flex-1 min-w-0 break-words whitespace-normal text-[10px] lg:text-xs lg:font-bold ${theme.text}`}
+                                              className={`flex items-center gap-1.5 text-[10px] opacity-70 lg:text-xs ${theme.text}`}
+                                            >
+                                              <IconComp className="h-3.5 w-3.5 shrink-0" />
+                                              <span>event</span>
+                                            </div>
+                                            <div
+                                              className={`break-words whitespace-normal text-[10px] lg:text-xs ${theme.text}`}
                                             >
                                               {event.title}
                                             </div>
-                                          </div>
+                                          </div>{' '}
                                           {hasSegments && (
                                             <div className="flex flex-col gap-1 p-1">
                                               {event.segments!.map(
@@ -590,9 +593,7 @@ export function CalendarView() {
                                                         <IconComponent className="h-3.5 w-3.5 shrink-0 text-muted-foreground lg:h-4 lg:w-4" />
                                                       )}
                                                       <div className="flex flex-col gap-0.5 text-[10px] leading-none lg:text-xs">
-                                                        <span className="font-bold">
-                                                          {sportName}
-                                                        </span>
+                                                        <span>{sportName}</span>{' '}
                                                         {duration > 0 && (
                                                           <span className="text-muted-foreground">
                                                             {formatMinsShort(
@@ -719,7 +720,7 @@ export function CalendarView() {
                                               })()}
                                             </div>
                                             {/* Title */}
-                                            <div className="break-words whitespace-normal text-[10px] lg:text-xs lg:font-bold">
+                                            <div className="break-words whitespace-normal text-[10px] lg:text-xs">
                                               {w.title || 'Untitled'}
                                             </div>
                                             {/* Duration */}

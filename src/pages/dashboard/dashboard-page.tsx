@@ -18,8 +18,8 @@ import {
 } from '@/services/training/effort-colors';
 import { EventDialog } from '../training/_shared/components/event-dialog';
 import { WorkoutDialog } from '../training/calendar/components/workout-dialog';
+import { DailySessions } from './components/daily-sessions';
 import { SportDistribution } from './components/sport-distribution';
-import { TodaysSession } from './components/todays-session';
 import { UpcomingEvents } from './components/upcoming-events';
 import { VolumeChart } from './components/volume-chart';
 
@@ -60,10 +60,23 @@ export function DashboardPage() {
   }, []);
 
   const todayStr = useMemo(() => format(today, 'yyyy-MM-dd'), [today]);
+  const tomorrowStr = useMemo(() => {
+    const d = new Date(today);
+    d.setDate(d.getDate() + 1);
+    return format(d, 'yyyy-MM-dd');
+  }, [today]);
 
-  const todayWorkout = useMemo(() => {
-    return workouts.find((w) => w.date === todayStr);
+  const todayWorkouts = useMemo(() => {
+    return workouts
+      .filter((w) => w.date === todayStr)
+      .sort((a, b) => (a.workout_order ?? 0) - (b.workout_order ?? 0));
   }, [workouts, todayStr]);
+
+  const tomorrowWorkouts = useMemo(() => {
+    return workouts
+      .filter((w) => w.date === tomorrowStr)
+      .sort((a, b) => (a.workout_order ?? 0) - (b.workout_order ?? 0));
+  }, [workouts, tomorrowStr]);
 
   const upcomingEvents = useMemo(() => {
     return events
@@ -254,23 +267,42 @@ export function DashboardPage() {
             />
           </div>
 
-          {/* Today's Session and Upcoming Events */}
+          {/* Today's & Tomorrow's Sessions and Upcoming Events */}
           <div className="grid gap-6 lg:grid-cols-2">
-            <TodaysSession
-              workout={todayWorkout}
-              sportMap={sportMap}
-              settingsMap={settingsMap}
-              onEdit={(workout) => setWorkoutToEdit(workout)}
-              onDelete={(workout) => {
-                if (
-                  confirm(
-                    `Delete workout "${workout.title || workout.sportName}"?`,
-                  )
-                ) {
-                  deleteWorkout.mutate({ id: workout.id, mode: 'single' });
-                }
-              }}
-            />
+            <div className="flex flex-col gap-6">
+              <DailySessions
+                title="today's sessions"
+                workouts={todayWorkouts}
+                sportMap={sportMap}
+                settingsMap={settingsMap}
+                onEdit={(workout) => setWorkoutToEdit(workout)}
+                onDelete={(workout) => {
+                  if (
+                    confirm(
+                      `Delete workout "${workout.title || workout.sportName}"?`,
+                    )
+                  ) {
+                    deleteWorkout.mutate({ id: workout.id, mode: 'single' });
+                  }
+                }}
+              />
+              <DailySessions
+                title="tomorrow's sessions"
+                workouts={tomorrowWorkouts}
+                sportMap={sportMap}
+                settingsMap={settingsMap}
+                onEdit={(workout) => setWorkoutToEdit(workout)}
+                onDelete={(workout) => {
+                  if (
+                    confirm(
+                      `Delete workout "${workout.title || workout.sportName}"?`,
+                    )
+                  ) {
+                    deleteWorkout.mutate({ id: workout.id, mode: 'single' });
+                  }
+                }}
+              />
+            </div>
             <UpcomingEvents
               events={upcomingEvents}
               today={today}
