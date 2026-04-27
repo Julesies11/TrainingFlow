@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { BookOpen, ChevronLeft, ChevronRight, Plus, Star } from 'lucide-react';
 import { Event, LibraryWorkout, Workout } from '@/types/training';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';

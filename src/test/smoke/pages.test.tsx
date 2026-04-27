@@ -1,6 +1,8 @@
 import { ProfilePage } from '@/pages/account/profile';
+import { SportTypesPage } from '@/pages/account/sport-types';
 import { EventPrioritiesAdminPage } from '@/pages/admin/event-priorities';
 import { EventTypesAdminPage } from '@/pages/admin/event-types';
+import { SportTypesAdminPage } from '@/pages/admin/sport-types';
 import { DashboardPage } from '@/pages/dashboard';
 import { CalendarView } from '@/pages/training/calendar';
 import { EventsPage } from '@/pages/training/events';
@@ -26,7 +28,7 @@ vi.mock('@/hooks/use-training-data', () => ({
   useEventPriorities: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useUserSportSettings: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useProfile: vi.fn().mockReturnValue({
-    data: { theme: 'light', effort_settings: {} },
+    data: { theme: 'light', effort_settings: {}, calendar_stats_mode: true },
     isLoading: false,
   }),
   useUpdateProfile: vi.fn().mockReturnValue({ mutate: vi.fn() }),
@@ -46,6 +48,9 @@ vi.mock('@/hooks/use-training-data', () => ({
   useCreateEventPriority: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useUpdateEventPriority: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useDeleteEventPriority: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useCreateSportType: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useUpdateSportType: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useDeleteSportType: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useUpsertUserSportSettings: vi.fn().mockReturnValue({ mutate: vi.fn() }),
 }));
 
@@ -86,6 +91,19 @@ describe('Smoke Test: Main Pages', () => {
   it('renders Event Priorities Admin page without crashing', async () => {
     render(<EventPrioritiesAdminPage />);
     expect(screen.getByText(/event priorities admin/i)).toBeDefined();
+  });
+
+  it('renders Sport Types Admin page without crashing', async () => {
+    render(<SportTypesAdminPage />);
+    expect(screen.getByText(/sport types admin/i)).toBeDefined();
+  });
+
+  it('renders Sport Types Settings page without crashing', async () => {
+    render(<SportTypesPage />);
+    await waitFor(() => {
+      expect(screen.queryByText(/loading sport types/i)).toBeNull();
+    });
+    expect(screen.getByText(/customize effort level colors/i)).toBeDefined();
   });
 
   it('renders Library page without crashing', async () => {

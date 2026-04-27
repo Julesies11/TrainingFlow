@@ -11,6 +11,9 @@ TrainingFlow is designed as a management platform with the following core module
 - **Interactive Calendar**: Drag-and-drop workout planning.
 - **Session Duplication**: Quickly copy and paste workouts to different dates via the "Duplicate" feature.
 - **Dynamic Lookups**: Manage custom Event Types and Priorities with administrative overrides for global defaults.
+- **Sport Types & Effort Settings**: 
+    - **Global Admin**: Developers can manage system-wide sport types, units (pace/distance), and default effort levels.
+    - **Personalized Settings**: Users can customize effort level colors and labels for each sport to match their training philosophy.
 - **Workout Library**: Save and reuse workout templates.
 - **Weekly Stats & Metrics**: Persistent toggle to show/hide detailed weekly summaries and sport-specific totals.
 - **Mobile-Optimized Experience**: Enhanced calendar views for mobile devices with compact stats and intuitive navigation.

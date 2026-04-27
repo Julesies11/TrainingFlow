@@ -24,6 +24,9 @@ window.ResizeObserver = class ResizeObserver {
   disconnect() {}
 };
 
+// Mock scrollIntoView
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
+
 // Mock ApexCharts
 vi.mock('react-apexcharts', () => ({
   __esModule: true,
