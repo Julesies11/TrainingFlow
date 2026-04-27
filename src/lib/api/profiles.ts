@@ -24,7 +24,7 @@ export const handleAvatarUpload = async (file: File) => {
 
   // 1. Get current profile to check for existing avatar
   const { data: profile } = await supabase
-    .from('pf_profiles')
+    .from('tf_profiles')
     .select('avatar_url')
     .eq('id', userId)
     .single();
@@ -37,7 +37,7 @@ export const handleAvatarUpload = async (file: File) => {
       const oldFileName = fileNameWithQuery.split('?')[0];
       if (oldFileName) {
         await supabase.storage
-          .from('pf_avatars')
+          .from('tf_avatars')
           .remove([`${userId}/${oldFileName}`]);
       }
     } catch (error) {
@@ -51,13 +51,13 @@ export const handleAvatarUpload = async (file: File) => {
   const filePath = `${userId}/${fileName}`;
 
   // 4. Storage Logic: This calls uploadFile in src/lib/api/storage.ts, which acts as a centralized orchestrator.
-  const avatarUrl = await uploadFile('pf_avatars', filePath, file, {
+  const avatarUrl = await uploadFile('tf_avatars', filePath, file, {
     compress: true,
   });
 
-  // 5. Update pf_profiles table with the new avatar_url
+  // 5. Update tf_profiles table with the new avatar_url
   const { error: updateError } = await supabase
-    .from('pf_profiles')
+    .from('tf_profiles')
     .update({
       avatar_url: avatarUrl,
       updated_at: new Date().toISOString(),
@@ -91,7 +91,7 @@ export const handleAvatarRemove = async () => {
 
   // 1. Get current profile to check for existing avatar
   const { data: profile } = await supabase
-    .from('pf_profiles')
+    .from('tf_profiles')
     .select('avatar_url')
     .eq('id', userId)
     .single();
@@ -103,14 +103,14 @@ export const handleAvatarRemove = async () => {
     const oldFileName = fileNameWithQuery.split('?')[0];
     if (oldFileName) {
       await supabase.storage
-        .from('pf_avatars')
+        .from('tf_avatars')
         .remove([`${userId}/${oldFileName}`]);
     }
   }
 
   // 3. Update profile
   const { error: updateError } = await supabase
-    .from('pf_profiles')
+    .from('tf_profiles')
     .update({
       avatar_url: null,
       updated_at: new Date().toISOString(),

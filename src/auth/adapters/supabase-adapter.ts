@@ -10,13 +10,13 @@ import { supabase } from '@/lib/supabase';
  */
 export const SupabaseAdapter = {
   /**
-   * Private-ish helper to ensure a record exists in pf_profiles.
+   * Private-ish helper to ensure a record exists in tf_profiles.
    * Performs an upsert to bridge users from shared auth.users.
    */
   async _ensureProfileExists(user: User): Promise<void> {
     const metadata = user.user_metadata || {};
 
-    const { error } = await supabase.from('pf_profiles').upsert(
+    const { error } = await supabase.from('tf_profiles').upsert(
       {
         id: user.id,
         workout_type_options: JSON.stringify({
@@ -201,7 +201,7 @@ export const SupabaseAdapter = {
 
     // Check if profile exists, if not, create it lazily
     const { data: profile } = await supabase
-      .from('pf_profiles')
+      .from('tf_profiles')
       .select('id')
       .eq('id', data.user.id)
       .maybeSingle();
@@ -283,7 +283,7 @@ export const SupabaseAdapter = {
     // Also update the relational profile if relevant fields changed
     if (userData.pic) {
       await supabase
-        .from('pf_profiles')
+        .from('tf_profiles')
         .update({ avatar_url: userData.pic })
         .eq('id', (await supabase.auth.getUser()).data.user?.id);
     }

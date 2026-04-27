@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 export const eventTypesApi = {
   async getAll(): Promise<EventTypeRecord[]> {
     const { data, error } = await supabase
-      .from('pf_event_types')
+      .from('tf_event_types')
       .select('*')
       .eq('is_active', true)
       .order('name');
@@ -18,7 +18,7 @@ export const eventTypesApi = {
     userId: string,
   ): Promise<EventTypeRecord> {
     const { data, error } = await supabase
-      .from('pf_event_types')
+      .from('tf_event_types')
       .insert({
         name: eventType.name,
         is_system: eventType.is_system ?? false,
@@ -35,7 +35,7 @@ export const eventTypesApi = {
 
   async update(eventType: EventTypeRecord): Promise<EventTypeRecord> {
     const { data, error } = await supabase
-      .from('pf_event_types')
+      .from('tf_event_types')
       .update({
         name: eventType.name,
         is_active: eventType.is_active,
@@ -53,7 +53,7 @@ export const eventTypesApi = {
 
   async remove(id: string): Promise<void> {
     const { error } = await supabase
-      .from('pf_event_types')
+      .from('tf_event_types')
       .update({ is_active: false })
       .eq('id', id);
 

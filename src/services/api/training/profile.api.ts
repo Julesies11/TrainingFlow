@@ -70,7 +70,7 @@ function defaultIntensitySettings(): IntensitySettings {
 export const profileApi = {
   async get(userId: string): Promise<UserProfile | null> {
     const { data, error } = await supabase
-      .from('pf_profiles')
+      .from('tf_profiles')
       .select('*')
       .eq('id', userId)
       .maybeSingle();
@@ -96,7 +96,7 @@ export const profileApi = {
 
     try {
       const { data, error } = await supabase
-        .from('pf_profiles')
+        .from('tf_profiles')
         .update(dbPayload)
         .eq('id', userId)
         .select()

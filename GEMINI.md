@@ -32,8 +32,8 @@ For detailed information on the project architecture, database, and features, re
 # ===============================
 # 4. PROJECT-SPECIFIC MEMORIES
 # ===============================
-- **Database Strategy**: The database uses the default `public` schema with dedicated tables (`pf_profiles`, `pf_workouts`, `pf_events`, `pf_sport_types`, `pf_daily_metrics`).
-- **User Profiles**: Profiles are managed via the `public.pf_profiles` table, linked to `auth.users` via `id`. This supersedes the older metadata-only approach. Roles (`admin`, `developer`, `user`) are stored here for RBAC.
+- **Database Strategy**: The database uses the default `public` schema with dedicated tables (`tf_profiles`, `tf_workouts`, `tf_events`, `tf_sport_types`, `tf_daily_metrics`).
+- **User Profiles**: Profiles are managed via the `public.tf_profiles` table, linked to `auth.users` via `id`. This supersedes the older metadata-only approach. Roles (`admin`, `developer`, `user`) are stored here for RBAC.
 - **Components**: Always prioritize using Metronic's ReUI components from `@/components/ui/` over custom Tailwind implementations.
 
-# Gemini Project Instructions — Metronic React (Vite) + TanStack Query + Supabase
+# TrainingFlow Project Instructions — Metronic React (Vite) + TanStack Query + Supabase

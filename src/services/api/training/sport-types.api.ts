@@ -24,7 +24,7 @@ function mapDbSportType(s: any): SportTypeRecord {
 export const sportTypesApi = {
   async getAll(): Promise<SportTypeRecord[]> {
     const { data, error } = await supabase
-      .from('pf_sport_types')
+      .from('tf_sport_types')
       .select('*')
       .order('name');
 
@@ -37,7 +37,7 @@ export const sportTypesApi = {
     userId: string,
   ): Promise<SportTypeRecord> {
     const { data, error } = await supabase
-      .from('pf_sport_types')
+      .from('tf_sport_types')
       .insert({
         name: st.name,
         description: st.description || null,
@@ -64,7 +64,7 @@ export const sportTypesApi = {
 
   async update(st: SportTypeRecord, userId: string): Promise<SportTypeRecord> {
     const { data, error } = await supabase
-      .from('pf_sport_types')
+      .from('tf_sport_types')
       .update({
         name: st.name,
         description: st.description || null,
@@ -92,7 +92,7 @@ export const sportTypesApi = {
 
   async remove(id: string): Promise<void> {
     const { error } = await supabase
-      .from('pf_sport_types')
+      .from('tf_sport_types')
       .delete()
       .eq('id', id);
 

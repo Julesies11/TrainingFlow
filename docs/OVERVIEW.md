@@ -1,6 +1,6 @@
 # Project Overview
 
-PeakForm is a modern web application built with **Metronic 9** and **React 19**. It leverages a high-performance stack centered around Vite, Tailwind CSS 4, and Supabase.
+TrainingFlow is a modern web application built with **Metronic 9** and **React 19**. It leverages a high-performance stack centered around Vite, Tailwind CSS 4, and Supabase.
 
 ## Tech Stack
 

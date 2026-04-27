@@ -16,7 +16,7 @@ interface DbSegmentFromSupabase {
   id: string;
   event_id: string;
   sport_type_id: string;
-  pf_sport_types: { name: string } | null;
+  tf_sport_types: { name: string } | null;
   planned_duration_minutes: number | null;
   planned_distance_kilometers: number | null;
   effort_level: number;
@@ -41,13 +41,13 @@ function mapDbEvent(e: {
   id: string;
   date: string;
   event_type_id: string;
-  pf_event_types?: {
+  tf_event_types?: {
     name: string;
     icon_name: string;
     color_theme: string;
   } | null;
   priority_id: string;
-  pf_event_priorities?: { name: string } | null;
+  tf_event_priorities?: { name: string } | null;
   title: string;
   description?: string;
   segments?: DbSegmentWithSportName[];
@@ -56,13 +56,13 @@ function mapDbEvent(e: {
     id: e.id,
     date: e.date,
     eventTypeId: e.event_type_id,
-    eventTypeName: e.pf_event_types?.name,
-    eventTypeIcon: e.pf_event_types?.icon_name,
-    eventTypeColorTheme: e.pf_event_types?.color_theme,
+    eventTypeName: e.tf_event_types?.name,
+    eventTypeIcon: e.tf_event_types?.icon_name,
+    eventTypeColorTheme: e.tf_event_types?.color_theme,
     eventPriorityId: e.priority_id,
-    eventPriorityName: e.pf_event_priorities?.name,
+    eventPriorityName: e.tf_event_priorities?.name,
     title: e.title,
-    priority: (e.pf_event_priorities?.name || 'B') as Event['priority'],
+    priority: (e.tf_event_priorities?.name || 'B') as Event['priority'],
     description: e.description,
     segments: e.segments ? e.segments.map(mapDbSegment) : [],
   };
@@ -71,17 +71,17 @@ function mapDbEvent(e: {
 export const eventsApi = {
   async getAll(userId: string): Promise<Event[]> {
     const { data, error } = await supabase
-      .from('pf_events')
+      .from('tf_events')
       .select(
         `
         *,
-        pf_event_types(name, icon_name, color_theme),
-        pf_event_priorities(name),
-        segments:pf_event_segments(
+        tf_event_types(name, icon_name, color_theme),
+        tf_event_priorities(name),
+        segments:tf_event_segments(
           id,
           event_id,
           sport_type_id,
-          pf_sport_types(name),
+          tf_sport_types(name),
           planned_duration_minutes,
           planned_distance_kilometers,
           effort_level,
@@ -97,7 +97,7 @@ export const eventsApi = {
     return (data || []).map((e) => {
       const segments = (e.segments || []).map((s: DbSegmentFromSupabase) => ({
         ...s,
-        sport_name: s.pf_sport_types?.name,
+        sport_name: s.tf_sport_types?.name,
       }));
       return mapDbEvent({ ...e, segments });
     });
@@ -105,7 +105,7 @@ export const eventsApi = {
 
   async create(event: Partial<Event>, userId: string): Promise<Event> {
     const { data: eventData, error: eventError } = await supabase
-      .from('pf_events')
+      .from('tf_events')
       .insert({
         user_id: userId,
         date: event.date,
@@ -130,24 +130,24 @@ export const eventsApi = {
       }));
 
       const { error: segmentsError } = await supabase
-        .from('pf_event_segments')
+        .from('tf_event_segments')
         .insert(segmentsToInsert);
 
       if (segmentsError) throw segmentsError;
     }
 
     const { data: fullEvent, error: fetchError } = await supabase
-      .from('pf_events')
+      .from('tf_events')
       .select(
         `
         *,
-        pf_event_types(name, icon_name, color_theme),
-        pf_event_priorities(name),
-        segments:pf_event_segments(
+        tf_event_types(name, icon_name, color_theme),
+        tf_event_priorities(name),
+        segments:tf_event_segments(
           id,
           event_id,
           sport_type_id,
-          pf_sport_types(name),
+          tf_sport_types(name),
           planned_duration_minutes,
           planned_distance_kilometers,
           effort_level,
@@ -163,7 +163,7 @@ export const eventsApi = {
     const segments = (fullEvent.segments || []).map(
       (s: DbSegmentFromSupabase) => ({
         ...s,
-        sport_name: s.pf_sport_types?.name,
+        sport_name: s.tf_sport_types?.name,
       }),
     );
 
@@ -172,7 +172,7 @@ export const eventsApi = {
 
   async update(event: Event, userId: string): Promise<Event> {
     const { error: eventError } = await supabase
-      .from('pf_events')
+      .from('tf_events')
       .update({
         date: event.date,
         event_type_id: event.eventTypeId,
@@ -186,7 +186,7 @@ export const eventsApi = {
     if (eventError) throw eventError;
 
     const { data: existingSegments, error: fetchError } = await supabase
-      .from('pf_event_segments')
+      .from('tf_event_segments')
       .select('id')
       .eq('event_id', event.id);
 
@@ -202,7 +202,7 @@ export const eventsApi = {
     );
     if (toDelete.length > 0) {
       const { error: deleteError } = await supabase
-        .from('pf_event_segments')
+        .from('tf_event_segments')
         .delete()
         .in('id', toDelete);
 
@@ -223,14 +223,14 @@ export const eventsApi = {
 
         if (seg.id && existingIds.has(seg.id)) {
           const { error: updateError } = await supabase
-            .from('pf_event_segments')
+            .from('tf_event_segments')
             .update(segmentData)
             .eq('id', seg.id);
 
           if (updateError) throw updateError;
         } else {
           const { error: insertError } = await supabase
-            .from('pf_event_segments')
+            .from('tf_event_segments')
             .insert(segmentData);
 
           if (insertError) throw insertError;
@@ -239,17 +239,17 @@ export const eventsApi = {
     }
 
     const { data: fullEvent, error: finalFetchError } = await supabase
-      .from('pf_events')
+      .from('tf_events')
       .select(
         `
         *,
-        pf_event_types(name, icon_name, color_theme),
-        pf_event_priorities(name),
-        segments:pf_event_segments(
+        tf_event_types(name, icon_name, color_theme),
+        tf_event_priorities(name),
+        segments:tf_event_segments(
           id,
           event_id,
           sport_type_id,
-          pf_sport_types(name),
+          tf_sport_types(name),
           planned_duration_minutes,
           planned_distance_kilometers,
           effort_level,
@@ -265,7 +265,7 @@ export const eventsApi = {
     const segments = (fullEvent.segments || []).map(
       (s: DbSegmentFromSupabase) => ({
         ...s,
-        sport_name: s.pf_sport_types?.name,
+        sport_name: s.tf_sport_types?.name,
       }),
     );
 
@@ -274,7 +274,7 @@ export const eventsApi = {
 
   async remove(id: string, userId: string): Promise<void> {
     const { error } = await supabase
-      .from('pf_events')
+      .from('tf_events')
       .delete()
       .eq('id', id)
       .eq('user_id', userId);

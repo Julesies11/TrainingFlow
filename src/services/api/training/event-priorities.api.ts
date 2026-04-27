@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 export const eventPrioritiesApi = {
   async getAll(): Promise<EventPriorityRecord[]> {
     const { data, error } = await supabase
-      .from('pf_event_priorities')
+      .from('tf_event_priorities')
       .select('*')
       .eq('is_active', true)
       .order('name');
@@ -18,7 +18,7 @@ export const eventPrioritiesApi = {
     userId: string,
   ): Promise<EventPriorityRecord> {
     const { data, error } = await supabase
-      .from('pf_event_priorities')
+      .from('tf_event_priorities')
       .insert({
         name: eventPriority.name,
         is_system: eventPriority.is_system ?? false,
@@ -35,7 +35,7 @@ export const eventPrioritiesApi = {
     eventPriority: EventPriorityRecord,
   ): Promise<EventPriorityRecord> {
     const { data, error } = await supabase
-      .from('pf_event_priorities')
+      .from('tf_event_priorities')
       .update({
         name: eventPriority.name,
         is_active: eventPriority.is_active,
@@ -51,7 +51,7 @@ export const eventPrioritiesApi = {
 
   async remove(id: string): Promise<void> {
     const { error } = await supabase
-      .from('pf_event_priorities')
+      .from('tf_event_priorities')
       .update({ is_active: false })
       .eq('id', id);
 

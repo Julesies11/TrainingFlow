@@ -239,7 +239,7 @@ Switching doesn't affect any data. You can switch back and forth freely.
 ## 📁 Complete File Structure
 
 ```
-PeakForm/
+TrainingFlow/
 ├── Documentation (7 files):
 │   ├── SWITCH_TO_NEW_CALENDAR.md ......... Immediate action
 │   ├── QUICK_START.md ................... Quick overview

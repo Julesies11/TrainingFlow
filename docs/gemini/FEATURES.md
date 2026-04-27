@@ -1,10 +1,10 @@
 # Features & Modules
 
-PeakForm is designed as a management platform with the following core modules:
+TrainingFlow is designed as a management platform with the following core modules:
 
 ## 1. Authentication & Identity
 - Supabase-powered login/registration.
-- Role-based access control (stored in `pf_profiles` table: `admin`, `developer`, `user`).
+- Role-based access control (stored in `tf_profiles` table: `admin`, `developer`, `user`).
 - Profile management (avatar, personal details, theme).
 
 ## 2. Training Management

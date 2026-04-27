@@ -20,7 +20,7 @@ function mapDbRow(r: any): UserSportSettings {
 export const userSportSettingsApi = {
   async getAll(userId: string): Promise<UserSportSettings[]> {
     const { data, error } = await supabase
-      .from('pf_user_sport_settings')
+      .from('tf_user_sport_settings')
       .select('*')
       .eq('user_id', userId);
 
@@ -43,7 +43,7 @@ export const userSportSettingsApi = {
     },
   ): Promise<UserSportSettings> {
     const { data, error } = await supabase
-      .from('pf_user_sport_settings')
+      .from('tf_user_sport_settings')
       .upsert(
         {
           user_id: userId,

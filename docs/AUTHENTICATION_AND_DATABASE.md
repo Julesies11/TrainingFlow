@@ -1,6 +1,6 @@
 # Authentication & Database
 
-PeakForm uses **Supabase Auth** for identity management and a relational PostgreSQL schema in the `public` schema for application data. All application tables use the `pf_` prefix.
+TrainingFlow uses **Supabase Auth** for identity management and a relational PostgreSQL schema in the `public` schema for application data. All application tables use the `tf_` prefix.
 
 ## Database Schema Strategy
 
@@ -8,8 +8,8 @@ The application uses a set of dedicated tables to manage its core entities.
 
 ### Key Components
 
-- **Profiles**: The `public.pf_profiles` table contains user-specific metadata and preferences, linked directly to `auth.users`.
-- **Relational Tables**: Application-specific data like `pf_workouts`, `pf_events`, and `pf_sport_types` are stored in their own tables with appropriate foreign keys to maintain data integrity.
+- **Profiles**: The `public.tf_profiles` table contains user-specific metadata and preferences, linked directly to `auth.users`.
+- **Relational Tables**: Application-specific data like `tf_workouts`, `tf_events`, and `tf_sport_types` are stored in their own tables with appropriate foreign keys to maintain data integrity.
 
 ### Baseline Migration
 
@@ -25,4 +25,4 @@ The current database schema is consolidated into a single baseline migration in 
 ## Data Rules
 
 - **Foreign Keys**: All user-specific tables must have a foreign key to `auth.users` with `ON DELETE CASCADE`.
-- **Row Level Security (RLS)**: RLS is enabled and fully configured on all `pf_` tables in `baseline_schema.sql` to ensure users can only access their own data.
+- **Row Level Security (RLS)**: RLS is enabled and fully configured on all `tf_` tables in `baseline_schema.sql` to ensure users can only access their own data.

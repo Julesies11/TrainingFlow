@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide outlines the local development workflow, project-specific scripts, and styling conventions for PeakForm.
+This guide outlines the local development workflow, project-specific scripts, and styling conventions for TrainingFlow.
 
 ## Local Setup
 
@@ -56,7 +56,7 @@ When adding new pages, consider adding a basic smoke test in `src/test/smoke/pag
 
 ## Styling & UI Components
 
-PeakForm follows **Metronic 9** standards using **Tailwind CSS 4**.
+TrainingFlow follows **Metronic 9** standards using **Tailwind CSS 4**.
 
 - **Config:** `src/css/config.reui.css` contains the ReUI theme configuration.
 - **Components:** Always prefer **ReUI components** from `@/components/ui/` for consistency.

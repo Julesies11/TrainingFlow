@@ -7,7 +7,7 @@ function mapDbWorkout(w: any): Workout {
     id: w.id,
     date: w.date,
     sportTypeId: w.sport_type_id,
-    sportName: w.pf_sport_types?.name ?? undefined,
+    sportName: w.tf_sport_types?.name ?? undefined,
     title: w.title,
     description: w.description,
     plannedDurationMinutes: w.planned_duration_minutes || 0,
@@ -52,8 +52,8 @@ function toDbPayload(w: Partial<Workout>, userId: string) {
 export const workoutsApi = {
   async getAll(userId: string): Promise<Workout[]> {
     const { data, error } = await supabase
-      .from('pf_workouts')
-      .select('*, pf_sport_types(name)')
+      .from('tf_workouts')
+      .select('*, tf_sport_types(name)')
       .eq('user_id', userId)
       .order('date', { ascending: false });
 
@@ -63,7 +63,7 @@ export const workoutsApi = {
 
   async create(workout: Partial<Workout>, userId: string): Promise<Workout> {
     const { data, error } = await supabase
-      .from('pf_workouts')
+      .from('tf_workouts')
       .insert(toDbPayload(workout, userId))
       .select()
       .single();
@@ -78,7 +78,7 @@ export const workoutsApi = {
   ): Promise<Workout[]> {
     const payload = workouts.map((w) => toDbPayload(w, userId));
     const { data, error } = await supabase
-      .from('pf_workouts')
+      .from('tf_workouts')
       .insert(payload)
       .select();
 
@@ -90,7 +90,7 @@ export const workoutsApi = {
     const { user_id, ...rest } = toDbPayload(workout, userId);
     void user_id;
     const { data, error } = await supabase
-      .from('pf_workouts')
+      .from('tf_workouts')
       .update(rest)
       .eq('id', workout.id)
       .eq('user_id', userId)
@@ -103,7 +103,7 @@ export const workoutsApi = {
 
   async deleteSingle(id: string, userId: string): Promise<void> {
     const { error } = await supabase
-      .from('pf_workouts')
+      .from('tf_workouts')
       .delete()
       .eq('id', id)
       .eq('user_id', userId);
@@ -117,7 +117,7 @@ export const workoutsApi = {
     userId: string,
   ): Promise<void> {
     const { error } = await supabase
-      .from('pf_workouts')
+      .from('tf_workouts')
       .delete()
       .eq('user_id', userId)
       .eq('recurrence_id', recurrenceId)

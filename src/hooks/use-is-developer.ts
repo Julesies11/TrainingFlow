@@ -15,7 +15,7 @@ export function useIsDeveloper(): boolean {
       }
 
       const { data: profile } = await supabase
-        .from('pf_profiles')
+        .from('tf_profiles')
         .select('role')
         .eq('id', user.id)
         .maybeSingle();
