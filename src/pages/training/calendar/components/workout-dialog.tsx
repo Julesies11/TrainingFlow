@@ -213,7 +213,7 @@ export function WorkoutDialog({
         />
 
         <div className="flex flex-col grow overflow-hidden">
-          <DialogHeader className="shrink-0 p-6 pb-0">
+          <DialogHeader className="shrink-0 px-6 pt-5 pb-0 mb-0">
             <DialogTitle className="text-2xl font-black tracking-tight lowercase">
               {dialogTitle}
             </DialogTitle>
@@ -222,7 +222,7 @@ export function WorkoutDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <DialogBody className="grow overflow-y-auto scrollable-y p-6 py-4">
+          <DialogBody className="grow overflow-y-auto scrollable-y px-6 pb-4 pt-0">
             {isDuplicated && (
               <div className="mb-6 rounded-xl border border-primary/30 bg-primary/10 p-4 text-center">
                 <p className="text-primary text-xs font-bold lowercase">
@@ -439,29 +439,14 @@ export function WorkoutDialog({
 
               {/* Right column */}
               <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                      duration (m)
-                    </Label>
-                    <Input
-                      type="number"
-                      value={workout.plannedDurationMinutes}
-                      onChange={(e) =>
-                        setWorkout({
-                          ...workout,
-                          plannedDurationMinutes: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
+                <div className="grid grid-cols-3 gap-3">
                   {isPaceRelevant(
                     !!selectedSport?.paceRelevant,
                     selectedSport?.paceUnit,
-                  ) && (
+                  ) ? (
                     <div>
-                      <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                        distance ({selectedSport?.distanceUnit || 'km'})
+                      <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest leading-none">
+                        dist ({selectedSport?.distanceUnit || 'km'})
                       </Label>
                       <Input
                         type="number"
@@ -497,19 +482,37 @@ export function WorkoutDialog({
                         }}
                       />
                     </div>
+                  ) : (
+                    <div />
+                  )}
+
+                  <div>
+                    <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
+                      dur (m)
+                    </Label>
+                    <Input
+                      type="number"
+                      value={workout.plannedDurationMinutes}
+                      onChange={(e) =>
+                        setWorkout({
+                          ...workout,
+                          plannedDurationMinutes: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+
+                  {calculatedPace && (
+                    <div className="space-y-2">
+                      <Label className="text-primary mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
+                        pace
+                      </Label>
+                      <div className="bg-primary/5 flex h-10 items-center justify-center rounded-lg border border-primary/20 text-primary text-[11px] font-black px-1 text-center leading-none">
+                        {calculatedPace}
+                      </div>
+                    </div>
                   )}
                 </div>
-
-                {calculatedPace && (
-                  <div className="bg-primary/5 flex items-center justify-between rounded-xl border p-3">
-                    <span className="text-primary text-[9px] font-black uppercase tracking-widest">
-                      calculated pace
-                    </span>
-                    <span className="text-primary text-sm font-black">
-                      {calculatedPace}
-                    </span>
-                  </div>
-                )}
 
                 <div className="space-y-3">
                   <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">

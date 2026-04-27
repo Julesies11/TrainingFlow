@@ -89,18 +89,15 @@ export function LibraryTemplateDialog({
     <Dialog open={true} onOpenChange={onCancel}>
       <DialogContent className="max-w-full sm:max-w-[500px] w-full h-[100dvh] sm:h-auto sm:max-h-[95vh] flex flex-col p-0 overflow-hidden bg-background top-0 left-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] border-0 sm:border rounded-none sm:rounded-xl">
         <div className="flex flex-col grow overflow-hidden">
-          <DialogHeader className="shrink-0 p-6 pb-0">
-            <DialogTitle className="text-2xl font-black lowercase tracking-tighter">
+          <DialogHeader className="shrink-0 px-5 pt-5 pb-0 mb-0">
+            <DialogTitle className="text-xl font-black lowercase tracking-tighter">
               {template.id ? 'edit template' : 'new template'}
             </DialogTitle>
-            <DialogDescription className="text-xs font-semibold uppercase tracking-widest opacity-60">
-              workout library blueprint
-            </DialogDescription>
           </DialogHeader>
 
-          <DialogBody className="space-y-6 px-6 py-4 overflow-y-auto scrollable-y grow">
+          <DialogBody className="space-y-4 px-5 pb-2 pt-0 overflow-y-auto scrollable-y grow">
           {/* Title */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
               template title
             </Label>
@@ -116,7 +113,7 @@ export function LibraryTemplateDialog({
 
           <div className="grid grid-cols-2 gap-4">
             {/* Sport Select */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
                 discipline
               </Label>
@@ -140,7 +137,7 @@ export function LibraryTemplateDialog({
             </div>
 
             {/* Key Workout Toggle */}
-            <div className="flex flex-col justify-center space-y-2 pl-2">
+            <div className="flex flex-col justify-center space-y-1.5 pl-2">
               <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
                 priority workout
               </Label>
@@ -159,7 +156,7 @@ export function LibraryTemplateDialog({
           </div>
 
           {/* Effort Level */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
               effort intensity
             </Label>
@@ -183,7 +180,7 @@ export function LibraryTemplateDialog({
                     onClick={() =>
                       setTemplate({ ...template, effortLevel: level })
                     }
-                    className={`flex flex-col items-center gap-1 rounded-xl p-3 transition-all hover:scale-105 active:scale-95 ${
+                    className={`flex flex-col items-center gap-0.5 rounded-xl p-2 transition-all hover:scale-105 active:scale-95 ${
                       isSelected
                         ? 'ring-2 ring-primary ring-offset-2'
                         : 'opacity-60 grayscale-[40%] hover:grayscale-0'
@@ -191,7 +188,7 @@ export function LibraryTemplateDialog({
                     style={{ backgroundColor: color }}
                   >
                     <span
-                      className={`text-xl font-black ${getContrastColor(color)}`}
+                      className={`text-lg font-black ${getContrastColor(color)}`}
                     >
                       {level}
                     </span>
@@ -206,30 +203,13 @@ export function LibraryTemplateDialog({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Duration */}
-            <div className="space-y-2">
-              <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
-                duration (min)
-              </Label>
-              <Input
-                type="number"
-                value={template.plannedDurationMinutes}
-                onChange={(e) =>
-                  setTemplate({
-                    ...template,
-                    plannedDurationMinutes: Number(e.target.value),
-                  })
-                }
-              />
-            </div>
-
+          <div className="grid grid-cols-3 gap-3">
             {/* Distance */}
             {isPaceRelevant(
               !!selectedSport?.paceRelevant,
               selectedSport?.paceUnit,
-            ) && (
-              <div className="space-y-2">
+            ) ? (
+              <div className="space-y-1.5">
                 <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
                   distance ({selectedSport?.distanceUnit || 'km'})
                 </Label>
@@ -267,22 +247,42 @@ export function LibraryTemplateDialog({
                   }}
                 />
               </div>
+            ) : (
+              <div /> // Spacer if distance not relevant
+            )}
+
+            {/* Duration */}
+            <div className="space-y-1.5">
+              <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
+                duration (min)
+              </Label>
+              <Input
+                type="number"
+                value={template.plannedDurationMinutes}
+                onChange={(e) =>
+                  setTemplate({
+                    ...template,
+                    plannedDurationMinutes: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+
+            {/* Calculated Pace */}
+            {calculatedPace && (
+              <div className="space-y-1.5">
+                <Label className="text-primary ml-1 text-[10px] font-black uppercase tracking-widest">
+                  pace
+                </Label>
+                <div className="bg-primary/5 flex h-10 items-center justify-center rounded-lg border border-primary/20 text-primary text-sm font-black px-1 text-center leading-none">
+                  {calculatedPace}
+                </div>
+              </div>
             )}
           </div>
 
-          {calculatedPace && (
-            <div className="bg-primary/5 flex items-center justify-between rounded-xl border p-3">
-              <span className="text-primary text-[9px] font-black uppercase tracking-widest">
-                calculated pace
-              </span>
-              <span className="text-primary text-sm font-black">
-                {calculatedPace}
-              </span>
-            </div>
-          )}
-
           {/* Description */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
               details
             </Label>
@@ -292,12 +292,12 @@ export function LibraryTemplateDialog({
                 setTemplate({ ...template, description: e.target.value })
               }
               placeholder="describe the main set or focus of this workout..."
-              className="min-h-[100px] text-sm leading-relaxed"
+              className="min-h-[60px] resize-none text-sm leading-relaxed"
             />
           </div>
         </DialogBody>
 
-        <DialogFooter className="shrink-0 p-6 pt-0 gap-3">
+        <DialogFooter className="shrink-0 px-5 pb-5 pt-2 gap-3">
           <Button
             variant="outline"
             onClick={onCancel}
