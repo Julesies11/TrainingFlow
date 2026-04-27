@@ -11,13 +11,31 @@ import { supabase } from '@/lib/supabase';
 export const SupabaseAdapter = {
   /**
    * Private-ish helper to ensure a record exists in tf_profiles.
-   * Performs an upsert to bridge users from shared auth.users.
    */
   async _ensureProfileExists(user: User): Promise<void> {
     const metadata = user.user_metadata || {};
 
-    const { error } = await supabase.from('tf_profiles').upsert(
-      {
+    // 1. Check if profile already exists to avoid overwriting user settings/data on every login
+    try {
+      const { data: existingProfile, error: checkError } = await supabase
+        .from('tf_profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error(
+          'SupabaseAdapter: Error checking existing profile:',
+          checkError,
+        );
+      }
+
+      if (existingProfile) {
+        return;
+      }
+
+      // 2. Only create if it doesn't exist (e.g., first login)
+      const { error } = await supabase.from('tf_profiles').insert({
         id: user.id,
         workout_type_options: JSON.stringify({
           Swim: ['Easy', 'Hard'],
@@ -30,13 +48,16 @@ export const SupabaseAdapter = {
         // Map common metadata fields if they exist from other apps
         theme: metadata.theme || 'light',
         avatar_url: metadata.pic || metadata.avatar_url || null,
-      },
-      { onConflict: 'id' },
-    );
+      });
 
-    if (error) {
-      console.error('SupabaseAdapter: Error ensuring profile exists:', error);
-      // We don't throw here to avoid blocking the login if profile sync fails
+      if (error) {
+        console.error('SupabaseAdapter: Error creating profile:', error);
+      }
+    } catch (err) {
+      console.error(
+        'SupabaseAdapter: Unexpected error in _ensureProfileExists:',
+        err,
+      );
     }
   },
 
@@ -196,37 +217,53 @@ export const SupabaseAdapter = {
    * Get current user from the session
    */
   async getCurrentUser(): Promise<UserModel | null> {
-    const { data } = await supabase.auth.getUser();
-    if (!data.user) return null;
+    try {
+      const { data, error: userError } = await supabase.auth.getUser();
 
-    // Check if profile exists, if not, create it lazily
-    const { data: profile } = await supabase
-      .from('tf_profiles')
-      .select('id')
-      .eq('id', data.user.id)
-      .maybeSingle();
+      if (userError) {
+        console.error('SupabaseAdapter: auth.getUser error:', userError);
+        return null;
+      }
 
-    if (!profile) {
+      if (!data.user) {
+        return null;
+      }
+
+      // Check if profile exists, if not, create it lazily
       await this._ensureProfileExists(data.user);
-    }
 
-    return this.getUserProfile();
+      // Pass the user we already fetched to avoid another getUser() call
+      return this.getUserProfile(data.user);
+    } catch (err) {
+      console.error(
+        'SupabaseAdapter: Unexpected error in getCurrentUser:',
+        err,
+      );
+      return null;
+    }
   },
 
   /**
    * Get user profile from user metadata
    */
-  async getUserProfile(): Promise<UserModel> {
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser();
+  async getUserProfile(passedUser?: User): Promise<UserModel> {
+    let user = passedUser;
 
-    if (error || !user) throw new Error(error?.message || 'User not found');
+    if (!user) {
+      const {
+        data: { user: fetchedUser },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (error || !fetchedUser) {
+        throw new Error(error?.message || 'User not found');
+      }
+      user = fetchedUser;
+    }
 
     const metadata = user.user_metadata || {};
 
-    return {
+    const profile: UserModel = {
       id: user.id,
       email: user.email || '',
       email_verified: user.email_confirmed_at !== null,
@@ -245,6 +282,8 @@ export const SupabaseAdapter = {
       language: metadata.language || 'en',
       is_admin: metadata.is_admin || false,
     };
+
+    return profile;
   },
 
   /**
@@ -280,15 +319,17 @@ export const SupabaseAdapter = {
 
     if (error) throw new Error(error.message);
 
+    const currentUser = (await supabase.auth.getUser()).data.user;
+
     // Also update the relational profile if relevant fields changed
-    if (userData.pic) {
+    if (userData.pic && currentUser) {
       await supabase
         .from('tf_profiles')
         .update({ avatar_url: userData.pic })
-        .eq('id', (await supabase.auth.getUser()).data.user?.id);
+        .eq('id', currentUser.id);
     }
 
-    return this.getCurrentUser() as Promise<UserModel>;
+    return this.getUserProfile(currentUser || undefined);
   },
 
   /**

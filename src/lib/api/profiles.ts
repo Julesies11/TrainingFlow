@@ -69,6 +69,14 @@ export const handleAvatarUpload = async (file: File) => {
     throw updateError;
   }
 
+  // 6. Sync to auth metadata so ensuring profile on next login doesn't revert it
+  await supabase.auth.updateUser({
+    data: {
+      pic: avatarUrl,
+      avatar_url: avatarUrl,
+    },
+  });
+
   return avatarUrl;
 };
 

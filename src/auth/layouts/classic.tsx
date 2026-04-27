@@ -18,11 +18,9 @@ export function ClassicLayout() {
       <div className="flex flex-col items-center justify-center grow bg-center bg-no-repeat page-bg">
         <div className="m-5">
           <Link to="/">
-            <img
-              src={toAbsoluteUrl('/media/app/mini-logo.svg')}
-              className="h-[35px] max-w-none"
-              alt=""
-            />
+            <h1 className="text-3xl font-black lowercase tracking-tighter">
+              trainingflow
+            </h1>
           </Link>
         </div>
         <Card className="w-full max-w-[400px]">

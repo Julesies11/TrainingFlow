@@ -156,9 +156,11 @@ export function SignInPage() {
         className="block w-full space-y-5"
       >
         <div className="text-center space-y-1 pb-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Sign In</h1>
+          <h1 className="text-2xl font-black lowercase tracking-tighter">
+            sign in
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Welcome back! Log in with your credentials.
+            Welcome back to trainingflow.
           </p>
         </div>
 

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { SupabaseAdapter } from '@/auth/adapters/supabase-adapter';
 import { useAuth } from '@/auth/context/auth-context';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -9,7 +10,7 @@ import {
   LoaderCircleIcon,
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -22,9 +23,11 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Icons } from '@/components/common/icons';
 import { getSignupSchema, SignupSchemaType } from '../forms/signup-schema';
 
 export function SignUpPage() {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { register } = useAuth();
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -32,6 +35,7 @@ export function SignUpPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const form = useForm<SignupSchemaType>({
     resolver: zodResolver(getSignupSchema()),
@@ -83,6 +87,37 @@ export function SignUpPage() {
     }
   }
 
+  // Handle Google Sign In with Supabase OAuth
+  const handleGoogleSignIn = async () => {
+    try {
+      setIsGoogleLoading(true);
+      setError(null);
+
+      // Get the next path if available
+      const nextPath = searchParams.get('next');
+
+      // Calculate the redirect URL
+      const redirectTo = nextPath
+        ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
+        : `${window.location.origin}/auth/callback`;
+
+      console.log('Initiating Google sign-in with redirect:', redirectTo);
+
+      // Use our adapter to initiate the OAuth flow
+      await SupabaseAdapter.signInWithOAuth('google', { redirectTo });
+
+      // The browser will be redirected automatically
+    } catch (err) {
+      console.error('Google sign-in error:', err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to sign in with Google. Please try again.',
+      );
+      setIsGoogleLoading(false);
+    }
+  };
+
   return (
     <Form {...form}>
       <form
@@ -90,10 +125,41 @@ export function SignUpPage() {
         className="block w-full space-y-5"
       >
         <div className="text-center space-y-1 pb-3">
-          <h1 className="text-2xl font-semibold tracking-tight">Sign Up</h1>
+          <h1 className="text-2xl font-black lowercase tracking-tighter">
+            sign up
+          </h1>
           <p className="text-sm text-muted-foreground">
-            Create your account to get started
+            Get started with your trainingflow account.
           </p>
+        </div>
+
+        <div className="flex flex-col gap-3.5">
+          <Button
+            variant="outline"
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={isGoogleLoading}
+          >
+            {isGoogleLoading ? (
+              <span className="flex items-center gap-2">
+                <LoaderCircleIcon className="size-4! animate-spin" /> Signing in
+                with Google...
+              </span>
+            ) : (
+              <>
+                <Icons.googleColorful className="size-5!" /> Sign up with Google
+              </>
+            )}
+          </Button>
+        </div>
+
+        <div className="relative py-1.5">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">or</span>
+          </div>
         </div>
 
         {error && (

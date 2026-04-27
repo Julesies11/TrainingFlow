@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/auth/context/auth-context';
 import { useLocation } from 'react-router-dom';
 import { useLoadingBar } from 'react-top-loading-bar';
+import { ScreenLoader } from '@/components/common/screen-loader';
 import { AppRoutingSetup } from './app-routing-setup';
 
 export function AppRouting() {
@@ -13,38 +14,24 @@ export function AppRouting() {
     height: 2,
   });
 
-  const { verify, setLoading } = useAuth();
+  const { loading } = useAuth();
   const [previousLocation, setPreviousLocation] = useState('');
-  const [firstLoad, setFirstLoad] = useState(true);
   const location = useLocation();
   const path = location.pathname.trim();
 
+  // Handle route transitions with loading bar
   useEffect(() => {
-    if (firstLoad) {
-      verify().finally(() => {
-        setLoading(false);
-        setFirstLoad(false);
-      });
-    }
-  }, [firstLoad, verify, setLoading]);
-
-  useEffect(() => {
-    if (!firstLoad) {
+    if (!loading) {
       start('static');
-      verify()
-        .catch(() => {
-          throw new Error('User verify request failed!');
-        })
-        .finally(() => {
-          setPreviousLocation(path);
-          complete();
-          if (path === previousLocation) {
-            setPreviousLocation('');
-          }
-        });
+      // On internal navigation, we just complete the bar
+      setPreviousLocation(path);
+      complete();
+      if (path === previousLocation) {
+        setPreviousLocation('');
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location]);
+  }, [location, loading]);
 
   useEffect(() => {
     // Skip automatic scroll to top for the training calendar as it handles its own scrolling
@@ -52,6 +39,11 @@ export function AppRouting() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [previousLocation, path]);
+
+  // Show screen loader during the initial auth session check
+  if (loading) {
+    return <ScreenLoader />;
+  }
 
   return <AppRoutingSetup />;
 }

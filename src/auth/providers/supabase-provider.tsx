@@ -1,52 +1,104 @@
-import { PropsWithChildren, useEffect, useState } from 'react';
+import { PropsWithChildren, useEffect, useState, useRef } from 'react';
 import { SupabaseAdapter } from '@/auth/adapters/supabase-adapter';
 import { AuthContext } from '@/auth/context/auth-context';
-import * as authHelper from '@/auth/lib/helpers';
 import { AuthModel, UserModel } from '@/auth/lib/models';
+import { supabase } from '@/lib/supabase';
+import { Session } from '@supabase/supabase-js';
 
 // Define the Supabase Auth Provider
 export function AuthProvider({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(true);
-  const [auth, setAuth] = useState<AuthModel | undefined>(authHelper.getAuth());
+  const [auth, setAuth] = useState<AuthModel | undefined>();
   const [currentUser, setCurrentUser] = useState<UserModel | undefined>();
   const [isAdmin, setIsAdmin] = useState(false);
+  const isInitialized = useRef(false);
+
+  // Initialize auth state from Supabase
+  useEffect(() => {
+    if (isInitialized.current) return;
+    isInitialized.current = true;
+
+    // 1. Define internal state sync function
+    const syncState = async (session: Session | null) => {
+      if (session) {
+        setAuth({
+          access_token: session.access_token,
+          refresh_token: session.refresh_token,
+        });
+
+        try {
+          const user = await SupabaseAdapter.getUserProfile(session.user);
+          setCurrentUser(user || undefined);
+          // Background ensure profile exists
+          SupabaseAdapter._ensureProfileExists(session.user);
+        } catch (err) {
+          console.error(
+            'AuthProvider: Error fetching profile during sync:',
+            err,
+          );
+        }
+      } else {
+        setAuth(undefined);
+        setCurrentUser(undefined);
+      }
+    };
+
+    // 2. Initial manual check (Source of truth for the first render)
+    const initAuth = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        await syncState(session);
+      } catch (error) {
+        console.error('AuthProvider: Initialization error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // 3. Listen for subsequent auth state changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      // INITIAL_SESSION redundant with initAuth, but safe
+      await syncState(session);
+      setLoading(false);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
 
   // Check if user is admin
   useEffect(() => {
     setIsAdmin(currentUser?.is_admin === true);
   }, [currentUser]);
 
+  // Non-destructive verification
   const verify = async () => {
-    if (auth) {
-      try {
-        const user = await getUser();
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session) {
+        const user = await SupabaseAdapter.getUserProfile(session.user);
         setCurrentUser(user || undefined);
-      } catch {
-        saveAuth(undefined);
-        setCurrentUser(undefined);
       }
+    } catch (error) {
+      console.error('AuthProvider: Verification failed:', error);
     }
   };
 
   const saveAuth = (auth: AuthModel | undefined) => {
     setAuth(auth);
-    if (auth) {
-      authHelper.setAuth(auth);
-    } else {
-      authHelper.removeAuth();
-    }
   };
 
   const login = async (email: string, password: string) => {
-    try {
-      const auth = await SupabaseAdapter.login(email, password);
-      saveAuth(auth);
-      const user = await getUser();
-      setCurrentUser(user || undefined);
-    } catch (error) {
-      saveAuth(undefined);
-      throw error;
-    }
+    await SupabaseAdapter.login(email, password);
   };
 
   const register = async (
@@ -56,21 +108,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
     firstName?: string,
     lastName?: string,
   ) => {
-    try {
-      const auth = await SupabaseAdapter.register(
-        email,
-        password,
-        password_confirmation,
-        firstName,
-        lastName,
-      );
-      saveAuth(auth);
-      const user = await getUser();
-      setCurrentUser(user || undefined);
-    } catch (error) {
-      saveAuth(undefined);
-      throw error;
-    }
+    await SupabaseAdapter.register(
+      email,
+      password,
+      password_confirmation,
+      firstName,
+      lastName,
+    );
   };
 
   const requestPasswordReset = async (email: string) => {
@@ -89,17 +133,23 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   const getUser = async () => {
-    return await SupabaseAdapter.getCurrentUser();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (session) {
+      return await SupabaseAdapter.getUserProfile(session.user);
+    }
+    return null;
   };
 
   const updateProfile = async (userData: Partial<UserModel>) => {
-    return await SupabaseAdapter.updateUserProfile(userData);
+    const updatedUser = await SupabaseAdapter.updateUserProfile(userData);
+    setCurrentUser(updatedUser);
+    return updatedUser;
   };
 
   const logout = () => {
     SupabaseAdapter.logout();
-    saveAuth(undefined);
-    setCurrentUser(undefined);
   };
 
   return (

@@ -15,7 +15,7 @@ import { SignUpPage } from './pages/signup-page';
 export const authRoutes: RouteObject[] = [
   {
     path: '',
-    element: <BrandedLayout />,
+    element: <ClassicLayout />,
     children: [
       {
         path: 'signin',
@@ -53,41 +53,16 @@ export const authRoutes: RouteObject[] = [
     ],
   },
   {
-    path: '',
-    element: <ClassicLayout />,
+    path: 'branded',
+    element: <BrandedLayout />,
     children: [
       {
-        path: 'classic/signin',
+        path: 'signin',
         element: <SignInPage />,
       },
       {
-        path: 'classic/signup',
+        path: 'signup',
         element: <SignUpPage />,
-      },
-      {
-        path: 'classic/change-password',
-        element: <ChangePasswordPage />,
-      },
-      {
-        path: 'classic/reset-password',
-        element: <ResetPasswordPage />,
-      },
-      /* Extended examples */
-      {
-        path: 'classic/2fa',
-        element: <TwoFactorAuth />,
-      },
-      {
-        path: 'classic/check-email',
-        element: <CheckEmail />,
-      },
-      {
-        path: 'classic/reset-password/check-email',
-        element: <ResetPasswordCheckEmail />,
-      },
-      {
-        path: 'classic/reset-password/changed',
-        element: <ResetPasswordChanged />,
       },
     ],
   },

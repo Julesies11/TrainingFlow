@@ -17,10 +17,13 @@ The current database schema is consolidated into a single baseline migration in 
 
 ## Authentication Flow
 
-1. **Provider**: `src/auth/providers/supabase-provider.tsx` wraps the app.
-2. **Context**: `src/auth/context/auth-context.tsx` provides access to the current user and auth state.
-3. **Hooks**: `src/hooks/use-supabase-user.ts` allows components to reactively access user data.
-4. **Protection**: `src/auth/require-auth.tsx` is used in routing to protect private pages.
+TrainingFlow uses **Supabase's native authentication management** to ensure reliable session persistence across page refreshes and different subdomains.
+
+1. **Provider**: `src/auth/providers/supabase-provider.tsx` wraps the app and acts as the single source of truth. It listens to `supabase.auth.onAuthStateChange` to sync session state automatically.
+2. **Context**: `src/auth/context/auth-context.tsx` provides access to the current authenticated user (`UserModel`) and session data (`AuthModel`).
+3. **Lazy Profile Creation**: When a user logs in for the first time, the `SupabaseAdapter` ensures a corresponding record exists in `public.tf_profiles` without overwriting existing data.
+4. **Protection**: `src/auth/require-auth.tsx` is a non-destructive guard that protects private routes while the session is being verified.
+5. **Hooks**: `src/hooks/use-supabase-user.ts` and `useAuth` allow components to reactively access user data and session state.
 
 ## Data Rules
 

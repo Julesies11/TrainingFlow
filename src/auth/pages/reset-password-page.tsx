@@ -75,11 +75,11 @@ export function ResetPasswordPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <div className="text-center space-y-2">
-            <h1 className="text-2xl font-bold tracking-tight">
-              Reset Password
+            <h1 className="text-2xl font-black lowercase tracking-tighter">
+              reset password
             </h1>
             <p className="text-sm text-muted-foreground">
-              Enter your email to receive a password reset link
+              Enter your email to reset your trainingflow password.
             </p>
           </div>
 
