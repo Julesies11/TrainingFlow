@@ -21,7 +21,20 @@ export const userSportSettingsApi = {
   async getAll(userId: string): Promise<UserSportSettings[]> {
     const { data, error } = await supabase
       .from('tf_user_sport_settings')
-      .select('*')
+      .select(
+        `
+        id, 
+        sport_type_id, 
+        effort1_hex, 
+        effort2_hex, 
+        effort3_hex, 
+        effort4_hex, 
+        effort1_label, 
+        effort2_label, 
+        effort3_label, 
+        effort4_label
+      `,
+      )
       .eq('user_id', userId);
 
     if (error) throw error;

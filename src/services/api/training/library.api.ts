@@ -20,7 +20,19 @@ export const libraryApi = {
   async getAll(userId: string): Promise<LibraryWorkout[]> {
     const { data, error } = await supabase
       .from('tf_library_workouts')
-      .select('*, tf_sport_types(name)')
+      .select(
+        `
+        id, 
+        sport_type_id, 
+        title, 
+        description, 
+        planned_duration_minutes, 
+        planned_distance_km, 
+        effort_level, 
+        is_key_workout,
+        tf_sport_types(name)
+      `,
+      )
       .eq('user_id', userId);
 
     if (error) throw error;
@@ -43,7 +55,19 @@ export const libraryApi = {
         effort_level: workout.effortLevel,
         is_key_workout: workout.isKeyWorkout,
       })
-      .select('*, tf_sport_types(name)')
+      .select(
+        `
+        id, 
+        sport_type_id, 
+        title, 
+        description, 
+        planned_duration_minutes, 
+        planned_distance_km, 
+        effort_level, 
+        is_key_workout,
+        tf_sport_types(name)
+      `,
+      )
       .single();
 
     if (error) throw error;
@@ -67,7 +91,19 @@ export const libraryApi = {
       })
       .eq('id', workout.id)
       .eq('user_id', userId)
-      .select('*, tf_sport_types(name)')
+      .select(
+        `
+        id, 
+        sport_type_id, 
+        title, 
+        description, 
+        planned_duration_minutes, 
+        planned_distance_km, 
+        effort_level, 
+        is_key_workout,
+        tf_sport_types(name)
+      `,
+      )
       .single();
 
     if (error) throw error;

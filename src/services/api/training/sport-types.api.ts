@@ -25,7 +25,24 @@ export const sportTypesApi = {
   async getAll(): Promise<SportTypeRecord[]> {
     const { data, error } = await supabase
       .from('tf_sport_types')
-      .select('*')
+      .select(
+        `
+        id, 
+        name, 
+        description, 
+        pace_relevant, 
+        pace_unit, 
+        distance_unit, 
+        effort1_label, 
+        effort1_hex, 
+        effort2_label, 
+        effort2_hex, 
+        effort3_label, 
+        effort3_hex, 
+        effort4_label, 
+        effort4_hex
+      `,
+      )
       .order('name');
 
     if (error) throw error;

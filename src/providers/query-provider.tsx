@@ -6,6 +6,7 @@ import {
   QueryClientProvider,
 } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { errorLogsApi } from '@/services/api/system/error-logs.api';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 
 const QueryProvider = ({ children }: { children: ReactNode }) => {
@@ -16,6 +17,14 @@ const QueryProvider = ({ children }: { children: ReactNode }) => {
           onError: (error) => {
             const message =
               error.message || 'Something went wrong. Please try again.';
+
+            // Log to database
+            errorLogsApi.capture({
+              message: `TanStack Query Error: ${message}`,
+              stack: error instanceof Error ? error.stack : undefined,
+              component_name: 'QueryProvider',
+              severity: 'error',
+            });
 
             toast.custom(
               () => (

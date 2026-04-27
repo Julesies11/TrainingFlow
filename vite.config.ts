@@ -11,6 +11,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  esbuild: {
+    drop: ['console', 'debugger'],
+  },
   build: {
     chunkSizeWarningLimit: 3000,
   },

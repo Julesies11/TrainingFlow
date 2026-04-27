@@ -53,7 +53,29 @@ export const workoutsApi = {
   async getAll(userId: string): Promise<Workout[]> {
     const { data, error } = await supabase
       .from('tf_workouts')
-      .select('*, tf_sport_types(name)')
+      .select(
+        `
+        id, 
+        date, 
+        sport_type_id, 
+        title, 
+        description, 
+        planned_duration_minutes, 
+        planned_distance_km, 
+        effort_level, 
+        is_key_workout, 
+        is_completed, 
+        actual_duration_minutes, 
+        actual_distance_km, 
+        avg_hr, 
+        avg_power, 
+        intervals, 
+        workout_order, 
+        recurrence_id, 
+        recurrence_rule,
+        tf_sport_types(name)
+      `,
+      )
       .eq('user_id', userId)
       .order('date', { ascending: false });
 

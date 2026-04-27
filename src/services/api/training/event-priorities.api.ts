@@ -5,7 +5,7 @@ export const eventPrioritiesApi = {
   async getAll(): Promise<EventPriorityRecord[]> {
     const { data, error } = await supabase
       .from('tf_event_priorities')
-      .select('*')
+      .select('id, name, is_active, is_system')
       .eq('is_active', true)
       .order('name');
 

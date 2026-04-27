@@ -74,7 +74,12 @@ export const eventsApi = {
       .from('tf_events')
       .select(
         `
-        *,
+        id, 
+        date, 
+        event_type_id, 
+        priority_id, 
+        title, 
+        description,
         tf_event_types(name, icon_name, color_theme),
         tf_event_priorities(name),
         segments:tf_event_segments(
@@ -140,7 +145,12 @@ export const eventsApi = {
       .from('tf_events')
       .select(
         `
-        *,
+        id, 
+        date, 
+        event_type_id, 
+        priority_id, 
+        title, 
+        description,
         tf_event_types(name, icon_name, color_theme),
         tf_event_priorities(name),
         segments:tf_event_segments(
@@ -242,7 +252,12 @@ export const eventsApi = {
       .from('tf_events')
       .select(
         `
-        *,
+        id, 
+        date, 
+        event_type_id, 
+        priority_id, 
+        title, 
+        description,
         tf_event_types(name, icon_name, color_theme),
         tf_event_priorities(name),
         segments:tf_event_segments(

@@ -5,7 +5,7 @@ export const eventTypesApi = {
   async getAll(): Promise<EventTypeRecord[]> {
     const { data, error } = await supabase
       .from('tf_event_types')
-      .select('*')
+      .select('id, name, is_active, is_system, icon_name, color_theme')
       .eq('is_active', true)
       .order('name');
 

@@ -71,7 +71,18 @@ export const profileApi = {
   async get(userId: string): Promise<UserProfile | null> {
     const { data, error } = await supabase
       .from('tf_profiles')
-      .select('*')
+      .select(
+        `
+        id, 
+        updated_at, 
+        theme, 
+        role, 
+        calendar_stats_mode, 
+        avatar_url, 
+        workout_type_options, 
+        effort_settings
+      `,
+      )
       .eq('id', userId)
       .maybeSingle();
 

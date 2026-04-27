@@ -1,9 +1,9 @@
-import { PropsWithChildren, useEffect, useState, useRef } from 'react';
+import { PropsWithChildren, useEffect, useRef, useState } from 'react';
 import { SupabaseAdapter } from '@/auth/adapters/supabase-adapter';
 import { AuthContext } from '@/auth/context/auth-context';
 import { AuthModel, UserModel } from '@/auth/lib/models';
-import { supabase } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase';
 
 // Define the Supabase Auth Provider
 export function AuthProvider({ children }: PropsWithChildren) {
