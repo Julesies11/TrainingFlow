@@ -87,17 +87,18 @@ export function LibraryTemplateDialog({
 
   return (
     <Dialog open={true} onOpenChange={onCancel}>
-      <DialogContent className="max-w-[500px] max-h-[95vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="shrink-0 p-6 pb-0">
-          <DialogTitle className="text-2xl font-black lowercase tracking-tighter">
-            {template.id ? 'edit template' : 'new template'}
-          </DialogTitle>
-          <DialogDescription className="text-xs font-semibold uppercase tracking-widest opacity-60">
-            workout library blueprint
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-[500px] w-full max-h-[95vh] flex flex-col p-0 overflow-hidden bg-background">
+        <div className="flex flex-col grow overflow-hidden">
+          <DialogHeader className="shrink-0 p-6 pb-0">
+            <DialogTitle className="text-2xl font-black lowercase tracking-tighter">
+              {template.id ? 'edit template' : 'new template'}
+            </DialogTitle>
+            <DialogDescription className="text-xs font-semibold uppercase tracking-widest opacity-60">
+              workout library blueprint
+            </DialogDescription>
+          </DialogHeader>
 
-        <DialogBody className="space-y-6 px-6 py-4 overflow-y-auto scrollable-y grow">
+          <DialogBody className="space-y-6 px-6 py-4 overflow-y-auto scrollable-y grow">
           {/* Title */}
           <div className="space-y-2">
             <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
@@ -296,13 +297,20 @@ export function LibraryTemplateDialog({
           </div>
         </DialogBody>
 
-        <DialogFooter className="shrink-0 p-6 pt-0">
-          <Button variant="outline" onClick={onCancel}>
+        <DialogFooter className="shrink-0 p-6 pt-0 gap-3">
+          <Button
+            variant="outline"
+            onClick={onCancel}
+            className="w-full sm:w-auto"
+          >
             discard
           </Button>
-          <Button onClick={() => onSave(template)}>save to library</Button>
+          <Button onClick={() => onSave(template)} className="w-full sm:flex-1">
+            save to library
+          </Button>
         </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </DialogContent>
+  </Dialog>
   );
 }
