@@ -87,7 +87,7 @@ export function LibraryTemplateDialog({
 
   return (
     <Dialog open={true} onOpenChange={onCancel}>
-      <DialogContent className="max-w-[500px] w-full max-h-[calc(100dvh-2rem)] sm:max-h-[95vh] flex flex-col p-0 overflow-hidden bg-background sm:top-[50%] sm:translate-y-[-50%] top-4 translate-y-0">
+      <DialogContent className="max-w-full sm:max-w-[500px] w-full h-[100dvh] sm:h-auto sm:max-h-[95vh] flex flex-col p-0 overflow-hidden bg-background top-0 left-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] border-0 sm:border rounded-none sm:rounded-xl">
         <div className="flex flex-col grow overflow-hidden">
           <DialogHeader className="shrink-0 p-6 pb-0">
             <DialogTitle className="text-2xl font-black lowercase tracking-tighter">

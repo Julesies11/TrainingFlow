@@ -205,7 +205,7 @@ export function WorkoutDialog({
 
   return (
     <Dialog open={true} onOpenChange={() => onCancel()}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] sm:max-h-[95vh] w-full max-w-2xl overflow-hidden bg-background p-0 flex flex-col sm:top-[50%] sm:translate-y-[-50%] top-4 translate-y-0">
+      <DialogContent className="max-w-full sm:max-w-2xl w-full h-[100dvh] sm:h-auto sm:max-h-[95vh] flex flex-col p-0 overflow-hidden bg-background top-0 left-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] border-0 sm:border rounded-none sm:rounded-xl">
         {/* Color bar */}
         <div
           className="h-2 shrink-0"
