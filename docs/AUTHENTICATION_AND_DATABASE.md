@@ -13,7 +13,7 @@ The application uses a set of dedicated tables to manage its core entities.
 
 ### Baseline Migration
 
-The current database schema is consolidated into a single baseline migration in `supabase/migrations/2026042304_baseline_v2.sql`. This file includes all table definitions, RLS policies, indexes, storage buckets, and initial seed data.
+The current database schema is consolidated into a single baseline migration in `supabase/migrations/2026042701_baseline_v3.sql`. This file includes all table definitions, RLS policies, indexes, storage buckets, and initial seed data.
 
 ## Authentication Flow
 
@@ -25,4 +25,4 @@ The current database schema is consolidated into a single baseline migration in 
 ## Data Rules
 
 - **Foreign Keys**: All user-specific tables must have a foreign key to `auth.users` with `ON DELETE CASCADE`.
-- **Row Level Security (RLS)**: RLS is enabled and fully configured on all `tf_` tables in `baseline_schema.sql` to ensure users can only access their own data.
+- **Row Level Security (RLS)**: RLS is enabled and fully configured on all `tf_` tables in the baseline migration to ensure users can only access their own data.

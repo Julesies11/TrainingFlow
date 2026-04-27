@@ -39,7 +39,7 @@ This guide outlines the local development workflow, project-specific scripts, an
 
 Database schema changes are managed via SQL migration files in `supabase/migrations/`.
 
-- **Baseline:** The current state of the database is consolidated in `2026042304_baseline_v2.sql`.
+- **Baseline:** The current state of the database is consolidated in `2026042701_baseline_v3.sql`.
 - **New Migrations:** When making schema changes, create a new SQL file with a timestamp prefix (e.g., `YYYYMMDDHH_description.sql`).
 - **Archive:** Older migrations that have been consolidated are stored in the `supabase/migrations/archive/` directory for historical reference.
 
