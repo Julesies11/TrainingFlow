@@ -283,7 +283,7 @@ export function LibraryTemplateDialog({
           {/* Description */}
           <div className="space-y-2">
             <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
-              blueprint details
+              details
             </Label>
             <Textarea
               value={template.description || ''}

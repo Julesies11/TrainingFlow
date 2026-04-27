@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, ChevronLeft, ChevronRight, Plus, Star } from 'lucide-react';
 import { Event, LibraryWorkout, Workout } from '@/types/training';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';
@@ -87,6 +87,9 @@ export function CalendarView() {
     new Date().getFullYear(),
   );
 
+  const todayRef = useRef<HTMLDivElement>(null);
+  const hasInitialScrolled = useRef(false);
+
   // Toggle helper
   const handleToggleStats = (checked: boolean) => {
     setShowStats(checked);
@@ -166,6 +169,14 @@ export function CalendarView() {
     setDisplayMonth(today.getMonth());
     setDisplayYear(today.getFullYear());
     setSelectedDate(formatDateToLocalISO(today));
+
+    // Scroll to today after state updates
+    setTimeout(() => {
+      todayRef.current?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }, 100);
   }, []);
 
   // Drag & drop handlers
@@ -316,6 +327,19 @@ export function CalendarView() {
   const isLoading =
     !userId || loadingWorkouts || loadingSports || loadingSettings;
 
+  // Scroll to today on initial load
+  useEffect(() => {
+    if (!isLoading && todayRef.current && !hasInitialScrolled.current) {
+      setTimeout(() => {
+        todayRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+        hasInitialScrolled.current = true;
+      }, 300); // Give it a bit more time for all data to render
+    }
+  }, [isLoading]);
+
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
@@ -448,6 +472,7 @@ export function CalendarView() {
                         return (
                           <div
                             key={dIdx}
+                            ref={isToday ? todayRef : null}
                             onClick={() => setSelectedDate(dateStr)}
                             onDragOver={(e) =>
                               handleDragOverCell(
