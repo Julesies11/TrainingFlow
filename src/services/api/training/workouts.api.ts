@@ -147,4 +147,19 @@ export const workoutsApi = {
 
     if (error) throw error;
   },
+
+  async deleteBulk(
+    filters: { fromDate: string; toDate: string; sportTypeIds: string[] },
+    userId: string,
+  ): Promise<void> {
+    const { error } = await supabase
+      .from('tf_workouts')
+      .delete()
+      .eq('user_id', userId)
+      .gte('date', filters.fromDate)
+      .lte('date', filters.toDate)
+      .in('sport_type_id', filters.sportTypeIds);
+
+    if (error) throw error;
+  },
 };

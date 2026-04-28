@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { parseISO } from 'date-fns';
-import { BookOpen, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import {
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  FileUp,
+  Plus,
+  Trash2,
+} from 'lucide-react';
 import { Event, LibraryWorkout, Workout } from '@/types/training';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';
 import {
@@ -10,6 +17,7 @@ import {
   useDeleteEvent,
   useDeleteLibraryWorkout,
   useDeleteWorkout,
+  useDeleteWorkoutsBulk,
   useEvents,
   useGoals,
   useLibrary,
@@ -40,6 +48,8 @@ import { Button } from '@/components/ui/button';
 import { Switch, SwitchWrapper } from '@/components/ui/switch';
 import { EventDialog } from '../_shared/components/event-dialog';
 import { CalendarDay } from './components/calendar-day';
+import { ImportDialog } from './components/import-dialog';
+import { BulkDeleteDialog } from './components/bulk-delete-dialog';
 import { LibraryDrawer } from './components/library-drawer';
 import { WorkoutDialog } from './components/workout-dialog';
 
@@ -59,6 +69,7 @@ export function CalendarView() {
   const createWorkout = useCreateWorkout();
   const createWorkoutsBulk = useCreateWorkoutsBulk();
   const deleteWorkout = useDeleteWorkout();
+  const deleteWorkoutsBulk = useDeleteWorkoutsBulk();
   const updateEvent = useUpdateEvent();
   const deleteEvent = useDeleteEvent();
   const createLibrary = useCreateLibraryWorkout();
@@ -101,6 +112,8 @@ export function CalendarView() {
   const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] =
     useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   // Drag and drop state
   const [isDraggingId, setIsDraggingId] = useState<string | null>(null);
@@ -420,6 +433,34 @@ export function CalendarView() {
             </div>
 
             <div className="flex items-center gap-1.5 lg:gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowBulkDeleteDialog(true)}
+                className="gap-2 text-destructive hover:bg-destructive/5 border-destructive/20"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest lg:hidden">
+                  del
+                </span>
+                <span className="hidden text-[10px] font-black uppercase tracking-widest lg:inline">
+                  bulk delete
+                </span>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowImportDialog(true)}
+                className="gap-2"
+              >
+                <FileUp className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest lg:hidden">
+                  imp
+                </span>
+                <span className="hidden text-[10px] font-black uppercase tracking-widest lg:inline">
+                  import
+                </span>
+              </Button>
               <Button
                 variant={showLibrary ? 'primary' : 'outline'}
                 size="sm"
@@ -784,7 +825,16 @@ export function CalendarView() {
             onCancel={() => setEventWithSegmentsToEdit(null)}
           />
         )}{' '}
-      </div>
-    </div>
-  );
-}
+        {/* Import Dialog */}
+        <ImportDialog
+          open={showImportDialog}
+          onOpenChange={setShowImportDialog}
+        />
+        <BulkDeleteDialog
+          open={showBulkDeleteDialog}
+          onOpenChange={setShowBulkDeleteDialog}
+        />
+        </div>
+        </div>
+        );
+        }

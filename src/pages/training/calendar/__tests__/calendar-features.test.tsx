@@ -16,7 +16,9 @@ vi.mock('@/hooks/use-training-data', () => ({
   useUpdateProfile: vi.fn(),
   useUpdateWorkout: vi.fn(),
   useCreateWorkout: vi.fn(),
-  useCreateWorkoutsBulk: vi.fn(),
+  useCreateWorkoutsBulk: vi
+    .fn()
+    .mockReturnValue({ mutate: vi.fn(), isPending: false }),
   useDeleteWorkout: vi.fn(),
   useUpdateEvent: vi.fn(),
   useDeleteEvent: vi.fn(),

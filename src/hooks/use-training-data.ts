@@ -306,6 +306,18 @@ export function useDeleteWorkout() {
   });
 }
 
+export function useDeleteWorkoutsBulk() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (filters: { fromDate: string; toDate: string; sportTypeIds: string[] }) =>
+      workoutsApi.deleteBulk(filters, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.workouts(userId!) });
+    },
+  });
+}
+
 // ─── Library ─────────────────────────────────────────────────
 export function useLibrary() {
   const userId = useSupabaseUserId();
