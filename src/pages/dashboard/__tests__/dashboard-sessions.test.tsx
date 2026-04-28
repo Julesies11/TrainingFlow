@@ -10,6 +10,7 @@ vi.mock('@/hooks/use-training-data', () => ({
   useEvents: vi.fn(),
   useSportTypes: vi.fn(),
   useUserSportSettings: vi.fn(),
+  useGoals: vi.fn(),
   useUpdateWorkout: vi.fn(),
   useUpdateEvent: vi.fn(),
   useDeleteWorkout: vi.fn(),
@@ -32,6 +33,10 @@ describe('DashboardPage Sessions', () => {
       data: [],
       isLoading: false,
     } as unknown as ReturnType<typeof trainingHooks.useUserSportSettings>);
+    vi.mocked(trainingHooks.useGoals).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof trainingHooks.useGoals>);
     vi.mocked(trainingHooks.useUpdateWorkout).mockReturnValue({
       mutate: vi.fn(),
     } as unknown as ReturnType<typeof trainingHooks.useUpdateWorkout>);

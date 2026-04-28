@@ -1,7 +1,12 @@
 import { useMemo } from 'react';
 import { parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { Event, SportTypeRecord, UserSportSettings, Workout } from '@/types/training';
+import {
+  Event,
+  SportTypeRecord,
+  UserSportSettings,
+  Workout,
+} from '@/types/training';
 import { getEffortColor } from '@/services/training/effort-colors';
 
 type ViewType = 'week' | 'month';
@@ -80,34 +85,43 @@ export function SportDistribution({
 
     totalDuration = totalDuration || 1;
 
-    return sportTypes.map((st) => {
-      let sportDuration = filteredWorkouts
-        .filter((w) => w.sportName === st.name)
-        .reduce((sum, w) => {
-          const dur = w.isCompleted
-            ? w.actualDurationMinutes || 0
-            : w.plannedDurationMinutes || 0;
-          return sum + dur;
-        }, 0);
+    return sportTypes
+      .map((st) => {
+        let sportDuration = filteredWorkouts
+          .filter((w) => w.sportName === st.name)
+          .reduce((sum, w) => {
+            const dur = w.isCompleted
+              ? w.actualDurationMinutes || 0
+              : w.plannedDurationMinutes || 0;
+            return sum + dur;
+          }, 0);
 
-      filteredEvents.forEach((event) => {
-        if (event.segments && event.segments.length > 0) {
-          event.segments.forEach((seg) => {
-            if (seg.sportName === st.name) {
-              sportDuration += seg.plannedDurationMinutes || 0;
-            }
-          });
-        }
-      });
+        filteredEvents.forEach((event) => {
+          if (event.segments && event.segments.length > 0) {
+            event.segments.forEach((seg) => {
+              if (seg.sportName === st.name) {
+                sportDuration += seg.plannedDurationMinutes || 0;
+              }
+            });
+          }
+        });
 
-      return {
-        sport: st.name,
-        duration: sportDuration,
-        percent: Math.round((sportDuration / totalDuration) * 100),
-        color: getEffortColor(st, 4, userSettingsMap.get(st.id)),
-      };
-    }).filter(item => item.duration > 0);
-  }, [workouts, events, sportTypes, userSettingsMap, distViewType, distPivotDate]);
+        return {
+          sport: st.name,
+          duration: sportDuration,
+          percent: Math.round((sportDuration / totalDuration) * 100),
+          color: getEffortColor(st, 4, userSettingsMap.get(st.id)),
+        };
+      })
+      .filter((item) => item.duration > 0);
+  }, [
+    workouts,
+    events,
+    sportTypes,
+    userSettingsMap,
+    distViewType,
+    distPivotDate,
+  ]);
 
   const distributionLabel = useMemo(() => {
     if (distViewType === 'week') {

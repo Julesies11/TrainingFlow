@@ -1,10 +1,5 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { parseISO } from 'date-fns';
 import { BookOpen, ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Event, LibraryWorkout, Workout } from '@/types/training';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';
@@ -16,6 +11,7 @@ import {
   useDeleteLibraryWorkout,
   useDeleteWorkout,
   useEvents,
+  useGoals,
   useLibrary,
   useProfile,
   useSportTypes,
@@ -51,6 +47,7 @@ export function CalendarView() {
   const userId = useSupabaseUserId();
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
   const { data: events = [] } = useEvents();
+  const { data: goals = [] } = useGoals();
   const { data: library = [] } = useLibrary();
   const { data: sportTypes = [], isLoading: loadingSports } = useSportTypes();
   const { data: userSportSettings = [], isLoading: loadingSettings } =
@@ -300,7 +297,17 @@ export function CalendarView() {
           }
         });
     });
-    return { sportTotals, weekTotals };
+
+    // Find active goals for this week
+    const weekStart = week[0];
+    const weekEnd = week[week.length - 1];
+    const activeGoals = goals.filter((g) => {
+      const gStart = parseISO(g.startDate);
+      const gEnd = parseISO(g.endDate);
+      return gStart <= weekEnd && gEnd >= weekStart;
+    });
+
+    return { sportTotals, weekTotals, activeGoals };
   };
 
   // Save handler
@@ -455,7 +462,8 @@ export function CalendarView() {
             {/* Weeks */}
             <div className="flex flex-col gap-2 p-2 lg:block lg:p-0">
               {weeks.map((week, wIdx) => {
-                const { sportTotals, weekTotals } = calculateWeekSummary(week);
+                const { sportTotals, weekTotals, activeGoals } =
+                  calculateWeekSummary(week);
                 const weekStart = formatDateToLocalISO(week[0]);
                 return (
                   <div
@@ -555,6 +563,46 @@ export function CalendarView() {
                                             {st.distanceUnit || 'km'}
                                           </span>
                                         )}
+
+                                      {/* Goal Progress */}
+                                      {activeGoals
+                                        .filter((g) => g.sportTypeId === stId)
+                                        .map((goal) => {
+                                          const actual =
+                                            goal.metric === 'duration'
+                                              ? sTotal.duration
+                                              : sTotal.distance;
+                                          const target = goal.targetValue;
+                                          const percent = Math.min(
+                                            100,
+                                            Math.round(
+                                              (actual / (target || 1)) * 100,
+                                            ),
+                                          );
+                                          return (
+                                            <div
+                                              key={goal.id}
+                                              className="mt-1.5 flex flex-col gap-1"
+                                            >
+                                              <div className="flex justify-between text-[8px] font-black uppercase opacity-60">
+                                                <span>goal: {percent}%</span>
+                                                <span>
+                                                  {goal.metric === 'duration'
+                                                    ? formatMinsShort(target)
+                                                    : `${target}${st?.distanceUnit || 'km'}`}
+                                                </span>
+                                              </div>
+                                              <div className="h-1 w-full rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+                                                <div
+                                                  className={`h-full ${actual >= target ? 'bg-green-500' : 'bg-red-500'}`}
+                                                  style={{
+                                                    width: `${percent}%`,
+                                                  }}
+                                                />
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
                                     </div>
                                   </div>
                                 );
@@ -598,20 +646,50 @@ export function CalendarView() {
                                         {sportName}
                                       </span>
                                     </div>
-                                    <div className="flex items-baseline gap-1">
-                                      <span className="text-[10px] font-bold leading-none">
-                                        {formatMinsShort(sTotal.duration)}
-                                      </span>
-                                      {sTotal.distance > 0 &&
-                                        isPaceRelevant(
-                                          !!st?.paceRelevant,
-                                          st?.paceUnit,
-                                        ) && (
-                                          <span className="text-muted-foreground text-[9px] font-bold leading-none italic">
-                                            {sTotal.distance.toFixed(1)}
-                                            {st.distanceUnit || 'km'}
-                                          </span>
-                                        )}
+                                    <div className="flex flex-col">
+                                      <div className="flex items-baseline gap-1">
+                                        <span className="text-[10px] font-bold leading-none">
+                                          {formatMinsShort(sTotal.duration)}
+                                        </span>
+                                        {sTotal.distance > 0 &&
+                                          isPaceRelevant(
+                                            !!st?.paceRelevant,
+                                            st?.paceUnit,
+                                          ) && (
+                                            <span className="text-muted-foreground text-[9px] font-bold leading-none italic">
+                                              {sTotal.distance.toFixed(1)}
+                                              {st.distanceUnit || 'km'}
+                                            </span>
+                                          )}
+                                      </div>
+
+                                      {/* Mobile Goal Progress */}
+                                      {activeGoals
+                                        .filter((g) => g.sportTypeId === stId)
+                                        .map((goal) => {
+                                          const actual =
+                                            goal.metric === 'duration'
+                                              ? sTotal.duration
+                                              : sTotal.distance;
+                                          const target = goal.targetValue;
+                                          const percent = Math.min(
+                                            100,
+                                            Math.round(
+                                              (actual / (target || 1)) * 100,
+                                            ),
+                                          );
+                                          return (
+                                            <div
+                                              key={goal.id}
+                                              className="h-0.5 w-12 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden mt-0.5"
+                                            >
+                                              <div
+                                                className={`h-full ${actual >= target ? 'bg-green-500' : 'bg-red-500'}`}
+                                                style={{ width: `${percent}%` }}
+                                              />
+                                            </div>
+                                          );
+                                        })}
                                     </div>
                                   </div>
                                 );

@@ -6,6 +6,7 @@ import { SportTypesAdminPage } from '@/pages/admin/sport-types';
 import { DashboardPage } from '@/pages/dashboard';
 import { CalendarView } from '@/pages/training/calendar';
 import { EventsPage } from '@/pages/training/events';
+import { GoalsPage } from '@/pages/training/goals';
 import { LibraryPage } from '@/pages/training/library';
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '../test-utils';
@@ -38,6 +39,10 @@ vi.mock('@/hooks/use-training-data', () => ({
   useDeleteWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useUpdateEvent: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useDeleteEvent: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useGoals: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useCreateGoal: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useUpdateGoal: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useDeleteGoal: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useCreateLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useUpdateLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useDeleteLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
@@ -109,6 +114,14 @@ describe('Smoke Test: Main Pages', () => {
   it('renders Library page without crashing', async () => {
     render(<LibraryPage />);
     expect(screen.getByText(/library/i)).toBeDefined();
+  });
+
+  it('renders Training Goals page without crashing', async () => {
+    render(<GoalsPage />);
+    await waitFor(() => {
+      expect(screen.queryByText(/loading goals/i)).toBeNull();
+    });
+    expect(screen.getByText(/training goals/i)).toBeDefined();
   });
 
   it('renders CalendarView page without crashing', async () => {

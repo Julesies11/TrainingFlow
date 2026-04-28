@@ -1,4 +1,10 @@
-import { BookOpen, CalendarCheck, LayoutGrid, Trophy } from 'lucide-react';
+import {
+  BookOpen,
+  CalendarCheck,
+  LayoutGrid,
+  Target,
+  Trophy,
+} from 'lucide-react';
 import { type MenuConfig } from './types';
 
 export const MENU_SIDEBAR: MenuConfig = [
@@ -18,6 +24,11 @@ export const MENU_SIDEBAR: MenuConfig = [
     path: '/training/library',
   },
   {
+    title: 'Goals',
+    icon: Target,
+    path: '/training/goals',
+  },
+  {
     title: 'Events',
     icon: Trophy,
     path: '/training/events',
@@ -29,6 +40,7 @@ export const MENU_SIDEBAR_COMPACT: MenuConfig = MENU_SIDEBAR;
 export const MENU_MEGA: MenuConfig = [
   { title: 'Dashboard', path: '/dashboard' },
   { title: 'Calendar', path: '/training/calendar' },
+  { title: 'Goals', path: '/training/goals' },
   { title: 'Library', path: '/training/library' },
   { title: 'Events', path: '/training/events' },
 ];

@@ -28,9 +28,11 @@ window.ResizeObserver = class ResizeObserver {
 window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 // Mock ApexCharts
+export const mockApexChart = vi.fn(() => <div data-testid="mock-apexchart" />);
+
 vi.mock('react-apexcharts', () => ({
   __esModule: true,
-  default: () => <div data-testid="mock-apexchart" />,
+  default: mockApexChart,
 }));
 
 // Runs a cleanup after each test case (e.g. clearing jsdom)

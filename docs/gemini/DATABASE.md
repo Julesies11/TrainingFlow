@@ -15,6 +15,7 @@ User profiles are stored in the `public.tf_profiles` table, which is linked to S
 - `tf_event_priorities`: Lookup table for event priorities (A, B, C). Supports system-wide and user-specific custom entries.
 - `tf_library_workouts`: Reusable workout templates.
 - `tf_daily_metrics`: Daily tracking of training stress (TSS, CTL, ATL, TSB).
+- `tf_training_goals`: Periodized training targets. Columns: `id`, `user_id`, `sport_type_id`, `metric` (duration/distance), `target_value`, `period` (weekly/monthly), `start_date`, `end_date`, `event_id` (optional).
 
 ## Authentication
 Authentication is managed via Supabase Auth (`auth.users`).

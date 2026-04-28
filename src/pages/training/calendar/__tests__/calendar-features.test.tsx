@@ -20,6 +20,10 @@ vi.mock('@/hooks/use-training-data', () => ({
   useDeleteWorkout: vi.fn(),
   useUpdateEvent: vi.fn(),
   useDeleteEvent: vi.fn(),
+  useGoals: vi.fn(),
+  useCreateGoal: vi.fn(),
+  useUpdateGoal: vi.fn(),
+  useDeleteGoal: vi.fn(),
   useCreateLibraryWorkout: vi.fn(),
   useUpdateLibraryWorkout: vi.fn(),
   useDeleteLibraryWorkout: vi.fn(),
@@ -48,6 +52,10 @@ describe('CalendarView Features', () => {
       data: [],
       isLoading: false,
     } as unknown as ReturnType<typeof trainingHooks.useEvents>);
+    vi.mocked(trainingHooks.useGoals).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof trainingHooks.useGoals>);
     vi.mocked(trainingHooks.useLibrary).mockReturnValue({
       data: [],
       isLoading: false,

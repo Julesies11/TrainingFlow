@@ -6,6 +6,7 @@ import {
   useDeleteEvent,
   useDeleteWorkout,
   useEvents,
+  useGoals,
   useSportTypes,
   useUpdateEvent,
   useUpdateWorkout,
@@ -16,6 +17,8 @@ import {
   buildSportMap,
   buildUserSettingsMap,
 } from '@/services/training/effort-colors';
+import { Label } from '@/components/ui/label';
+import { Switch, SwitchWrapper } from '@/components/ui/switch';
 import { EventDialog } from '../training/_shared/components/event-dialog';
 import { WorkoutDialog } from '../training/calendar/components/workout-dialog';
 import { DailySessions } from './components/daily-sessions';
@@ -29,8 +32,10 @@ type ViewType = 'week' | 'month';
 export function DashboardPage() {
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
   const { data: events = [], isLoading: loadingEvents } = useEvents();
-  const { data: sportTypes = [] } = useSportTypes();
-  const { data: userSettings = [] } = useUserSportSettings();
+  const { data: goals = [], isLoading: loadingGoals } = useGoals();
+  const { data: sportTypes = [], isLoading: loadingSports } = useSportTypes();
+  const { data: userSettings = [], isLoading: loadingSettings } =
+    useUserSportSettings();
   const updateWorkout = useUpdateWorkout();
   const updateEvent = useUpdateEvent();
   const deleteWorkout = useDeleteWorkout();
@@ -43,6 +48,7 @@ export function DashboardPage() {
   const [sport, setSport] = useState<string | 'All'>('All');
   const [viewType, setViewType] = useState<ViewType>('week');
   const [pivotDate, setPivotDate] = useState(new Date());
+  const [showEvents, setShowEvents] = useState(true);
   const [distViewType, setDistViewType] = useState<ViewType>('week');
   const [distPivotDate, setDistPivotDate] = useState(new Date());
 
@@ -117,7 +123,12 @@ export function DashboardPage() {
     [distPivotDate, distViewType],
   );
 
-  const isLoading = loadingWorkouts || loadingEvents;
+  const isLoading =
+    loadingWorkouts ||
+    loadingEvents ||
+    loadingGoals ||
+    loadingSports ||
+    loadingSettings;
 
   if (isLoading) {
     return (
@@ -145,114 +156,134 @@ export function DashboardPage() {
             </div>
           </header>
 
-          {/* Main Grid */}
-          <div className="grid gap-6 lg:grid-cols-3">
-            {/* Volume Summary Chart */}
-            <div className="bg-card lg:col-span-2 overflow-hidden rounded-2xl border shadow-sm">
-              <div className="border-b bg-muted/30 px-5 py-4">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  <h3 className="text-base md:text-lg font-black lowercase tracking-tight">
-                    volume summary
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="flex items-center gap-1 rounded-lg border bg-background p-0.5">
+          {/* Volume Summary Chart - Full Width */}
+          <div className="bg-card overflow-hidden rounded-2xl border shadow-sm w-full">
+            <div className="border-b bg-muted/30 px-5 py-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <h3 className="text-base md:text-lg font-black lowercase tracking-tight">
+                  volume summary
+                </h3>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-1 rounded-lg border bg-background p-0.5">
+                    <button
+                      onClick={() => setMetric('duration')}
+                      className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
+                        metric === 'duration'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      duration
+                    </button>
+                    <button
+                      onClick={() => setMetric('distance')}
+                      className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
+                        metric === 'distance'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      distance
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1 rounded-lg border bg-background p-0.5">
+                    <button
+                      onClick={() => setSport('All')}
+                      className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
+                        sport === 'All'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      all
+                    </button>
+                    {sportTypes.map((st) => (
                       <button
-                        onClick={() => setMetric('duration')}
+                        key={st.id}
+                        onClick={() => setSport(st.name)}
                         className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                          metric === 'duration'
+                          sport === st.name
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:text-foreground'
                         }`}
                       >
-                        duration
+                        {st.name.toLowerCase()}
                       </button>
-                      <button
-                        onClick={() => setMetric('distance')}
-                        className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                          metric === 'distance'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        distance
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-1 rounded-lg border bg-background p-0.5">
-                      <button
-                        onClick={() => setSport('All')}
-                        className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                          sport === 'All'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        all
-                      </button>
-                      {sportTypes.map((st) => (
-                        <button
-                          key={st.id}
-                          onClick={() => setSport(st.name)}
-                          className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                            sport === st.name
-                              ? 'bg-primary text-primary-foreground'
-                              : 'text-muted-foreground hover:text-foreground'
-                          }`}
-                        >
-                          {st.name.toLowerCase()}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex items-center gap-1 rounded-lg border bg-background p-0.5">
-                      <button
-                        onClick={() => setViewType('week')}
-                        className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                          viewType === 'week'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        week
-                      </button>
-                      <button
-                        onClick={() => setViewType('month')}
-                        className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                          viewType === 'month'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        month
-                      </button>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleShift('prev')}
-                        className="p-1 rounded hover:bg-muted transition-colors"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleShift('next')}
-                        className="p-1 rounded hover:bg-muted transition-colors"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
+                    ))}
+                  </div>
+                  <div className="flex items-center gap-1 rounded-lg border bg-background p-0.5">
+                    <button
+                      onClick={() => setViewType('week')}
+                      className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
+                        viewType === 'week'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      week
+                    </button>
+                    <button
+                      onClick={() => setViewType('month')}
+                      className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
+                        viewType === 'month'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      month
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1 mr-auto md:mr-0">
+                    <button
+                      onClick={() => handleShift('prev')}
+                      className="p-1 rounded hover:bg-muted transition-colors"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handleShift('next')}
+                      className="p-1 rounded hover:bg-muted transition-colors"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 ml-auto">
+                    <Label
+                      htmlFor="events-toggle"
+                      className="text-xs font-bold lowercase text-muted-foreground cursor-pointer"
+                    >
+                      events
+                    </Label>
+                    <SwitchWrapper>
+                      <Switch
+                        id="events-toggle"
+                        checked={showEvents}
+                        onCheckedChange={setShowEvents}
+                        size="sm"
+                      />
+                    </SwitchWrapper>
                   </div>
                 </div>
               </div>
-              <div className="p-5">
-                <VolumeChart
-                  workouts={workouts}
-                  events={events}
-                  metric={metric}
-                  sport={sport}
-                  viewType={viewType}
-                  pivotDate={pivotDate}
-                />
-              </div>
             </div>
+            <div className="p-5">
+              <VolumeChart
+                workouts={workouts}
+                events={events}
+                goals={goals}
+                sportTypes={sportTypes}
+                metric={metric}
+                sport={sport}
+                viewType={viewType}
+                pivotDate={pivotDate}
+                showEvents={showEvents}
+              />
+            </div>
+          </div>
 
+          {/* Secondary Grid */}
+          <div className="grid gap-6 lg:grid-cols-3">
             {/* Sport Distribution */}
             <SportDistribution
               workouts={workouts}

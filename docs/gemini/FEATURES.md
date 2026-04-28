@@ -18,6 +18,14 @@ TrainingFlow is designed as a management platform with the following core module
 - **Weekly Stats & Metrics**: Persistent toggle to show/hide detailed weekly summaries and sport-specific totals.
 - **Mobile-Optimized Experience**: Enhanced calendar views for mobile devices with compact stats and intuitive navigation.
 - **Data Casing Preservation**: Ensures all user-entered workout and event titles preserve original capitalization for improved readability and personalization.
+- **Athlete Dashboard**: 
+    - **Volume Charts**: Visual monitoring of training volume (distance/duration) over time.
+    - **Event Annotations**: Races and goals are overlaid on the progression chart to visualize the build-up and taper leading to events.
+    - **Sport Distribution**: Dynamic breakdown of training time across different sport types, respecting user-customized colors.
+- **Training Goals**: 
+    - **Periodized Targets**: Set specific weekly or monthly targets (e.g., "Bike 200km/week") for defined training blocks.
+    - **Target Overlays**: Dashboard charts show a "Target" line to track actual volume against goals.
+    - **Progress Tracking**: Weekly summary columns on the calendar display real-time progress bars towards active goals.
 
 ## 3. Participant Management
 - *Status:* Planned/In-Progress.

@@ -5,6 +5,7 @@ import {
   EventTypeRecord,
   LibraryWorkout,
   SportTypeRecord,
+  TrainingGoal,
   UserProfile,
   Workout,
 } from '@/types/training';
@@ -12,6 +13,7 @@ import {
   eventPrioritiesApi,
   eventsApi,
   eventTypesApi,
+  goalsApi,
   libraryApi,
   profileApi,
   sportTypesApi,
@@ -25,6 +27,7 @@ const KEYS = {
   workouts: (uid: string) => ['workouts', uid] as const,
   library: (uid: string) => ['library', uid] as const,
   events: (uid: string) => ['events', uid] as const,
+  goals: (uid: string) => ['goals', uid] as const,
   profile: (uid: string) => ['profile', uid] as const,
   sportTypes: ['sportTypes'] as const,
   userSportSettings: (uid: string) => ['userSportSettings', uid] as const,
@@ -398,6 +401,49 @@ export function useDeleteEvent() {
     mutationFn: (id: string) => eventsApi.remove(id, userId!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.events(userId!) });
+    },
+  });
+}
+
+// ─── Goals ──────────────────────────────────────────────────
+export function useGoals() {
+  const userId = useSupabaseUserId();
+  return useQuery({
+    queryKey: KEYS.goals(userId ?? ''),
+    queryFn: () => goalsApi.getAll(userId!),
+    enabled: !!userId,
+  });
+}
+
+export function useCreateGoal() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (goal: Partial<TrainingGoal>) => goalsApi.create(goal, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.goals(userId!) });
+    },
+  });
+}
+
+export function useUpdateGoal() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (goal: TrainingGoal) => goalsApi.update(goal, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.goals(userId!) });
+    },
+  });
+}
+
+export function useDeleteGoal() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => goalsApi.remove(id, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.goals(userId!) });
     },
   });
 }

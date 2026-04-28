@@ -10,6 +10,7 @@ import { SportTypesAdminPage } from '@/pages/admin/sport-types';
 import { DashboardPage } from '@/pages/dashboard';
 import { CalendarView } from '@/pages/training/calendar';
 import { EventsPage } from '@/pages/training/events';
+import { GoalsPage } from '@/pages/training/goals';
 import { LibraryPage } from '@/pages/training/library';
 import { Navigate, Route, Routes } from 'react-router-dom';
 
@@ -37,6 +38,7 @@ export function AppRoutingSetup() {
           <Route path="/training/calendar" element={<CalendarView />} />
           <Route path="/training/library" element={<LibraryPage />} />
           <Route path="/training/events" element={<EventsPage />} />
+          <Route path="/training/goals" element={<GoalsPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/account/profile" element={<ProfilePage />} />
           <Route

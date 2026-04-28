@@ -1,9 +1,18 @@
 import { useMemo } from 'react';
+import { getEventTypeTheme } from '@/pages/training/_shared/utils/event-theme';
 import { ApexOptions } from 'apexcharts';
 import { parseISO } from 'date-fns';
 import ApexChart from 'react-apexcharts';
-import { Event, Workout } from '@/types/training';
-import { getEventTypeTheme } from '@/pages/training/_shared/utils/event-theme';
+import {
+  Event,
+  SportTypeRecord,
+  TrainingGoal,
+  Workout,
+} from '@/types/training';
+import {
+  findActiveGoal,
+  getTargetValueForBucket,
+} from '@/services/training/goals.utils';
 
 type ProgressMetric = 'distance' | 'duration';
 type ViewType = 'week' | 'month';
@@ -11,19 +20,25 @@ type ViewType = 'week' | 'month';
 interface VolumeChartProps {
   workouts: Workout[];
   events: Event[];
+  goals?: TrainingGoal[];
+  sportTypes?: SportTypeRecord[];
   metric: ProgressMetric;
   sport: string | 'All';
   viewType: ViewType;
   pivotDate: Date;
+  showEvents?: boolean;
 }
 
 export function VolumeChart({
   workouts,
   events,
+  goals = [],
+  sportTypes = [],
   metric,
   sport,
   viewType,
   pivotDate,
+  showEvents = true,
 }: VolumeChartProps) {
   const chartData = useMemo(() => {
     const data = [];
@@ -108,11 +123,28 @@ export function VolumeChart({
         val = val / 60; // Convert to hours
       }
 
+      // Calculate Goal for this bucket
+      const sportRecord =
+        sport !== 'All'
+          ? sportTypes.find((st) => st.name === sport)
+          : undefined;
+      const activeGoal = findActiveGoal(
+        goals,
+        sportRecord?.id,
+        metric,
+        bucketStart,
+        bucketEnd,
+      );
+      const targetVal = getTargetValueForBucket(activeGoal, metric);
+
       const isPast = bucketEnd <= today;
       const isCurrent = today >= bucketStart && today < bucketEnd;
 
       const eventInfo = bucketEvents.map((e) => {
-        const theme = getEventTypeTheme(e.colorTheme || e.eventTypeColorTheme, e.icon || e.eventTypeIcon);
+        const theme = getEventTypeTheme(
+          e.colorTheme || e.eventTypeColorTheme,
+          e.icon || e.eventTypeIcon,
+        );
         return {
           title: e.title,
           hex: theme.hex,
@@ -123,6 +155,7 @@ export function VolumeChart({
         label,
         past: isPast || isCurrent ? Number(val.toFixed(2)) : null,
         future: !isPast ? Number(val.toFixed(2)) : null,
+        target: targetVal,
         isCurrent,
         bucketStart: new Date(bucketStart),
         bucketEnd: new Date(bucketEnd),
@@ -134,49 +167,60 @@ export function VolumeChart({
     }
 
     return data;
-  }, [workouts, events, metric, sport, viewType, pivotDate]);
+  }, [workouts, events, goals, sportTypes, metric, sport, viewType, pivotDate]);
 
   const chartOptions: ApexOptions = useMemo(
     () => ({
       series: [
         {
           name: 'Past',
+          type: 'area',
           data: chartData.map((d) => d.past),
         },
         {
           name: 'Future',
+          type: 'area',
           data: chartData.map((d) => d.future),
+        },
+        {
+          name: 'Target',
+          type: 'line',
+          data: chartData.map((d) => d.target),
         },
       ],
       annotations: {
-        xaxis: chartData
-          .filter((d) => d.eventInfo && d.eventInfo.length > 0)
-          .map((d, index) => {
-            const firstEvent = d.eventInfo[0];
-            return {
-              x: d.label,
-              strokeDashArray: 4,
-              borderColor: firstEvent.hex,
-              borderWidth: 2,
-              label: {
-                borderColor: firstEvent.hex,
-                style: {
-                  color: '#fff',
-                  background: firstEvent.hex,
-                  fontSize: '10px',
-                  fontWeight: 700,
-                  padding: { left: 4, right: 4, top: 2, bottom: 2 },
-                },
-                text: firstEvent.title + (d.eventInfo.length > 1 ? ' +' : ''),
-                offsetY: index % 2 === 0 ? 0 : 25,
-                orientation: 'horizontal',
-              },
-            };
-          }),
+        xaxis: showEvents
+          ? chartData
+              .filter((d) => d.eventInfo && d.eventInfo.length > 0)
+              .map((d, index) => {
+                const firstEvent = d.eventInfo[0];
+                return {
+                  x: d.label,
+                  strokeDashArray: 4,
+                  borderColor: firstEvent.hex,
+                  borderWidth: 2,
+                  label: {
+                    borderColor: firstEvent.hex,
+                    position: 'top',
+                    style: {
+                      color: '#fff',
+                      background: firstEvent.hex,
+                      fontSize: '10px',
+                      fontWeight: 700,
+                      padding: { left: 4, right: 4, top: 2, bottom: 2 },
+                    },
+                    text:
+                      firstEvent.title + (d.eventInfo.length > 1 ? ' +' : ''),
+                    offsetY: index % 2 === 0 ? -25 : 0,
+                    orientation: 'horizontal',
+                  },
+                };
+              })
+          : [],
       },
       chart: {
         height: 300,
-        type: 'area',
+        type: 'line',
         toolbar: { show: false },
         zoom: { enabled: false },
         selection: {
@@ -184,30 +228,46 @@ export function VolumeChart({
         },
       },
       dataLabels: { enabled: false },
-      legend: { show: false },
+      legend: {
+        show: false,
+      },
       stroke: {
-        curve: 'smooth',
-        width: [3, 3],
-        colors: ['#3b82f6', '#8b5cf6'],
-        dashArray: [0, 5],
+        curve: ['smooth', 'smooth', 'stepline'],
+        width: [3, 3, 4],
+        colors: ['#3b82f6', '#8b5cf6', '#ef4444'],
+        dashArray: [0, 5, 0],
       },
       fill: {
-        type: 'gradient',
+        type: ['gradient', 'gradient', 'solid'],
         gradient: {
-          opacityFrom: [0.25, 0.1],
-          opacityTo: [0, 0],
+          opacityFrom: [0.25, 0.1, 0],
+          opacityTo: [0, 0, 0],
         },
       },
-      colors: ['#3b82f6', '#8b5cf6'],
+      colors: ['#3b82f6', '#8b5cf6', '#ef4444'],
       xaxis: {
         categories: chartData.map((d) => d.label),
         axisBorder: { show: false },
         axisTicks: { show: false },
+        crosshairs: {
+          show: true,
+          width: 1,
+          position: 'back',
+          opacity: 0.9,
+          stroke: {
+            color: '#6366f1',
+            width: 1,
+            dashArray: 4,
+          },
+        },
+        tooltip: {
+          enabled: false,
+        },
         labels: {
           rotate: -90,
           rotateAlways: true,
           style: {
-            colors: 'var(--color-muted-foreground)',
+            colors: '#888',
             fontSize: '10px',
             fontWeight: 800,
           },
@@ -217,7 +277,7 @@ export function VolumeChart({
         min: 0,
         labels: {
           style: {
-            colors: 'var(--color-muted-foreground)',
+            colors: '#888',
             fontSize: '10px',
             fontWeight: 700,
           },
@@ -228,7 +288,7 @@ export function VolumeChart({
         },
       },
       grid: {
-        borderColor: 'var(--color-border)',
+        borderColor: '#e5e7eb',
         strokeDashArray: 5,
         yaxis: { lines: { show: true } },
         xaxis: { lines: { show: false } },
@@ -237,7 +297,7 @@ export function VolumeChart({
         enabled: true,
         shared: true,
         intersect: false,
-        followCursor: true,
+        followCursor: false,
         custom: function ({ series, seriesIndex, dataPointIndex }) {
           const value = series[seriesIndex][dataPointIndex];
           if (value === null || value === undefined) return '';
@@ -276,18 +336,17 @@ export function VolumeChart({
             });
           }
 
-          return `<div class="apexcharts-tooltip-custom" style="padding: 8px 12px; background: var(--color-popover); border: 1px solid var(--color-border); border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
-          <div style="font-size: 11px; font-weight: 700; color: var(--color-muted-foreground); text-transform: lowercase; margin-bottom: 4px;">${dateRange}</div>
-          <div style="font-size: 13px; font-weight: 800; color: var(--color-foreground);">Total: ${total.toFixed(2)}${unit}</div>
+          return `<div class="apexcharts-tooltip-custom" style="padding: 8px 12px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+          <div style="font-size: 11px; font-weight: 700; color: #666; text-transform: lowercase; margin-bottom: 4px;">${dateRange}</div>
+          <div style="font-size: 13px; font-weight: 800; color: #111;">Total: ${total.toFixed(2)}${unit}</div>
         </div>`;
         },
       },
       markers: {
-        size: 0,
-        colors: ['#fff'],
-        strokeColors: ['#3b82f6', '#8b5cf6'],
-        strokeWidth: 3,
-        hover: { size: 6, sizeOffset: 2 },
+        size: [0, 0, 0],
+        hover: {
+          size: 6,
+        },
       },
       states: {
         hover: {
@@ -302,14 +361,13 @@ export function VolumeChart({
         },
       },
     }),
-    [chartData, metric, viewType],
+    [chartData, metric, viewType, showEvents],
   );
 
   return (
     <ApexChart
       options={chartOptions}
       series={chartOptions.series}
-      type="area"
       height={300}
     />
   );
