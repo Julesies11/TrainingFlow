@@ -25,7 +25,6 @@ import { VolumeChart } from './components/volume-chart';
 
 type ProgressMetric = 'distance' | 'duration';
 type ViewType = 'week' | 'month';
-type SportType = 'Swim' | 'Bike' | 'Run' | 'Strength';
 
 export function DashboardPage() {
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
@@ -41,7 +40,7 @@ export function DashboardPage() {
   const [eventToEdit, setEventToEdit] = useState<Event | null>(null);
 
   const [metric, setMetric] = useState<ProgressMetric>('duration');
-  const [sport, setSport] = useState<SportType | 'All'>('All');
+  const [sport, setSport] = useState<string | 'All'>('All');
   const [viewType, setViewType] = useState<ViewType>('week');
   const [pivotDate, setPivotDate] = useState(new Date());
   const [distViewType, setDistViewType] = useState<ViewType>('week');
@@ -189,21 +188,19 @@ export function DashboardPage() {
                       >
                         all
                       </button>
-                      {(['Swim', 'Bike', 'Run', 'Strength'] as SportType[]).map(
-                        (s) => (
-                          <button
-                            key={s}
-                            onClick={() => setSport(s)}
-                            className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                              sport === s
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-muted-foreground hover:text-foreground'
-                            }`}
-                          >
-                            {s.toLowerCase()}
-                          </button>
-                        ),
-                      )}
+                      {sportTypes.map((st) => (
+                        <button
+                          key={st.id}
+                          onClick={() => setSport(st.name)}
+                          className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
+                            sport === st.name
+                              ? 'bg-primary text-primary-foreground'
+                              : 'text-muted-foreground hover:text-foreground'
+                          }`}
+                        >
+                          {st.name.toLowerCase()}
+                        </button>
+                      ))}
                     </div>
                     <div className="flex items-center gap-1 rounded-lg border bg-background p-0.5">
                       <button
@@ -260,6 +257,8 @@ export function DashboardPage() {
             <SportDistribution
               workouts={workouts}
               events={events}
+              sportTypes={sportTypes}
+              userSettingsMap={settingsMap}
               distViewType={distViewType}
               distPivotDate={distPivotDate}
               setDistViewType={setDistViewType}

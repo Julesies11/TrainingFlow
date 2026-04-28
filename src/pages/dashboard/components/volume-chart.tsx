@@ -6,13 +6,12 @@ import { Event, Workout } from '@/types/training';
 
 type ProgressMetric = 'distance' | 'duration';
 type ViewType = 'week' | 'month';
-type SportType = 'Swim' | 'Bike' | 'Run' | 'Strength';
 
 interface VolumeChartProps {
   workouts: Workout[];
   events: Event[];
   metric: ProgressMetric;
-  sport: SportType | 'All';
+  sport: string | 'All';
   viewType: ViewType;
   pivotDate: Date;
 }
