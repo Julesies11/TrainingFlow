@@ -3,6 +3,7 @@ import { ApexOptions } from 'apexcharts';
 import { parseISO } from 'date-fns';
 import ApexChart from 'react-apexcharts';
 import { Event, Workout } from '@/types/training';
+import { getEventTypeTheme } from '@/pages/training/_shared/utils/event-theme';
 
 type ProgressMetric = 'distance' | 'duration';
 type ViewType = 'week' | 'month';
@@ -110,6 +111,14 @@ export function VolumeChart({
       const isPast = bucketEnd <= today;
       const isCurrent = today >= bucketStart && today < bucketEnd;
 
+      const eventInfo = bucketEvents.map((e) => {
+        const theme = getEventTypeTheme(e.colorTheme || e.eventTypeColorTheme, e.icon || e.eventTypeIcon);
+        return {
+          title: e.title,
+          hex: theme.hex,
+        };
+      });
+
       data.push({
         label,
         past: isPast || isCurrent ? Number(val.toFixed(2)) : null,
@@ -117,6 +126,7 @@ export function VolumeChart({
         isCurrent,
         bucketStart: new Date(bucketStart),
         bucketEnd: new Date(bucketEnd),
+        eventInfo,
       });
 
       if (viewType === 'week') cursor.setDate(cursor.getDate() + 7);
@@ -138,6 +148,32 @@ export function VolumeChart({
           data: chartData.map((d) => d.future),
         },
       ],
+      annotations: {
+        xaxis: chartData
+          .filter((d) => d.eventInfo && d.eventInfo.length > 0)
+          .map((d, index) => {
+            const firstEvent = d.eventInfo[0];
+            return {
+              x: d.label,
+              strokeDashArray: 4,
+              borderColor: firstEvent.hex,
+              borderWidth: 2,
+              label: {
+                borderColor: firstEvent.hex,
+                style: {
+                  color: '#fff',
+                  background: firstEvent.hex,
+                  fontSize: '10px',
+                  fontWeight: 700,
+                  padding: { left: 4, right: 4, top: 2, bottom: 2 },
+                },
+                text: firstEvent.title + (d.eventInfo.length > 1 ? ' +' : ''),
+                offsetY: index % 2 === 0 ? 0 : 25,
+                orientation: 'horizontal',
+              },
+            };
+          }),
+      },
       chart: {
         height: 300,
         type: 'area',

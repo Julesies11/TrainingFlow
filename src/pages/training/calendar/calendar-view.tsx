@@ -230,6 +230,17 @@ export function CalendarView() {
 
   const handleDrop = (e: React.DragEvent, dateStr: string) => {
     e.preventDefault();
+
+    const eventId = e.dataTransfer.getData('eventId');
+    if (eventId) {
+      const event = events.find((ev) => ev.id === eventId);
+      if (event) {
+        updateEvent.mutate({ ...event, date: dateStr });
+      }
+      handleDragEnd();
+      return;
+    }
+
     const itemId = e.dataTransfer.getData('text/plain');
 
     const workout = workouts.find((w) => w.id === itemId);

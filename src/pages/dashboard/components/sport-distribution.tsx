@@ -106,7 +106,7 @@ export function SportDistribution({
         percent: Math.round((sportDuration / totalDuration) * 100),
         color: getEffortColor(st, 4, userSettingsMap.get(st.id)),
       };
-    });
+    }).filter(item => item.duration > 0);
   }, [workouts, events, sportTypes, userSettingsMap, distViewType, distPivotDate]);
 
   const distributionLabel = useMemo(() => {
