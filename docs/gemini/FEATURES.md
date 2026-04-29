@@ -22,7 +22,7 @@ TrainingFlow is designed as a management platform with the following core module
 - **Mobile-Optimized Experience**: Enhanced calendar views for mobile devices with compact stats and intuitive navigation.
 - **Data Casing Preservation**: Ensures all user-entered workout and event titles preserve original capitalization for improved readability and personalization.
 - **Athlete Dashboard**: 
-    - **Optimized Volume Summary**: Real-time aggregation of training volume (distance/duration) with $O(N+M)$ performance and lazy-loaded rendering.
+    - **Optimized Volume Summary**: Real-time aggregation of training volume (distance/duration) with $O(N+M)$ performance and a decoupled pre-fetching window (-12 to +24 months) for instant, flash-free navigation.
     - **Annotation Toggles**: Independently show/hide **Events** and **Notes** on the progression chart.
     - **Contextual Tooltips**: Hover over data points to see full event titles and note content alongside volume totals.
     - **Sport Distribution**: Dynamic breakdown of training time across different sport types, respecting user-customized colors.

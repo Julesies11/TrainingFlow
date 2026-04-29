@@ -185,6 +185,18 @@ export const VolumeChart = memo(function VolumeChart({
       );
       const targetVal = getTargetValueForBucket(activeGoal, metric);
 
+      // Generate a descriptive label since TrainingGoal currently lacks a 'title/description' field
+      let goalLabel = null;
+      if (activeGoal) {
+        const unit =
+          metric === 'distance' ? sportRecordByName?.distanceUnit || 'km' : 'h';
+        const displayVal =
+          metric === 'duration'
+            ? (activeGoal.targetValue / 60).toFixed(1)
+            : activeGoal.targetValue;
+        goalLabel = `Target: ${displayVal}${unit}`;
+      }
+
       const isPast = bucketEnd <= today;
       const isCurrent = today >= bucketStart && today < bucketEnd;
 
@@ -193,6 +205,7 @@ export const VolumeChart = memo(function VolumeChart({
         past: isPast || isCurrent ? Number(val.toFixed(2)) : null,
         future: !isPast ? Number(val.toFixed(2)) : null,
         target: targetVal,
+        goalTitle: goalLabel,
         isCurrent,
         bucketStart: new Date(bucketStart),
         bucketEnd: new Date(bucketEnd),
@@ -306,6 +319,37 @@ export const VolumeChart = memo(function VolumeChart({
                 })
             : []),
         ],
+        points: chartData.reduce(
+          (acc, d, i) => {
+            // Add label if target exists and it's the first point or different from previous point
+            if (
+              d.target > 0 &&
+              d.goalTitle &&
+              (i === 0 || chartData[i - 1].goalTitle !== d.goalTitle)
+            ) {
+              acc?.push({
+                x: d.label,
+                y: d.target,
+                marker: { size: 0 },
+                label: {
+                  borderColor: '#ef4444',
+                  style: {
+                    color: '#fff',
+                    background: '#ef4444',
+                    fontSize: '9px',
+                    fontWeight: 700,
+                    padding: { left: 4, right: 4, top: 2, bottom: 2 },
+                  },
+                  text: d.goalTitle,
+                  offsetY: -10,
+                  textAnchor: 'start',
+                },
+              });
+            }
+            return acc;
+          },
+          [] as Exclude<ApexOptions['annotations'], undefined>['points'],
+        ),
       },
       chart: {
         height: 300,
@@ -356,7 +400,7 @@ export const VolumeChart = memo(function VolumeChart({
           rotate: -90,
           rotateAlways: true,
           style: {
-            colors: '#888',
+            colors: chartData.map((d) => (d.isCurrent ? '#3b82f6' : '#888')),
             fontSize: '10px',
             fontWeight: 800,
           },
@@ -414,7 +458,8 @@ export const VolumeChart = memo(function VolumeChart({
           }
 
           // Calculate total for this data point
-          const total = (dataPoint.past || 0) + (dataPoint.future || 0);
+          // Use Math.max to avoid double-counting the current point where past and future overlap
+          const total = Math.max(dataPoint.past || 0, dataPoint.future || 0);
 
           // Format date range
           let dateRange = '';

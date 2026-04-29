@@ -38,12 +38,15 @@ export function DashboardPage() {
   const [pivotDate, setPivotDate] = useState(new Date());
 
   // PHASE 1: Range-Based Fetching
+  // Decouple from pivotDate to prevent full page reloads when shifting the chart.
+  // We fetch a wide static range relative to today's date for optimal caching.
   const dateRange = useMemo(() => {
+    const today = new Date();
     return {
-      from: format(subMonths(pivotDate, 6), 'yyyy-MM-dd'),
-      to: format(addMonths(pivotDate, 12), 'yyyy-MM-dd'),
+      from: format(subMonths(today, 12), 'yyyy-MM-dd'),
+      to: format(addMonths(today, 24), 'yyyy-MM-dd'),
     };
-  }, [pivotDate]);
+  }, []); // Static range based on app initialization
 
   const { data: workouts = [], isLoading: loadingWorkouts } =
     useWorkouts(dateRange);
