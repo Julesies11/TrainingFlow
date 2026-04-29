@@ -167,15 +167,27 @@ export function GoalDialog({
               <FormField
                 control={form.control}
                 name="targetValue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="lowercase">target</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.1" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const selectedSport = sportTypes.find(
+                    (st) => st.id === form.getValues('sportTypeId'),
+                  );
+                  const isDistance = form.watch('metric') === 'distance';
+                  const unitLabel = isDistance
+                    ? ` (${selectedSport?.distanceUnit || 'km'})`
+                    : ' (mins)';
+
+                  return (
+                    <FormItem>
+                      <FormLabel className="lowercase">
+                        target{unitLabel}
+                      </FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.1" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </div>
 

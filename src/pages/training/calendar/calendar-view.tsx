@@ -45,9 +45,19 @@ import {
   buildUserSettingsMap,
   getEffortColor,
 } from '@/services/training/effort-colors';
-import { isPaceRelevant } from '@/services/training/pace-utils';
+import {
+  isMetersDistance,
+  isPaceRelevant,
+} from '@/services/training/pace-utils';
 import { getSportIcon } from '@/services/training/sport-icons';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch, SwitchWrapper } from '@/components/ui/switch';
 import { EventDialog } from '../_shared/components/event-dialog';
 import { BulkDeleteDialog } from './components/bulk-delete-dialog';
@@ -125,9 +135,10 @@ export function CalendarView() {
 
   // Drag and drop state
   const [isDraggingId, setIsDraggingId] = useState<string | null>(null);
-  const [dragOverInfo, setDragOverInfo] = useState<{ date: string } | null>(
-    null,
-  );
+  const [dragOverInfo, setDragOverInfo] = useState<{
+    date: string;
+    index: number;
+  } | null>(null);
 
   const sportMap = useMemo(() => buildSportMap(sportTypes), [sportTypes]);
   const userSettingsMap = useMemo(
@@ -169,19 +180,26 @@ export function CalendarView() {
   }, [displayMonth, displayYear, generateWeeksFrom]);
 
   // Navigation helpers - simple state updates, no scroll
-  const stepMonth = useCallback((dir: 'up' | 'down') => {
-    setDisplayMonth((prev) => {
-      const newMonth = dir === 'up' ? prev - 1 : prev + 1;
-      if (newMonth < 0) {
-        setDisplayYear((y) => y - 1);
-        return 11;
-      } else if (newMonth > 11) {
-        setDisplayYear((y) => y + 1);
-        return 0;
+  const stepMonth = useCallback(
+    (dir: 'up' | 'down') => {
+      if (dir === 'up') {
+        if (displayMonth === 0) {
+          setDisplayYear((y) => y - 1);
+          setDisplayMonth(11);
+        } else {
+          setDisplayMonth((m) => m - 1);
+        }
+      } else {
+        if (displayMonth === 11) {
+          setDisplayYear((y) => y + 1);
+          setDisplayMonth(0);
+        } else {
+          setDisplayMonth((m) => m + 1);
+        }
       }
-      return newMonth;
-    });
-  }, []);
+    },
+    [displayMonth],
+  );
 
   const goToToday = useCallback(() => {
     const today = new Date();
@@ -274,7 +292,41 @@ export function CalendarView() {
 
     const workout = workouts.find((w) => w.id === itemId);
     if (workout) {
-      updateWorkout.mutate({ ...workout, date: dateStr, order: Date.now() });
+      // Calculate new order based on drop index
+      const dropIndex = dragOverInfo?.index ?? 0;
+
+      // Get all items that would be in that day
+      const dayEvents = events.filter((e) => e.date === dateStr);
+      const dayNotes = notes.filter((n) => n.date === dateStr);
+      // Get workouts in that day, excluding the one being moved if it's the same day
+      const dayWorkouts = workouts
+        .filter((w) => w.date === dateStr && w.id !== itemId)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+      // Calculate relative index within workouts
+      // Events and Notes are always rendered first in CalendarDay.tsx
+      const relIndex = Math.max(
+        0,
+        dropIndex - (dayEvents.length + dayNotes.length),
+      );
+
+      let newOrder: number;
+      if (dayWorkouts.length === 0) {
+        newOrder = Date.now();
+      } else if (relIndex <= 0) {
+        // Drop at the very beginning of workouts
+        newOrder = (dayWorkouts[0].order ?? 0) - 1000;
+      } else if (relIndex >= dayWorkouts.length) {
+        // Drop at the very end of workouts
+        newOrder = (dayWorkouts[dayWorkouts.length - 1].order ?? 0) + 1000;
+      } else {
+        // Drop between two workouts
+        const prevOrder = dayWorkouts[relIndex - 1].order ?? 0;
+        const nextOrder = dayWorkouts[relIndex].order ?? 0;
+        newOrder = Math.round((prevOrder + nextOrder) / 2);
+      }
+
+      updateWorkout.mutate({ ...workout, date: dateStr, order: newOrder });
     }
     handleDragEnd();
   };
@@ -294,16 +346,22 @@ export function CalendarView() {
           const dur = w.isCompleted
             ? w.actualDurationMinutes || 0
             : w.plannedDurationMinutes || 0;
-          const dist = w.isCompleted
+          let dist = w.isCompleted
             ? w.actualDistanceKilometers || 0
             : w.plannedDistanceKilometers || 0;
           const stId = w.sportTypeId || 'unknown';
+          const st = sportMap.get(stId);
+
+          // Convert km to meters if the sport uses meters
+          if (st && isMetersDistance(st.distanceUnit, st.name)) {
+            dist = dist * 1000;
+          }
+
           if (!sportTotals[stId])
             sportTotals[stId] = { distance: 0, duration: 0 };
           sportTotals[stId].duration += dur;
           sportTotals[stId].distance += dist;
           weekTotals.duration += dur;
-          const st = sportMap.get(stId);
           if (isPaceRelevant(!!st?.paceRelevant, st?.paceUnit))
             weekTotals.distance += dist;
         });
@@ -315,14 +373,20 @@ export function CalendarView() {
           if (e.segments && e.segments.length > 0) {
             e.segments.forEach((seg) => {
               const dur = seg.plannedDurationMinutes || 0;
-              const dist = seg.plannedDistanceKilometers || 0;
+              let dist = seg.plannedDistanceKilometers || 0;
               const stId = seg.sportTypeId || 'unknown';
+              const st = sportMap.get(stId);
+
+              // Convert km to meters if the sport uses meters
+              if (st && isMetersDistance(st.distanceUnit, st.name)) {
+                dist = dist * 1000;
+              }
+
               if (!sportTotals[stId])
                 sportTotals[stId] = { distance: 0, duration: 0 };
               sportTotals[stId].duration += dur;
               sportTotals[stId].distance += dist;
               weekTotals.duration += dur;
-              const st = sportMap.get(stId);
               if (isPaceRelevant(!!st?.paceRelevant, st?.paceUnit))
                 weekTotals.distance += dist;
             });
@@ -407,9 +471,49 @@ export function CalendarView() {
         {/* Header */}
         <header className="z-[70] flex w-full shrink-0 flex-col items-center justify-between gap-3 overflow-hidden px-4 lg:flex-row lg:px-4">
           <div className="flex w-full shrink-0 items-center justify-between gap-2 lg:w-auto lg:gap-4">
-            <h2 className="truncate text-lg font-black lowercase tracking-tighter lg:text-3xl">
-              {MONTH_NAMES[displayMonth]} {displayYear}
-            </h2>
+            <div className="flex items-center gap-1 lg:gap-2">
+              <Select
+                value={displayMonth.toString()}
+                onValueChange={(val) => setDisplayMonth(parseInt(val, 10))}
+              >
+                <SelectTrigger className="h-auto w-[110px] border-none bg-transparent p-0 shadow-none hover:bg-muted/50 focus:ring-0 lg:w-[170px] text-lg font-black lowercase tracking-tighter lg:text-3xl text-left justify-start gap-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MONTH_NAMES.map((m, i) => (
+                    <SelectItem
+                      key={i}
+                      value={i.toString()}
+                      className="font-bold lowercase"
+                    >
+                      {m}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={displayYear.toString()}
+                onValueChange={(val) => setDisplayYear(parseInt(val, 10))}
+              >
+                <SelectTrigger className="h-auto w-[70px] border-none bg-transparent p-0 shadow-none hover:bg-muted/50 focus:ring-0 lg:w-[100px] text-lg font-black lowercase tracking-tighter text-muted-foreground lg:text-3xl text-left justify-start gap-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 11 }).map((_, i) => {
+                    const year = new Date().getFullYear() - 2 + i;
+                    return (
+                      <SelectItem
+                        key={year}
+                        value={year.toString()}
+                        className="font-bold lowercase"
+                      >
+                        {year}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="bg-muted flex shrink-0 items-center gap-1 rounded-xl border p-1.5 shadow-sm lg:gap-1 lg:p-1">
               <Button
                 variant="ghost"

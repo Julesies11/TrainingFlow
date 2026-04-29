@@ -9,6 +9,7 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 - **Layout System**: Supports multiple Metronic layouts (Demo 1-10) located in `src/layouts/`.
 
 ## Specialized Logic
+- **Calendar Reordering**: Drag-and-drop reordering for workouts uses a position-based `order` calculation. When an item is dropped, its new order is determined by its position relative to existing items (beginning, end, or between two items), ensuring consistent sorting without requiring a full re-index of all items.
 - **Image Processing**: Client-side compression and resizing are handled by `browser-image-compression` in `src/lib/utils/image.ts`. All uploads are orchestrated via `src/lib/api/storage.ts` to ensure consistent optimization.
 - **Data-Driven Sport Logic**: Training math (pace, speed, distance conversion) is based on the `pace_unit` and `distance_unit` defined in the `tf_sport_types` table. Use `src/services/training/pace-utils.ts` for all calculations.
 

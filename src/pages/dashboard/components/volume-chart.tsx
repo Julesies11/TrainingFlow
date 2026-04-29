@@ -14,6 +14,7 @@ import {
   findActiveGoal,
   getTargetValueForBucket,
 } from '@/services/training/goals.utils';
+import { isMetersDistance } from '@/services/training/pace-utils';
 
 type ProgressMetric = 'distance' | 'duration';
 type ViewType = 'week' | 'month';
@@ -99,9 +100,19 @@ export function VolumeChart({
 
       let val = bucketWorkouts.reduce((sum, w) => {
         if (metric === 'distance') {
-          const dist = w.isCompleted
+          const distKm = w.isCompleted
             ? w.actualDistanceKilometers || 0
             : w.plannedDistanceKilometers || 0;
+
+          // Convert km to meters if a specific sport is selected and it uses meters
+          const sportRec = sportTypes.find((st) => st.id === w.sportTypeId);
+          const dist =
+            sport !== 'All' &&
+            sportRec &&
+            isMetersDistance(sportRec.distanceUnit, sportRec.name)
+              ? distKm * 1000
+              : distKm;
+
           return sum + dist;
         }
         if (metric === 'duration') {
@@ -120,7 +131,17 @@ export function VolumeChart({
             const sportMatch = sport === 'All' || seg.sportName === sport;
             if (sportMatch) {
               if (metric === 'distance') {
-                val += seg.plannedDistanceKilometers || 0;
+                const distKm = seg.plannedDistanceKilometers || 0;
+                const sportRec = sportTypes.find(
+                  (st) => st.id === seg.sportTypeId,
+                );
+                const dist =
+                  sport !== 'All' &&
+                  sportRec &&
+                  isMetersDistance(sportRec.distanceUnit, sportRec.name)
+                    ? distKm * 1000
+                    : distKm;
+                val += dist;
               } else if (metric === 'duration') {
                 val += seg.plannedDurationMinutes || 0;
               }
@@ -342,7 +363,17 @@ export function VolumeChart({
           },
           formatter: (value: number) => {
             if (metric === 'duration') return `${value}h`;
-            return `${value}km`;
+            let unit = 'km';
+            if (sport !== 'All') {
+              const sportRec = sportTypes.find((st) => st.name === sport);
+              if (
+                sportRec &&
+                isMetersDistance(sportRec.distanceUnit, sportRec.name)
+              ) {
+                unit = 'm';
+              }
+            }
+            return `${value}${unit}`;
           },
         },
       },
@@ -362,7 +393,16 @@ export function VolumeChart({
           if (value === null || value === undefined) return '';
 
           const dataPoint = chartData[dataPointIndex];
-          const unit = metric === 'duration' ? 'h' : 'km';
+          let unit = metric === 'duration' ? 'h' : 'km';
+          if (metric === 'distance' && sport !== 'All') {
+            const sportRec = sportTypes.find((st) => st.name === sport);
+            if (
+              sportRec &&
+              isMetersDistance(sportRec.distanceUnit, sportRec.name)
+            ) {
+              unit = 'm';
+            }
+          }
 
           // Calculate total for this data point
           const total = (dataPoint.past || 0) + (dataPoint.future || 0);
