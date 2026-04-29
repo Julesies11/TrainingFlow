@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { getEventTypeTheme } from '@/pages/training/_shared/utils/event-theme';
 import { ApexOptions } from 'apexcharts';
-import { parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import ApexChart from 'react-apexcharts';
 import {
   Event,
@@ -10,6 +10,7 @@ import {
   TrainingGoal,
   Workout,
 } from '@/types/training';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   findActiveGoal,
   getTargetValueForBucket,
@@ -33,7 +34,7 @@ interface VolumeChartProps {
   showNotes?: boolean;
 }
 
-export function VolumeChart({
+export const VolumeChart = memo(function VolumeChart({
   workouts,
   events,
   notes = [],
@@ -46,12 +47,13 @@ export function VolumeChart({
   showEvents = true,
   showNotes = true,
 }: VolumeChartProps) {
+  const isMobile = useIsMobile();
+
   const chartData = useMemo(() => {
     const data = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
     const unitCount =
       viewType === 'week' ? (isMobile ? 12 : 24) : isMobile ? 8 : 16;
 
@@ -66,102 +68,117 @@ export function VolumeChart({
       start.setDate(1);
     }
 
+    // PHASE 3: Algorithmic Optimization
+    // Pre-group data into Maps by date string for O(1) lookups
+    const workoutsByDate = new Map<string, Workout[]>();
+    workouts.forEach((w) => {
+      const dateStr = w.date;
+      if (!workoutsByDate.has(dateStr)) workoutsByDate.set(dateStr, []);
+      workoutsByDate.get(dateStr)!.push(w);
+    });
+
+    const eventsByDate = new Map<string, Event[]>();
+    events.forEach((e) => {
+      const dateStr = e.date;
+      if (!eventsByDate.has(dateStr)) eventsByDate.set(dateStr, []);
+      eventsByDate.get(dateStr)!.push(e);
+    });
+
+    const notesByDate = new Map<string, Note[]>();
+    notes.forEach((n) => {
+      const dateStr = n.date;
+      if (!notesByDate.has(dateStr)) notesByDate.set(dateStr, []);
+      notesByDate.get(dateStr)!.push(n);
+    });
+
+    const sportMap = new Map(sportTypes.map((st) => [st.id, st]));
+    const sportRecordByName =
+      sport !== 'All' ? sportTypes.find((st) => st.name === sport) : undefined;
+
     const cursor = new Date(start);
     for (let i = 0; i < unitCount; i++) {
       const bucketStart = new Date(cursor);
       const bucketEnd = new Date(cursor);
-      let label = '';
-
       if (viewType === 'week') {
         bucketEnd.setDate(bucketEnd.getDate() + 7);
-        label = `${bucketStart.getDate()} ${bucketStart.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()}`;
       } else {
         bucketEnd.setMonth(bucketEnd.getMonth() + 1);
-        label = bucketStart
-          .toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
-          .toLowerCase();
       }
 
-      const bucketWorkouts = workouts.filter((w) => {
-        const d = parseISO(w.date);
-        const sportMatch = sport === 'All' || w.sportName === sport;
-        return d >= bucketStart && d < bucketEnd && sportMatch;
-      });
+      const label =
+        viewType === 'week'
+          ? `${bucketStart.getDate()} ${bucketStart.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()}`
+          : bucketStart
+              .toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+              .toLowerCase();
 
-      const bucketEvents = events.filter((e) => {
-        const d = parseISO(e.date);
-        return d >= bucketStart && d < bucketEnd;
-      });
+      // Aggregate data for the bucket by iterating over dates within the bucket
+      let val = 0;
+      const bucketEvents: Event[] = [];
+      const bucketNotes: Note[] = [];
 
-      const bucketNotes = notes.filter((n) => {
-        const d = parseISO(n.date);
-        return d >= bucketStart && d < bucketEnd;
-      });
+      const tempDate = new Date(bucketStart);
+      while (tempDate < bucketEnd) {
+        const dateStr = format(tempDate, 'yyyy-MM-dd');
 
-      let val = bucketWorkouts.reduce((sum, w) => {
-        if (metric === 'distance') {
-          const distKm = w.isCompleted
-            ? w.actualDistanceKilometers || 0
-            : w.plannedDistanceKilometers || 0;
+        // Accumulate workouts
+        (workoutsByDate.get(dateStr) || []).forEach((w) => {
+          if (sport !== 'All' && w.sportName !== sport) return;
 
-          // Convert km to meters if a specific sport is selected and it uses meters
-          const sportRec = sportTypes.find((st) => st.id === w.sportTypeId);
-          const dist =
-            sport !== 'All' &&
-            sportRec &&
-            isMetersDistance(sportRec.distanceUnit, sportRec.name)
-              ? distKm * 1000
-              : distKm;
+          if (metric === 'distance') {
+            const distKm = w.isCompleted
+              ? w.actualDistanceKilometers || 0
+              : w.plannedDistanceKilometers || 0;
+            const sportRec = sportMap.get(w.sportTypeId);
+            const dist =
+              sport !== 'All' &&
+              sportRec &&
+              isMetersDistance(sportRec.distanceUnit, sportRec.name)
+                ? distKm * 1000
+                : distKm;
+            val += dist;
+          } else {
+            val += w.isCompleted
+              ? w.actualDurationMinutes || 0
+              : w.plannedDurationMinutes || 0;
+          }
+        });
 
-          return sum + dist;
-        }
-        if (metric === 'duration') {
-          const dur = w.isCompleted
-            ? w.actualDurationMinutes || 0
-            : w.plannedDurationMinutes || 0;
-          return sum + dur;
-        }
-        return sum;
-      }, 0);
+        // Accumulate events & segments
+        (eventsByDate.get(dateStr) || []).forEach((e) => {
+          bucketEvents.push(e);
+          (e.segments || []).forEach((seg) => {
+            if (sport !== 'All' && seg.sportName !== sport) return;
 
-      // Add event segment data
-      bucketEvents.forEach((event) => {
-        if (event.segments && event.segments.length > 0) {
-          event.segments.forEach((seg) => {
-            const sportMatch = sport === 'All' || seg.sportName === sport;
-            if (sportMatch) {
-              if (metric === 'distance') {
-                const distKm = seg.plannedDistanceKilometers || 0;
-                const sportRec = sportTypes.find(
-                  (st) => st.id === seg.sportTypeId,
-                );
-                const dist =
-                  sport !== 'All' &&
-                  sportRec &&
-                  isMetersDistance(sportRec.distanceUnit, sportRec.name)
-                    ? distKm * 1000
-                    : distKm;
-                val += dist;
-              } else if (metric === 'duration') {
-                val += seg.plannedDurationMinutes || 0;
-              }
+            if (metric === 'distance') {
+              const distKm = seg.plannedDistanceKilometers || 0;
+              const sportRec = sportMap.get(seg.sportTypeId);
+              const dist =
+                sport !== 'All' &&
+                sportRec &&
+                isMetersDistance(sportRec.distanceUnit, sportRec.name)
+                  ? distKm * 1000
+                  : distKm;
+              val += dist;
+            } else {
+              val += seg.plannedDurationMinutes || 0;
             }
           });
-        }
-      });
+        });
 
-      if (metric === 'duration') {
-        val = val / 60; // Convert to hours
+        // Accumulate notes
+        (notesByDate.get(dateStr) || []).forEach((n) => bucketNotes.push(n));
+
+        tempDate.setDate(tempDate.getDate() + 1);
       }
 
-      // Calculate Goal for this bucket
-      const sportRecord =
-        sport !== 'All'
-          ? sportTypes.find((st) => st.name === sport)
-          : undefined;
+      if (metric === 'duration') {
+        val = val / 60;
+      }
+
       const activeGoal = findActiveGoal(
         goals,
-        sportRecord?.id,
+        sportRecordByName?.id,
         metric,
         bucketStart,
         bucketEnd,
@@ -171,21 +188,6 @@ export function VolumeChart({
       const isPast = bucketEnd <= today;
       const isCurrent = today >= bucketStart && today < bucketEnd;
 
-      const eventInfo = bucketEvents.map((e) => {
-        const theme = getEventTypeTheme(
-          e.colorTheme || e.eventTypeColorTheme,
-          e.icon || e.eventTypeIcon,
-        );
-        return {
-          title: e.title,
-          hex: theme.hex,
-        };
-      });
-
-      const noteInfo = bucketNotes.map((n) => ({
-        content: n.content,
-      }));
-
       data.push({
         label,
         past: isPast || isCurrent ? Number(val.toFixed(2)) : null,
@@ -194,8 +196,14 @@ export function VolumeChart({
         isCurrent,
         bucketStart: new Date(bucketStart),
         bucketEnd: new Date(bucketEnd),
-        eventInfo,
-        noteInfo,
+        eventInfo: bucketEvents.map((e) => {
+          const theme = getEventTypeTheme(
+            e.colorTheme || e.eventTypeColorTheme,
+            e.icon || e.eventTypeIcon,
+          );
+          return { title: e.title, hex: theme.hex };
+        }),
+        noteInfo: bucketNotes.map((n) => ({ content: n.content })),
       });
 
       if (viewType === 'week') cursor.setDate(cursor.getDate() + 7);
@@ -213,6 +221,7 @@ export function VolumeChart({
     sport,
     viewType,
     pivotDate,
+    isMobile,
   ]);
 
   const chartOptions: ApexOptions = useMemo(
@@ -500,7 +509,7 @@ export function VolumeChart({
         },
       },
     }),
-    [chartData, metric, viewType, showEvents, showNotes],
+    [chartData, metric, viewType, showEvents, showNotes, sport, sportTypes],
   );
 
   return (
@@ -510,4 +519,4 @@ export function VolumeChart({
       height={300}
     />
   );
-}
+});

@@ -1,9 +1,10 @@
+import { memo } from 'react';
 import { getPriorityColor } from '@/pages/training/_shared/utils/event-helpers';
 import { getEventTypeTheme } from '@/pages/training/_shared/utils/event-theme';
 import { differenceInDays, format, parseISO } from 'date-fns';
 import { Pencil, Trash2, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { Event, SportTypeRecord } from '@/types/training';
+import { Event, SportTypeRecord, UserSportSettings } from '@/types/training';
 import { getEffortColor } from '@/services/training/effort-colors';
 import { formatEventDuration } from '@/services/training/event-duration';
 import {
@@ -33,7 +34,7 @@ interface UpcomingEventsProps {
   onDelete?: (event: Event) => void;
 }
 
-export function UpcomingEvents({
+export const UpcomingEvents = memo(function UpcomingEvents({
   events,
   today,
   sportTypes,
@@ -225,4 +226,4 @@ export function UpcomingEvents({
       </div>
     </div>
   );
-}
+});

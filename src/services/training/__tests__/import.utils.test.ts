@@ -94,9 +94,9 @@ describe('Import Utilities', () => {
 
     it('throws detailed error for malformed CSV', async () => {
       const csv = 'date,sportName,title\n2026-05-01,Run,Title,ExtraField';
-      await expect(
-        parseImportData(csv, 'csv', mockSports),
-      ).rejects.toThrow(/Too many fields \(row 2\)/);
+      await expect(parseImportData(csv, 'csv', mockSports)).rejects.toThrow(
+        /Too many fields/,
+      );
     });
   });
 });

@@ -17,12 +17,21 @@ function mapDbNote(n: NoteRecord): Note {
 }
 
 export const notesApi = {
-  async getAll(userId: string): Promise<Note[]> {
-    const { data, error } = await supabase
-      .from('tf_notes')
-      .select('*')
-      .eq('user_id', userId)
-      .order('date', { ascending: true });
+  async getAll(
+    userId: string,
+    fromDate?: string,
+    toDate?: string,
+  ): Promise<Note[]> {
+    let query = supabase.from('tf_notes').select('*').eq('user_id', userId);
+
+    if (fromDate) {
+      query = query.gte('date', fromDate);
+    }
+    if (toDate) {
+      query = query.lte('date', toDate);
+    }
+
+    const { data, error } = await query.order('date', { ascending: true });
 
     if (error) throw error;
     return (data || []).map(mapDbNote);

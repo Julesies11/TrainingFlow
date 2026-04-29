@@ -77,17 +77,18 @@ export async function parseImportData(
       });
 
       let finalMessage = errorMessages.join('; ');
-      
+
       // Heuristic for semi-colon delimiter issues
       if (input.includes(';') && !input.includes(',')) {
-        finalMessage += '. Tip: It looks like you might be using semi-colons (;) instead of commas (,). Please use standard comma-separated format.';
+        finalMessage +=
+          '. Tip: It looks like you might be using semi-colons (;) instead of commas (,). Please use standard comma-separated format.';
       }
 
       // If we have no data at all, it's a fatal structural error
       if (result.data.length === 0) {
         throw new Error(`Failed to parse CSV: ${finalMessage}`);
       }
-      
+
       throw new Error(`CSV formatting errors found: ${finalMessage}`);
     }
 

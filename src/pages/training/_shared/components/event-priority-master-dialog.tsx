@@ -1,15 +1,5 @@
 import { useState } from 'react';
-import {
-  Check,
-  Edit2,
-  Globe,
-  Plus,
-  Settings,
-  Trash2,
-  User,
-  X,
-} from 'lucide-react';
-import { EventPriorityRecord } from '@/types/training';
+import { Plus, Settings } from 'lucide-react';
 import {
   useCreateEventPriority,
   useDeleteEventPriority,
@@ -25,14 +15,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { EventPriorityTable } from './event-priority-table';
 
 interface EventPriorityMasterDialogProps {
   open: boolean;
@@ -49,8 +32,6 @@ export function EventPriorityMasterDialog({
   const deleteMutation = useDeleteEventPriority();
 
   const [newName, setNewName] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
 
   const handleAdd = () => {
     if (!newName.trim()) return;
@@ -58,16 +39,6 @@ export function EventPriorityMasterDialog({
       { name: newName.trim(), is_system: false },
       {
         onSuccess: () => setNewName(''),
-      },
-    );
-  };
-
-  const handleUpdate = (ep: EventPriorityRecord) => {
-    if (!editingName.trim()) return;
-    updateMutation.mutate(
-      { ...ep, name: editingName.trim() },
-      {
-        onSuccess: () => setEditingId(null),
       },
     );
   };
@@ -111,128 +82,14 @@ export function EventPriorityMasterDialog({
             </Button>
           </div>
 
-          {/* List Table */}
-          <div className="rounded-xl border overflow-hidden">
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest">
-                    Name
-                  </TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest w-24">
-                    Type
-                  </TableHead>
-                  <TableHead className="text-[10px] font-black uppercase tracking-widest w-24 text-right">
-                    Actions
-                  </TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={3}
-                      className="text-center py-8 text-muted-foreground italic text-sm"
-                    >
-                      Loading priorities...
-                    </TableCell>
-                  </TableRow>
-                ) : eventPriorities.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={3}
-                      className="text-center py-8 text-muted-foreground italic text-sm"
-                    >
-                      No event priorities found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  eventPriorities.map((ep) => (
-                    <TableRow key={ep.id}>
-                      <TableCell className="font-medium">
-                        {editingId === ep.id ? (
-                          <Input
-                            value={editingName}
-                            onChange={(e) => setEditingName(e.target.value)}
-                            className="h-8"
-                            autoFocus
-                          />
-                        ) : (
-                          <span className="text-sm">{ep.name}</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${ep.is_system ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-muted text-muted-foreground border'}`}
-                        >
-                          {ep.is_system ? (
-                            <Globe className="h-2.5 w-2.5" />
-                          ) : (
-                            <User className="h-2.5 w-2.5" />
-                          )}
-                          {ep.is_system ? 'system' : 'custom'}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-1">
-                          {editingId === ep.id ? (
-                            <>
-                              <Button
-                                variant="success"
-                                size="sm"
-                                className="h-8 px-2 flex items-center gap-1 shadow-sm"
-                                onClick={() => handleUpdate(ep)}
-                              >
-                                <Check className="h-4 w-4" />
-                                <span className="text-[10px] font-black uppercase">
-                                  save
-                                </span>
-                              </Button>
-
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-muted-foreground"
-                                onClick={() => setEditingId(null)}
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </>
-                          ) : (
-                            <>
-                              {!ep.is_system && (
-                                <>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0"
-                                    onClick={() => {
-                                      setEditingId(ep.id);
-                                      setEditingName(ep.name);
-                                    }}
-                                  >
-                                    <Edit2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-8 w-8 p-0 text-destructive"
-                                    onClick={() => handleDelete(ep.id)}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
+          {/* Shared Table */}
+          <EventPriorityTable
+            eventPriorities={eventPriorities}
+            isLoading={isLoading}
+            onUpdate={(ep) => updateMutation.mutate(ep)}
+            onDelete={handleDelete}
+            allowSystemEdit={false}
+          />
         </DialogBody>
       </DialogContent>
     </Dialog>
