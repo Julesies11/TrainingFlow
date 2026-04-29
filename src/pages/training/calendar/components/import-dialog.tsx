@@ -1,21 +1,21 @@
 import React, { useRef, useState } from 'react';
 import {
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   ClipboardList,
-  FileUp,
-  Loader2,
-  Download,
-  Info,
   Copy,
-  AlertTriangle,
+  Download,
+  FileUp,
+  Info,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import {
   useCreateWorkoutsBulk,
   useSportTypes,
 } from '@/hooks/use-training-data';
-import { useCopyToClipboard } from '@/hooks/use-copy-to-clipboard';
 import {
   parseImportData,
   ProcessedImportRow,
@@ -102,9 +102,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       onSuccess: () => {
         toast.success(`Successfully imported ${validWorkouts.length} workouts`);
         onOpenChange(false);
-        resetState();
       },
-      onError: (error: any) => {
+      onError: (error: Error) => {
         toast.error(error.message || 'Failed to import workouts');
       },
     });
@@ -118,8 +117,9 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   };
 
   const getPromptText = () => {
-    const validSports = sportTypes.map((st) => st.name).join(', ') || 'Run, Bike, Swim';
-    
+    const validSports =
+      sportTypes.map((st) => st.name).join(', ') || 'Run, Bike, Swim';
+
     return `Please act as an expert [ENTER SPORT TYPE] coach and design a training program for me. 
 
 [INSERT YOUR EVENT DETAILS, TIMEFRAME, CURRENT FITNESS LEVEL, EVENT DATE, AND GOALS HERE]
@@ -185,8 +185,6 @@ Before you start, ask me any questions you need to ensure you have full context`
     document.body.removeChild(link);
   };
 
-  const validSports = sportTypes.map((st) => st.name).join(', ');
-
   const validCount = processedRows.filter((r) => r.isValid).length;
   const totalCount = processedRows.length;
   const hasErrors = totalCount > validCount;
@@ -217,7 +215,11 @@ Before you start, ask me any questions you need to ensure you have full context`
                       instruction guide
                     </h4>
                     <p className="text-xs font-medium text-primary/80 leading-relaxed max-w-prose">
-                      Use AI to build your perfect training program. Simply copy the prompt template below, fill in your goal details, and ask an AI assistant (like ChatGPT or Claude) for a CSV file. When finished, upload the file or paste the raw text below to import your sessions instantly.
+                      Use AI to build your perfect training program. Simply copy
+                      the prompt template below, fill in your goal details, and
+                      ask an AI assistant (like ChatGPT or Claude) for a CSV
+                      file. When finished, upload the file or paste the raw text
+                      below to import your sessions instantly.
                     </p>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
@@ -256,7 +258,9 @@ Before you start, ask me any questions you need to ensure you have full context`
 
               <Tabs
                 value={activeTab}
-                onValueChange={(v: string) => setActiveTab(v as 'upload' | 'paste')}
+                onValueChange={(v: string) =>
+                  setActiveTab(v as 'upload' | 'paste')
+                }
                 className="w-full"
               >
                 <TabsList className="w-full justify-start border-b rounded-none bg-transparent h-auto p-0 mb-6">
@@ -309,7 +313,9 @@ Before you start, ask me any questions you need to ensure you have full context`
                   />
                   <Button
                     onClick={() => {
-                      const type = pastedText.trim().startsWith('[') ? 'json' : 'csv';
+                      const type = pastedText.trim().startsWith('[')
+                        ? 'json'
+                        : 'csv';
                       handleProcess(pastedText, type);
                     }}
                     disabled={!pastedText.trim() || isProcessing}
@@ -348,7 +354,8 @@ Before you start, ask me any questions you need to ensure you have full context`
               {hasErrors && (
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-[10px] md:text-xs font-bold">
                   <AlertTriangle className="h-4 w-4 shrink-0" />
-                  Warning: {totalCount - validCount} rows failed validation. Please review the highlighted errors below.
+                  Warning: {totalCount - validCount} rows failed validation.
+                  Please review the highlighted errors below.
                 </div>
               )}
 
@@ -372,67 +379,70 @@ Before you start, ask me any questions you need to ensure you have full context`
                         <TableHead className="w-[40px] text-[10px] font-black uppercase"></TableHead>
                       </TableRow>
                     </TableHeader>
-                  <TableBody>
-                    {processedRows.map((row, idx) => (
-                      <React.Fragment key={idx}>
-                        <TableRow
-                          className={
-                            !row.isValid
-                              ? 'bg-destructive/5 hover:bg-destructive/10'
-                              : ''
-                          }
-                        >
-                          <TableCell className="text-xs font-medium py-3">
-                            {row.row.date || '---'}
-                          </TableCell>
-                          <TableCell className="text-xs py-3">
-                            <span
-                              className={
-                                !row.isValid &&
-                                row.errors.some((e) => e.includes('Sport'))
-                                  ? 'text-destructive font-bold'
-                                  : ''
-                              }
-                            >
-                              {row.row.sportName || '---'}
-                            </span>
-                          </TableCell>
-                          <TableCell className="text-xs py-3 truncate max-w-[200px]">
-                            {row.row.title || '---'}
-                          </TableCell>
-                          <TableCell className="text-xs py-3 font-mono">
-                            {row.row.plannedDurationMinutes || 0}
-                          </TableCell>
-                          <TableCell className="py-3">
-                            {row.isValid ? (
-                              <CheckCircle2 className="h-4 w-4 text-green-500" />
-                            ) : (
-                              <AlertCircle className="h-4 w-4 text-destructive" />
-                            )}
-                          </TableCell>
-                        </TableRow>
-                        {!row.isValid && row.errors.length > 0 && (
-                          <TableRow className="bg-destructive/5 hover:bg-destructive/10">
-                            <TableCell colSpan={5} className="py-0 px-3 pb-3">
-                              <div className="text-[10px] font-bold text-destructive flex flex-col gap-0.5">
-                                {row.errors.map((err, i) => (
-                                  <span key={i} className="flex items-center gap-1">
-                                    • {err}
-                                  </span>
-                                ))}
-                              </div>
+                    <TableBody>
+                      {processedRows.map((row, idx) => (
+                        <React.Fragment key={idx}>
+                          <TableRow
+                            className={
+                              !row.isValid
+                                ? 'bg-destructive/5 hover:bg-destructive/10'
+                                : ''
+                            }
+                          >
+                            <TableCell className="text-xs font-medium py-3">
+                              {row.row.date || '---'}
+                            </TableCell>
+                            <TableCell className="text-xs py-3">
+                              <span
+                                className={
+                                  !row.isValid &&
+                                  row.errors.some((e) => e.includes('Sport'))
+                                    ? 'text-destructive font-bold'
+                                    : ''
+                                }
+                              >
+                                {row.row.sportName || '---'}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-xs py-3 truncate max-w-[200px]">
+                              {row.row.title || '---'}
+                            </TableCell>
+                            <TableCell className="text-xs py-3 font-mono">
+                              {row.row.plannedDurationMinutes || 0}
+                            </TableCell>
+                            <TableCell className="py-3">
+                              {row.isValid ? (
+                                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                              ) : (
+                                <AlertCircle className="h-4 w-4 text-destructive" />
+                              )}
                             </TableCell>
                           </TableRow>
-                        )}
-                      </React.Fragment>
-                    ))}
-                  </TableBody>
-                </Table>
+                          {!row.isValid && row.errors.length > 0 && (
+                            <TableRow className="bg-destructive/5 hover:bg-destructive/10">
+                              <TableCell colSpan={5} className="py-0 px-3 pb-3">
+                                <div className="text-[10px] font-bold text-destructive flex flex-col gap-0.5">
+                                  {row.errors.map((err, i) => (
+                                    <span
+                                      key={i}
+                                      className="flex items-center gap-1"
+                                    >
+                                      • {err}
+                                    </span>
+                                  ))}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
         <DialogFooter className="px-4 py-3 md:px-6 md:py-4 border-t bg-muted/30 flex flex-col sm:flex-row gap-2">
           <Button

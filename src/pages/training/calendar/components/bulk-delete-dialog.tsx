@@ -1,8 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Trash2, Loader2, AlertTriangle, Calendar as CalendarIcon, CheckSquare, Square } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import {
+  AlertTriangle,
+  Calendar as CalendarIcon,
+  Loader2,
+  Trash2,
+} from 'lucide-react';
 import { toast } from 'sonner';
-import { useDeleteWorkoutsBulk, useSportTypes } from '@/hooks/use-training-data';
+import {
+  useDeleteWorkoutsBulk,
+  useSportTypes,
+} from '@/hooks/use-training-data';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +20,6 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -20,13 +28,18 @@ interface BulkDeleteDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-export function BulkDeleteDialog({ open, onOpenChange }: BulkDeleteDialogProps) {
+export function BulkDeleteDialog({
+  open,
+  onOpenChange,
+}: BulkDeleteDialogProps) {
   const { data: sportTypes = [] } = useSportTypes();
   const deleteWorkoutsBulk = useDeleteWorkoutsBulk();
 
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
-  const [selectedSportTypeIds, setSelectedSportTypeIds] = useState<string[]>([]);
+  const [selectedSportTypeIds, setSelectedSportTypeIds] = useState<string[]>(
+    [],
+  );
 
   // Default values when opening
   useEffect(() => {
@@ -37,15 +50,15 @@ export function BulkDeleteDialog({ open, onOpenChange }: BulkDeleteDialogProps) 
       const sixteenWeeksOut = new Date();
       sixteenWeeksOut.setDate(sixteenWeeksOut.getDate() + 112);
       setToDate(sixteenWeeksOut.toISOString().split('T')[0]);
-      
+
       // Select all sports by default
-      setSelectedSportTypeIds(sportTypes.map(st => st.id));
+      setSelectedSportTypeIds(sportTypes.map((st) => st.id));
     }
   }, [open, sportTypes]);
 
   const handleToggleSport = (id: string) => {
-    setSelectedSportTypeIds(prev => 
-      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    setSelectedSportTypeIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
 
@@ -53,7 +66,7 @@ export function BulkDeleteDialog({ open, onOpenChange }: BulkDeleteDialogProps) 
     if (selectedSportTypeIds.length === sportTypes.length) {
       setSelectedSportTypeIds([]);
     } else {
-      setSelectedSportTypeIds(sportTypes.map(st => st.id));
+      setSelectedSportTypeIds(sportTypes.map((st) => st.id));
     }
   };
 
@@ -69,7 +82,7 @@ export function BulkDeleteDialog({ open, onOpenChange }: BulkDeleteDialogProps) 
     }
 
     const confirmed = window.confirm(
-      `Are you sure you want to delete incomplete workouts between ${fromDate} and ${toDate}? This action cannot be undone.`
+      `Are you sure you want to delete incomplete workouts between ${fromDate} and ${toDate}? This action cannot be undone.`,
     );
 
     if (!confirmed) return;
@@ -81,10 +94,10 @@ export function BulkDeleteDialog({ open, onOpenChange }: BulkDeleteDialogProps) 
           toast.success('Workouts deleted successfully');
           onOpenChange(false);
         },
-        onError: (error: any) => {
+        onError: (error: Error) => {
           toast.error(error.message || 'Failed to delete workouts');
         },
-      }
+      },
     );
   };
 
@@ -102,7 +115,9 @@ export function BulkDeleteDialog({ open, onOpenChange }: BulkDeleteDialogProps) 
           <div className="bg-destructive/5 rounded-xl border border-destructive/10 p-4 flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
             <p className="text-xs font-medium text-destructive leading-relaxed">
-              This will permanently delete <span className="font-bold">ALL</span> workouts within the selected date range and sport types. This action cannot be undone.
+              This will permanently delete{' '}
+              <span className="font-bold">ALL</span> workouts within the
+              selected date range and sport types. This action cannot be undone.
             </p>
           </div>
 
@@ -138,30 +153,32 @@ export function BulkDeleteDialog({ open, onOpenChange }: BulkDeleteDialogProps) 
               <Label className="text-[10px] font-black uppercase text-muted-foreground">
                 Sport Types
               </Label>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={handleToggleAll}
                 className="h-6 text-[9px] font-black uppercase tracking-tighter px-2 hover:bg-muted"
               >
-                {selectedSportTypeIds.length === sportTypes.length ? 'Deselect All' : 'Select All'}
+                {selectedSportTypeIds.length === sportTypes.length
+                  ? 'Deselect All'
+                  : 'Select All'}
               </Button>
             </div>
-            
+
             <ScrollArea className="h-[150px] pr-4 border rounded-lg p-3 bg-muted/20">
               <div className="space-y-2">
                 {sportTypes.map((st) => (
-                  <div 
-                    key={st.id} 
+                  <div
+                    key={st.id}
                     className="flex items-center space-x-2 cursor-pointer hover:bg-muted/30 p-1 rounded transition-colors"
                     onClick={() => handleToggleSport(st.id)}
                   >
-                    <Checkbox 
-                      id={st.id} 
+                    <Checkbox
+                      id={st.id}
                       checked={selectedSportTypeIds.includes(st.id)}
                       onCheckedChange={() => handleToggleSport(st.id)}
                     />
-                    <Label 
+                    <Label
                       htmlFor={st.id}
                       className="text-xs font-bold cursor-pointer flex-1"
                     >

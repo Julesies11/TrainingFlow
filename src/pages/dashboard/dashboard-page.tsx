@@ -7,6 +7,7 @@ import {
   useDeleteWorkout,
   useEvents,
   useGoals,
+  useNotes,
   useSportTypes,
   useUpdateEvent,
   useUpdateWorkout,
@@ -32,6 +33,7 @@ type ViewType = 'week' | 'month';
 export function DashboardPage() {
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
   const { data: events = [], isLoading: loadingEvents } = useEvents();
+  const { data: notes = [] } = useNotes();
   const { data: goals = [], isLoading: loadingGoals } = useGoals();
   const { data: sportTypes = [], isLoading: loadingSports } = useSportTypes();
   const { data: userSettings = [], isLoading: loadingSettings } =
@@ -49,6 +51,7 @@ export function DashboardPage() {
   const [viewType, setViewType] = useState<ViewType>('week');
   const [pivotDate, setPivotDate] = useState(new Date());
   const [showEvents, setShowEvents] = useState(true);
+  const [showNotes, setShowNotes] = useState(true);
   const [distViewType, setDistViewType] = useState<ViewType>('week');
   const [distPivotDate, setDistPivotDate] = useState(new Date());
 
@@ -249,20 +252,41 @@ export function DashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-2 ml-auto">
-                    <Label
-                      htmlFor="events-toggle"
-                      className="text-xs font-bold lowercase text-muted-foreground cursor-pointer"
-                    >
-                      events
-                    </Label>
-                    <SwitchWrapper>
-                      <Switch
-                        id="events-toggle"
-                        checked={showEvents}
-                        onCheckedChange={setShowEvents}
-                        size="sm"
-                      />
-                    </SwitchWrapper>
+                    <div className="flex items-center gap-3 bg-muted/50 rounded-lg border px-3 py-1.5 shadow-inner">
+                      <div className="flex items-center gap-2 pr-3 border-r border-muted-foreground/20">
+                        <Label
+                          htmlFor="notes-toggle"
+                          className="text-[10px] font-black uppercase tracking-widest text-gray-600 cursor-pointer"
+                        >
+                          notes
+                        </Label>
+                        <SwitchWrapper>
+                          <Switch
+                            id="notes-toggle"
+                            checked={showNotes}
+                            onCheckedChange={setShowNotes}
+                            size="sm"
+                          />
+                        </SwitchWrapper>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Label
+                          htmlFor="events-toggle"
+                          className="text-[10px] font-black uppercase tracking-widest text-primary cursor-pointer"
+                        >
+                          events
+                        </Label>
+                        <SwitchWrapper>
+                          <Switch
+                            id="events-toggle"
+                            checked={showEvents}
+                            onCheckedChange={setShowEvents}
+                            size="sm"
+                          />
+                        </SwitchWrapper>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -271,6 +295,7 @@ export function DashboardPage() {
               <VolumeChart
                 workouts={workouts}
                 events={events}
+                notes={notes}
                 goals={goals}
                 sportTypes={sportTypes}
                 metric={metric}
@@ -278,6 +303,7 @@ export function DashboardPage() {
                 viewType={viewType}
                 pivotDate={pivotDate}
                 showEvents={showEvents}
+                showNotes={showNotes}
               />
             </div>
           </div>

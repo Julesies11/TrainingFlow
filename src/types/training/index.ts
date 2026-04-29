@@ -3,3 +3,4 @@ export * from './workout.types';
 export * from './events.types';
 export * from './profile.types';
 export * from './goals.types';
+export * from './notes.types';

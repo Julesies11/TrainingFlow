@@ -8,6 +8,7 @@ import { DashboardPage } from '../dashboard-page';
 vi.mock('@/hooks/use-training-data', () => ({
   useWorkouts: vi.fn(),
   useEvents: vi.fn(),
+  useNotes: vi.fn(),
   useSportTypes: vi.fn(),
   useUserSportSettings: vi.fn(),
   useGoals: vi.fn(),
@@ -25,6 +26,10 @@ describe('DashboardPage Sessions', () => {
       data: [],
       isLoading: false,
     } as unknown as ReturnType<typeof trainingHooks.useEvents>);
+    vi.mocked(trainingHooks.useNotes).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof trainingHooks.useNotes>);
     vi.mocked(trainingHooks.useSportTypes).mockReturnValue({
       data: [],
       isLoading: false,

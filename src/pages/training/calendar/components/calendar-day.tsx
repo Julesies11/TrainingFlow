@@ -3,6 +3,7 @@ import React from 'react';
 import { Star } from 'lucide-react';
 import {
   Event,
+  Note,
   SportTypeRecord,
   UserSportSettings,
   Workout,
@@ -25,6 +26,7 @@ import { getEventTypeTheme } from '../../_shared/utils/event-theme';
 interface CalendarDayProps {
   date: Date;
   workouts: Workout[];
+  notes: Note[];
   events: Event[];
   isToday: boolean;
   isSelected: boolean;
@@ -34,13 +36,14 @@ interface CalendarDayProps {
   onDragOver: (e: React.DragEvent, dateStr: string, count: number) => void;
   onDragLeave: () => void;
   onDrop: (e: React.DragEvent, dateStr: string) => void;
-  onDragStart: (e: React.DragEvent, item: Workout) => void;
+  onDragStart: (e: React.DragEvent, item: Workout | Note) => void;
   onDragEnd: () => void;
   onEventDragStart: (e: React.DragEvent, item: Event) => void;
   sportMap: Map<string, SportTypeRecord>;
   userSettingsMap: Map<string, UserSportSettings>;
   showStats: boolean;
   onEditWorkout: (w: Workout) => void;
+  onEditNote: (n: Note) => void;
   onEditEvent: (e: Event) => void;
   isDraggingId: string | null;
   dragOverInfo: { date: string; index?: number } | null;
@@ -51,6 +54,7 @@ export const CalendarDay = React.memo(
   ({
     date,
     workouts,
+    notes = [],
     events,
     isToday,
     isSelected,
@@ -66,6 +70,7 @@ export const CalendarDay = React.memo(
     userSettingsMap,
     showStats,
     onEditWorkout,
+    onEditNote,
     onEditEvent,
     isDraggingId,
     dragOverInfo,
@@ -80,7 +85,7 @@ export const CalendarDay = React.memo(
         ref={isToday ? (todayRef as any) : null}
         onClick={() => onSelect(dateStr)}
         onDragOver={(e) =>
-          onDragOver(e, dateStr, workouts.length + events.length)
+          onDragOver(e, dateStr, workouts.length + events.length + notes.length)
         }
         onDragLeave={onDragLeave}
         onDrop={(e) => onDrop(e, dateStr)}
@@ -170,9 +175,37 @@ export const CalendarDay = React.memo(
             );
           })}
 
+          {/* Notes */}
+          {notes.map((note, nIdx) => {
+            const itemIndex = events.length + nIdx;
+            return (
+              <React.Fragment key={note.id}>
+                {dragOverInfo?.date === dateStr &&
+                  isDraggingId &&
+                  dragOverInfo.index === itemIndex && <DropIndicator />}
+                <div
+                  data-drop-item
+                  draggable="true"
+                  onDragStart={(e) => onDragStart(e, note)}
+                  onDragEnd={onDragEnd}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEditNote(note);
+                  }}
+                  className={`bg-info/10 text-info border-info/30 cursor-grab overflow-hidden rounded-lg border p-2 shadow-sm transition-all hover:shadow-md active:cursor-grabbing ${isDraggingId === note.id ? 'opacity-20 grayscale' : ''}`}
+                >
+                  <div className="text-[10px] font-bold lg:text-xs">note</div>
+                  <div className="text-muted-foreground mt-0.5 line-clamp-3 text-[10px] leading-tight lg:text-[11px]">
+                    {note.content}
+                  </div>
+                </div>
+              </React.Fragment>
+            );
+          })}
+
           {/* Workouts */}
           {workouts.map((w, wIdx) => {
-            const itemIndex = events.length + wIdx;
+            const itemIndex = events.length + notes.length + wIdx;
             const wSt = sportMap.get(w.sportTypeId);
             const bg = getEffortColor(
               wSt,
@@ -228,7 +261,8 @@ export const CalendarDay = React.memo(
           {/* Drop zone indicator - after last item */}
           {dragOverInfo?.date === dateStr &&
             isDraggingId &&
-            dragOverInfo.index! >= events.length + workouts.length && (
+            dragOverInfo.index! >=
+              events.length + notes.length + workouts.length && (
               <DropIndicator />
             )}
         </div>

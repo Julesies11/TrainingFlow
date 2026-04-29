@@ -16,10 +16,17 @@ vi.mock('@/hooks/use-training-data', () => ({
   useUpdateProfile: vi.fn(),
   useUpdateWorkout: vi.fn(),
   useCreateWorkout: vi.fn(),
+  useNotes: vi.fn(),
+  useCreateNote: vi.fn(),
+  useUpdateNote: vi.fn(),
+  useDeleteNote: vi.fn(),
   useCreateWorkoutsBulk: vi
     .fn()
     .mockReturnValue({ mutate: vi.fn(), isPending: false }),
   useDeleteWorkout: vi.fn(),
+  useDeleteWorkoutsBulk: vi
+    .fn()
+    .mockReturnValue({ mutate: vi.fn(), isPending: false }),
   useUpdateEvent: vi.fn(),
   useDeleteEvent: vi.fn(),
   useGoals: vi.fn(),
@@ -50,6 +57,10 @@ describe('CalendarView Features', () => {
       data: [],
       isLoading: false,
     } as unknown as ReturnType<typeof trainingHooks.useWorkouts>);
+    vi.mocked(trainingHooks.useNotes).mockReturnValue({
+      data: [],
+      isLoading: false,
+    } as unknown as ReturnType<typeof trainingHooks.useNotes>);
     vi.mocked(trainingHooks.useEvents).mockReturnValue({
       data: [],
       isLoading: false,
@@ -128,6 +139,28 @@ describe('CalendarView Features', () => {
 
     await waitFor(() => {
       expect(screen.getByText('Mixed CASE Title')).toBeDefined();
+    });
+  });
+
+  it('renders calendar notes', async () => {
+    const notes = [
+      {
+        id: 'note-1',
+        content: 'Test note content',
+        date: new Date().toISOString().split('T')[0],
+        userId: 'test-user-id',
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    vi.mocked(trainingHooks.useNotes).mockReturnValue({
+      data: notes,
+      isLoading: false,
+    } as unknown as ReturnType<typeof trainingHooks.useNotes>);
+
+    render(<CalendarView />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Test note content')).toBeDefined();
     });
   });
 });

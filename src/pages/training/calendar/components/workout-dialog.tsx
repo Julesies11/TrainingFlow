@@ -33,6 +33,7 @@ interface WorkoutDialogProps {
   onSave: (w: Partial<Workout>) => void;
   onSaveBulk?: (ws: Partial<Workout>[]) => void;
   onDelete?: (id: string, mode: 'single' | 'future') => void;
+  onSwitchToNote?: () => void;
   onCancel: () => void;
 }
 
@@ -44,6 +45,7 @@ export function WorkoutDialog({
   onSave,
   onSaveBulk,
   onDelete,
+  onSwitchToNote,
   onCancel,
 }: WorkoutDialogProps) {
   const isExisting = existingWorkouts.some((w) => w.id === initialWorkout.id);
@@ -337,24 +339,35 @@ export function WorkoutDialog({
 
                   <div className="flex flex-wrap gap-2">
                     {sportTypes.length > 0 ? (
-                      sportTypes.map((st) => (
+                      <>
+                        {sportTypes.map((st) => (
+                          <Button
+                            key={st.id}
+                            type="button"
+                            variant={
+                              workout.sportTypeId === st.id
+                                ? 'primary'
+                                : 'outline'
+                            }
+                            size="sm"
+                            onClick={() =>
+                              setWorkout({ ...workout, sportTypeId: st.id })
+                            }
+                            className="text-[9px] font-black lowercase"
+                          >
+                            {st.name}
+                          </Button>
+                        ))}
                         <Button
-                          key={st.id}
                           type="button"
-                          variant={
-                            workout.sportTypeId === st.id
-                              ? 'primary'
-                              : 'outline'
-                          }
+                          variant="outline"
                           size="sm"
-                          onClick={() =>
-                            setWorkout({ ...workout, sportTypeId: st.id })
-                          }
-                          className="text-[9px] font-black lowercase"
+                          onClick={() => onSwitchToNote?.()}
+                          className="text-[9px] font-black lowercase border-info/50 text-info hover:bg-info/5"
                         >
-                          {st.name}
+                          note
                         </Button>
-                      ))
+                      </>
                     ) : (
                       <div className="text-[10px] py-2 text-muted-foreground italic">
                         Please define sport types in settings first.

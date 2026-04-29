@@ -7,3 +7,4 @@ export { userSportSettingsApi } from './user-sport-settings.api';
 export { eventTypesApi } from './event-types.api';
 export { eventPrioritiesApi } from './event-priorities.api';
 export { goalsApi } from './goals.api';
+export { notesApi } from './notes.api';

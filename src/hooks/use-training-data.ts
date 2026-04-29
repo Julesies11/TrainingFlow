@@ -1,11 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
+  CreateNoteInput,
   Event,
   EventPriorityRecord,
   EventTypeRecord,
   LibraryWorkout,
+  Note,
   SportTypeRecord,
   TrainingGoal,
+  UpdateNoteInput,
   UserProfile,
   Workout,
 } from '@/types/training';
@@ -15,6 +18,7 @@ import {
   eventTypesApi,
   goalsApi,
   libraryApi,
+  notesApi,
   profileApi,
   sportTypesApi,
   userSportSettingsApi,
@@ -28,6 +32,7 @@ const KEYS = {
   library: (uid: string) => ['library', uid] as const,
   events: (uid: string) => ['events', uid] as const,
   goals: (uid: string) => ['goals', uid] as const,
+  notes: (uid: string) => ['notes', uid] as const,
   profile: (uid: string) => ['profile', uid] as const,
   sportTypes: ['sportTypes'] as const,
   userSportSettings: (uid: string) => ['userSportSettings', uid] as const,
@@ -310,8 +315,11 @@ export function useDeleteWorkoutsBulk() {
   const userId = useSupabaseUserId();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (filters: { fromDate: string; toDate: string; sportTypeIds: string[] }) =>
-      workoutsApi.deleteBulk(filters, userId!),
+    mutationFn: (filters: {
+      fromDate: string;
+      toDate: string;
+      sportTypeIds: string[];
+    }) => workoutsApi.deleteBulk(filters, userId!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.workouts(userId!) });
     },
@@ -456,6 +464,60 @@ export function useDeleteGoal() {
     mutationFn: (id: string) => goalsApi.remove(id, userId!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.goals(userId!) });
+    },
+  });
+}
+
+// ─── Notes ──────────────────────────────────────────────────
+export function useNotes() {
+  const userId = useSupabaseUserId();
+  return useQuery({
+    queryKey: KEYS.notes(userId ?? ''),
+    queryFn: () => notesApi.getAll(userId!),
+    enabled: !!userId,
+  });
+}
+
+export function useCreateNote() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (note: CreateNoteInput) => notesApi.create(note, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.notes(userId!) });
+    },
+  });
+}
+
+export function useUpdateNote() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (note: UpdateNoteInput) => notesApi.update(note, userId!),
+    onMutate: async (updated) => {
+      await qc.cancelQueries({ queryKey: KEYS.notes(userId!) });
+      const prev = qc.getQueryData<Note[]>(KEYS.notes(userId!));
+      qc.setQueryData<Note[]>(KEYS.notes(userId!), (old) =>
+        old?.map((n) => (n.id === updated.id ? { ...n, ...updated } : n)),
+      );
+      return { prev };
+    },
+    onError: (_err, _vars, ctx) => {
+      if (ctx?.prev) qc.setQueryData(KEYS.notes(userId!), ctx.prev);
+    },
+    onSettled: () => {
+      qc.invalidateQueries({ queryKey: KEYS.notes(userId!) });
+    },
+  });
+}
+
+export function useDeleteNote() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => notesApi.remove(id, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.notes(userId!) });
     },
   });
 }

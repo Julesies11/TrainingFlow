@@ -9,6 +9,7 @@ TrainingFlow is designed as a management platform with the following core module
 
 ## 2. Training Management
 - **Interactive Calendar**: Drag-and-drop workout planning.
+- **Calendar Notes**: Add simple text notes to any day on the calendar. Notes are draggable, editable, and visually distinct from workouts.
 - **Session Duplication**: Quickly copy and paste workouts to different dates via the "Duplicate" feature.
 - **Dynamic Lookups**: Manage custom Event Types and Priorities with administrative overrides for global defaults.
 - **Sport Types & Effort Settings**: 
@@ -20,7 +21,8 @@ TrainingFlow is designed as a management platform with the following core module
 - **Data Casing Preservation**: Ensures all user-entered workout and event titles preserve original capitalization for improved readability and personalization.
 - **Athlete Dashboard**: 
     - **Volume Charts**: Visual monitoring of training volume (distance/duration) over time.
-    - **Event Annotations**: Races and goals are overlaid on the progression chart to visualize the build-up and taper leading to events.
+    - **Annotation Toggles**: Independently show/hide **Events** and **Notes** on the progression chart.
+    - **Contextual Tooltips**: Hover over data points to see full event titles and note content alongside volume totals.
     - **Sport Distribution**: Dynamic breakdown of training time across different sport types, respecting user-customized colors.
 - **Training Goals**: 
     - **Periodized Targets**: Set specific weekly or monthly targets (e.g., "Bike 200km/week") for defined training blocks.

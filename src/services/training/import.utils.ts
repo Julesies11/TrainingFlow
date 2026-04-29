@@ -52,13 +52,15 @@ export async function parseImportData(
   type: 'json' | 'csv',
   sportTypes: SportTypeRecord[],
 ): Promise<ProcessedImportRow[]> {
-  let rawData: any[] = [];
+  let rawData: Record<string, unknown>[] = [];
 
   if (type === 'json') {
     try {
       const parsed = JSON.parse(input);
-      rawData = Array.isArray(parsed) ? parsed : [parsed];
-    } catch (e) {
+      rawData = Array.isArray(parsed)
+        ? (parsed as Record<string, unknown>[])
+        : [parsed as Record<string, unknown>];
+    } catch {
       throw new Error('Invalid JSON format');
     }
   } else {

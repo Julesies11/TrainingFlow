@@ -5,6 +5,7 @@ import { parseISO } from 'date-fns';
 import ApexChart from 'react-apexcharts';
 import {
   Event,
+  Note,
   SportTypeRecord,
   TrainingGoal,
   Workout,
@@ -20,6 +21,7 @@ type ViewType = 'week' | 'month';
 interface VolumeChartProps {
   workouts: Workout[];
   events: Event[];
+  notes?: Note[];
   goals?: TrainingGoal[];
   sportTypes?: SportTypeRecord[];
   metric: ProgressMetric;
@@ -27,11 +29,13 @@ interface VolumeChartProps {
   viewType: ViewType;
   pivotDate: Date;
   showEvents?: boolean;
+  showNotes?: boolean;
 }
 
 export function VolumeChart({
   workouts,
   events,
+  notes = [],
   goals = [],
   sportTypes = [],
   metric,
@@ -39,6 +43,7 @@ export function VolumeChart({
   viewType,
   pivotDate,
   showEvents = true,
+  showNotes = true,
 }: VolumeChartProps) {
   const chartData = useMemo(() => {
     const data = [];
@@ -84,6 +89,11 @@ export function VolumeChart({
 
       const bucketEvents = events.filter((e) => {
         const d = parseISO(e.date);
+        return d >= bucketStart && d < bucketEnd;
+      });
+
+      const bucketNotes = notes.filter((n) => {
+        const d = parseISO(n.date);
         return d >= bucketStart && d < bucketEnd;
       });
 
@@ -151,6 +161,10 @@ export function VolumeChart({
         };
       });
 
+      const noteInfo = bucketNotes.map((n) => ({
+        content: n.content,
+      }));
+
       data.push({
         label,
         past: isPast || isCurrent ? Number(val.toFixed(2)) : null,
@@ -160,6 +174,7 @@ export function VolumeChart({
         bucketStart: new Date(bucketStart),
         bucketEnd: new Date(bucketEnd),
         eventInfo,
+        noteInfo,
       });
 
       if (viewType === 'week') cursor.setDate(cursor.getDate() + 7);
@@ -167,7 +182,17 @@ export function VolumeChart({
     }
 
     return data;
-  }, [workouts, events, goals, sportTypes, metric, sport, viewType, pivotDate]);
+  }, [
+    workouts,
+    events,
+    notes,
+    goals,
+    sportTypes,
+    metric,
+    sport,
+    viewType,
+    pivotDate,
+  ]);
 
   const chartOptions: ApexOptions = useMemo(
     () => ({
@@ -189,34 +214,68 @@ export function VolumeChart({
         },
       ],
       annotations: {
-        xaxis: showEvents
-          ? chartData
-              .filter((d) => d.eventInfo && d.eventInfo.length > 0)
-              .map((d, index) => {
-                const firstEvent = d.eventInfo[0];
-                return {
-                  x: d.label,
-                  strokeDashArray: 4,
-                  borderColor: firstEvent.hex,
-                  borderWidth: 2,
-                  label: {
+        xaxis: [
+          ...(showEvents
+            ? chartData
+                .filter((d) => d.eventInfo && d.eventInfo.length > 0)
+                .map((d, index) => {
+                  const firstEvent = d.eventInfo[0];
+                  return {
+                    x: d.label,
+                    strokeDashArray: 4,
                     borderColor: firstEvent.hex,
-                    position: 'top',
-                    style: {
-                      color: '#fff',
-                      background: firstEvent.hex,
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      padding: { left: 4, right: 4, top: 2, bottom: 2 },
+                    borderWidth: 2,
+                    label: {
+                      borderColor: firstEvent.hex,
+                      position: 'top',
+                      style: {
+                        color: '#fff',
+                        background: firstEvent.hex,
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        padding: { left: 4, right: 4, top: 2, bottom: 2 },
+                      },
+                      text:
+                        firstEvent.title + (d.eventInfo.length > 1 ? ' +' : ''),
+                      offsetY: index % 2 === 0 ? -25 : 0,
+                      orientation: 'horizontal',
                     },
-                    text:
-                      firstEvent.title + (d.eventInfo.length > 1 ? ' +' : ''),
-                    offsetY: index % 2 === 0 ? -25 : 0,
-                    orientation: 'horizontal',
-                  },
-                };
-              })
-          : [],
+                  };
+                })
+            : []),
+          ...(showNotes
+            ? chartData
+                .filter((d) => d.noteInfo && d.noteInfo.length > 0)
+                .map((d, index) => {
+                  const firstNote = d.noteInfo[0];
+                  const noteColor = '#374151'; // Dark grey (gray-700) for notes
+                  return {
+                    x: d.label,
+                    strokeDashArray: 2,
+                    borderColor: noteColor,
+                    borderWidth: 1,
+                    label: {
+                      borderColor: noteColor,
+                      position: 'top',
+                      style: {
+                        color: '#fff',
+                        background: noteColor,
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        padding: { left: 4, right: 4, top: 2, bottom: 2 },
+                      },
+                      text:
+                        (firstNote.content.length > 15
+                          ? firstNote.content.substring(0, 15) + '...'
+                          : firstNote.content) +
+                        (d.noteInfo.length > 1 ? ' +' : ''),
+                      offsetY: index % 2 === 0 ? 70 : 95,
+                      orientation: 'horizontal',
+                    },
+                  };
+                })
+            : []),
+        ],
       },
       chart: {
         height: 300,
@@ -336,9 +395,49 @@ export function VolumeChart({
             });
           }
 
-          return `<div class="apexcharts-tooltip-custom" style="padding: 8px 12px; background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);">
+          const eventsHtml =
+            showEvents && dataPoint.eventInfo?.length > 0
+              ? `
+            <div style="margin-top: 8px; border-top: 1px solid #eee; pt-2">
+              <div style="font-size: 10px; font-weight: 700; color: #888; text-transform: lowercase; margin-bottom: 4px;">events</div>
+              ${dataPoint.eventInfo
+                .map(
+                  (e: { hex: string; title: string }) => `
+                <div style="display: flex; align-items: center; gap: 4px; margin-bottom: 2px;">
+                  <div style="width: 8px; height: 8px; border-radius: 2px; background: ${e.hex};"></div>
+                  <div style="font-size: 11px; font-weight: 600; color: #333;">${e.title}</div>
+                </div>
+              `,
+                )
+                .join('')}
+            </div>
+          `
+              : '';
+
+          const notesHtml =
+            showNotes && dataPoint.noteInfo?.length > 0
+              ? `
+            <div style="margin-top: 8px; border-top: 1px solid #eee; pt-2">
+              <div style="font-size: 10px; font-weight: 700; color: #888; text-transform: lowercase; margin-bottom: 4px;">notes</div>
+              ${dataPoint.noteInfo
+                .map(
+                  (n: { content: string }) => `
+                <div style="display: flex; align-items: flex-start; gap: 4px; margin-bottom: 4px;">
+                  <div style="width: 8px; height: 8px; border-radius: 2px; background: #374151; margin-top: 3px; flex-shrink: 0;"></div>
+                  <div style="font-size: 11px; font-weight: 500; color: #555; line-height: 1.3;">${n.content}</div>
+                </div>
+              `,
+                )
+                .join('')}
+            </div>
+          `
+              : '';
+
+          return `<div class="apexcharts-tooltip-custom" style="padding: 10px 14px; background: white; border: 1px solid #e5e7eb; border-radius: 10px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); min-width: 180px;">
           <div style="font-size: 11px; font-weight: 700; color: #666; text-transform: lowercase; margin-bottom: 4px;">${dateRange}</div>
-          <div style="font-size: 13px; font-weight: 800; color: #111;">Total: ${total.toFixed(2)}${unit}</div>
+          <div style="font-size: 14px; font-weight: 800; color: #111; margin-bottom: 2px;">total: ${total.toFixed(2)}${unit}</div>
+          ${eventsHtml}
+          ${notesHtml}
         </div>`;
         },
       },
@@ -361,7 +460,7 @@ export function VolumeChart({
         },
       },
     }),
-    [chartData, metric, viewType, showEvents],
+    [chartData, metric, viewType, showEvents, showNotes],
   );
 
   return (

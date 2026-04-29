@@ -8,23 +8,26 @@ import {
   Plus,
   Trash2,
 } from 'lucide-react';
-import { Event, LibraryWorkout, Workout } from '@/types/training';
+import { Event, LibraryWorkout, Note, Workout } from '@/types/training';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';
 import {
   useCreateLibraryWorkout,
+  useCreateNote,
   useCreateWorkout,
   useCreateWorkoutsBulk,
   useDeleteEvent,
   useDeleteLibraryWorkout,
+  useDeleteNote,
   useDeleteWorkout,
-  useDeleteWorkoutsBulk,
   useEvents,
   useGoals,
   useLibrary,
+  useNotes,
   useProfile,
   useSportTypes,
   useUpdateEvent,
   useUpdateLibraryWorkout,
+  useUpdateNote,
   useUpdateProfile,
   useUpdateWorkout,
   useUserSportSettings,
@@ -47,15 +50,17 @@ import { getSportIcon } from '@/services/training/sport-icons';
 import { Button } from '@/components/ui/button';
 import { Switch, SwitchWrapper } from '@/components/ui/switch';
 import { EventDialog } from '../_shared/components/event-dialog';
+import { BulkDeleteDialog } from './components/bulk-delete-dialog';
 import { CalendarDay } from './components/calendar-day';
 import { ImportDialog } from './components/import-dialog';
-import { BulkDeleteDialog } from './components/bulk-delete-dialog';
 import { LibraryDrawer } from './components/library-drawer';
+import { NoteDialog } from './components/note-dialog';
 import { WorkoutDialog } from './components/workout-dialog';
 
 export function CalendarView() {
   const userId = useSupabaseUserId();
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
+  const { data: notes = [] } = useNotes();
   const { data: events = [] } = useEvents();
   const { data: goals = [] } = useGoals();
   const { data: library = [] } = useLibrary();
@@ -69,9 +74,11 @@ export function CalendarView() {
   const createWorkout = useCreateWorkout();
   const createWorkoutsBulk = useCreateWorkoutsBulk();
   const deleteWorkout = useDeleteWorkout();
-  const deleteWorkoutsBulk = useDeleteWorkoutsBulk();
   const updateEvent = useUpdateEvent();
   const deleteEvent = useDeleteEvent();
+  const createNote = useCreateNote();
+  const updateNote = useUpdateNote();
+  const deleteNote = useDeleteNote();
   const createLibrary = useCreateLibraryWorkout();
   const updateLibrary = useUpdateLibraryWorkout();
   const deleteLibrary = useDeleteLibraryWorkout();
@@ -109,6 +116,7 @@ export function CalendarView() {
   const [workoutToEdit, setWorkoutToEdit] = useState<Partial<Workout> | null>(
     null,
   );
+  const [noteToEdit, setNoteToEdit] = useState<Partial<Note> | null>(null);
   const [eventWithSegmentsToEdit, setEventWithSegmentsToEdit] =
     useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
@@ -192,8 +200,9 @@ export function CalendarView() {
 
   // Drag & drop handlers
 
-  const handleDragStart = (e: React.DragEvent, item: Workout) => {
-    e.dataTransfer.setData('text/plain', item.id);
+  const handleDragStart = (e: React.DragEvent, item: Workout | Note) => {
+    const isNote = 'content' in item;
+    e.dataTransfer.setData(isNote ? 'noteId' : 'text/plain', item.id);
     e.dataTransfer.effectAllowed = 'move';
     setIsDraggingId(item.id);
   };
@@ -246,6 +255,16 @@ export function CalendarView() {
       const event = events.find((ev) => ev.id === eventId);
       if (event) {
         updateEvent.mutate({ ...event, date: dateStr });
+      }
+      handleDragEnd();
+      return;
+    }
+
+    const noteId = e.dataTransfer.getData('noteId');
+    if (noteId) {
+      const note = notes.find((n) => n.id === noteId);
+      if (note) {
+        updateNote.mutate({ ...note, date: dateStr });
       }
       handleDragEnd();
       return;
@@ -521,6 +540,9 @@ export function CalendarView() {
                         const dayWorkouts = workouts
                           .filter((w) => w.date === dateStr)
                           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+                        const dayNotes = notes.filter(
+                          (n) => n.date === dateStr,
+                        );
                         const dayEvents = events.filter(
                           (e) => e.date === dateStr,
                         );
@@ -534,6 +556,7 @@ export function CalendarView() {
                             key={dIdx}
                             date={date}
                             workouts={dayWorkouts}
+                            notes={dayNotes}
                             events={dayEvents}
                             isToday={isToday}
                             isSelected={isSelected}
@@ -553,6 +576,7 @@ export function CalendarView() {
                             userSettingsMap={userSettingsMap}
                             showStats={showStats}
                             onEditWorkout={setWorkoutToEdit}
+                            onEditNote={setNoteToEdit}
                             onEditEvent={setEventWithSegmentsToEdit}
                             isDraggingId={isDraggingId}
                             dragOverInfo={dragOverInfo}
@@ -791,6 +815,30 @@ export function CalendarView() {
             onSaveBulk={handleSaveBulk}
             onDelete={handleDeleteWorkout}
             onCancel={() => setWorkoutToEdit(null)}
+            onSwitchToNote={() => {
+              const d = workoutToEdit.date;
+              setWorkoutToEdit(null);
+              setNoteToEdit({ date: d });
+            }}
+          />
+        )}
+        {/* Note Dialog */}
+        {noteToEdit && (
+          <NoteDialog
+            note={noteToEdit}
+            onSave={(n) => {
+              if (n.id) {
+                updateNote.mutate(n as Note);
+              } else {
+                createNote.mutate(n as CreateNoteInput);
+              }
+              setNoteToEdit(null);
+            }}
+            onDelete={(id) => {
+              deleteNote.mutate(id);
+              setNoteToEdit(null);
+            }}
+            onCancel={() => setNoteToEdit(null)}
           />
         )}
         {/* Floating Add Button */}
@@ -834,7 +882,7 @@ export function CalendarView() {
           open={showBulkDeleteDialog}
           onOpenChange={setShowBulkDeleteDialog}
         />
-        </div>
-        </div>
-        );
-        }
+      </div>
+    </div>
+  );
+}

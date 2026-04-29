@@ -23,6 +23,7 @@ vi.mock('@/hooks/use-is-developer', () => ({
 vi.mock('@/hooks/use-training-data', () => ({
   useWorkouts: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useEvents: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useNotes: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useLibrary: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useSportTypes: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useEventTypes: vi.fn().mockReturnValue({ data: [], isLoading: false }),
@@ -39,12 +40,18 @@ vi.mock('@/hooks/use-training-data', () => ({
     .fn()
     .mockReturnValue({ mutate: vi.fn(), isPending: false }),
   useDeleteWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useDeleteWorkoutsBulk: vi
+    .fn()
+    .mockReturnValue({ mutate: vi.fn(), isPending: false }),
   useUpdateEvent: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useDeleteEvent: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useGoals: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useCreateGoal: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useUpdateGoal: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useDeleteGoal: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useCreateNote: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useUpdateNote: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useDeleteNote: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useCreateLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useUpdateLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useDeleteLibraryWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
