@@ -67,11 +67,31 @@ export async function parseImportData(
     const result = Papa.parse(input, {
       header: true,
       skipEmptyLines: true,
+      dynamicTyping: false,
     });
-    if (result.errors.length > 0 && rawData.length === 0) {
-      throw new Error('Failed to parse CSV');
+
+    if (result.errors.length > 0) {
+      const errorMessages = result.errors.map((err) => {
+        const rowInfo = err.row !== undefined ? ` (row ${err.row + 2})` : '';
+        return `${err.message}${rowInfo}`;
+      });
+
+      let finalMessage = errorMessages.join('; ');
+      
+      // Heuristic for semi-colon delimiter issues
+      if (input.includes(';') && !input.includes(',')) {
+        finalMessage += '. Tip: It looks like you might be using semi-colons (;) instead of commas (,). Please use standard comma-separated format.';
+      }
+
+      // If we have no data at all, it's a fatal structural error
+      if (result.data.length === 0) {
+        throw new Error(`Failed to parse CSV: ${finalMessage}`);
+      }
+      
+      throw new Error(`CSV formatting errors found: ${finalMessage}`);
     }
-    rawData = result.data;
+
+    rawData = result.data as Record<string, unknown>[];
   }
 
   return rawData.map((raw) => {

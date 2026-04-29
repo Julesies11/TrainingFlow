@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   AlertCircle,
   AlertTriangle,
@@ -54,13 +54,28 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
   const [processedRows, setProcessedRows] = useState<ProcessedImportRow[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPreview, setShowStats] = useState(false);
+  const [parseError, setParseError] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when tab changes
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      setTimeout(() => {
+        scrollContainerRef.current?.scrollTo({
+          top: scrollContainerRef.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      }, 50); // Small delay to allow tab content to render
+    }
+  }, [activeTab]);
 
   const handleProcess = async (input: string, type: 'json' | 'csv') => {
     if (!input.trim()) return;
 
     setIsProcessing(true);
+    setParseError(null);
     try {
       const results = await parseImportData(input, type, sportTypes);
       setProcessedRows(results);
@@ -68,7 +83,8 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'Failed to parse data';
-      toast.error(message);
+      setParseError(message);
+      toast.error('Check for parsing errors');
     } finally {
       setIsProcessing(false);
     }
@@ -113,6 +129,7 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
     setProcessedRows([]);
     setShowStats(false);
     setPastedText('');
+    setParseError(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -198,15 +215,18 @@ Before you start, ask me any questions you need to ensure you have full context`
       }}
     >
       <DialogContent className="max-w-4xl w-[95vw] md:w-full max-h-[95vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden">
-        <DialogHeader className="px-4 py-3 md:px-6 md:py-4 border-b">
-          <DialogTitle className="text-lg md:text-xl font-black lowercase tracking-tight">
-            import training plan
-          </DialogTitle>
-        </DialogHeader>
+        <>
+          <DialogHeader className="px-4 py-3 md:px-6 md:py-4 border-b">
+            <DialogTitle className="text-lg md:text-xl font-black lowercase tracking-tight">
+              import training plan
+            </DialogTitle>
+          </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-4 py-2 md:px-6 md:py-3">
-          {!showPreview ? (
-            <div className="space-y-4">
+          <div
+            ref={scrollContainerRef}
+            className="flex-1 overflow-y-auto px-4 py-2 md:px-6 md:py-3"
+          >
+            {!showPreview ? (            <div className="space-y-4">
               <div className="bg-primary/5 rounded-xl border border-primary/10 p-3 md:p-4">
                 <div className="flex flex-col md:flex-row items-start justify-between gap-4 mb-3">
                   <div className="space-y-1">
@@ -255,6 +275,16 @@ Before you start, ask me any questions you need to ensure you have full context`
                   />
                 </div>
               </div>
+
+              {parseError && (
+                <div className="bg-danger/10 border border-danger/20 rounded-xl p-4 flex gap-3 text-danger text-sm mb-6">
+                  <AlertCircle className="size-5 shrink-0" />
+                  <div className="space-y-1">
+                    <p className="font-bold lowercase">parsing error</p>
+                    <p className="text-xs opacity-90">{parseError}</p>
+                  </div>
+                </div>
+              )}
 
               <Tabs
                 value={activeTab}
@@ -466,6 +496,7 @@ Before you start, ask me any questions you need to ensure you have full context`
             )}
           </Button>
         </DialogFooter>
+        </>
       </DialogContent>
     </Dialog>
   );
