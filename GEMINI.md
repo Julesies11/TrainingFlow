@@ -35,5 +35,6 @@ For detailed information on the project architecture, database, and features, re
 - **Database Strategy**: The database uses the default `public` schema with dedicated tables (`tf_profiles`, `tf_workouts`, `tf_events`, `tf_sport_types`, `tf_daily_metrics`).
 - **User Profiles**: Profiles are managed via the `public.tf_profiles` table, linked to `auth.users` via `id`. This supersedes the older metadata-only approach. Roles (`admin`, `developer`, `user`) are stored here for RBAC.
 - **Components**: Always prioritize using Metronic's ReUI components from `@/components/ui/` over custom Tailwind implementations.
+- **Performance Standards**: The Dashboard utilizes range-based fetching, lazy loading for heavy charts, and Map-based $O(N+M)$ data aggregation to ensure scalability. Always verify that new data-heavy features include date filtering at the API level.
 
 # TrainingFlow Project Instructions — Metronic React (Vite) + TanStack Query + Supabase

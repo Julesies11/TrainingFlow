@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Calendar, Pencil, Trash2 } from 'lucide-react';
 import { SportTypeRecord, UserSportSettings, Workout } from '@/types/training';
 import { getEffortColor } from '@/services/training/effort-colors';
@@ -23,7 +24,7 @@ interface DailySessionsProps {
   onDelete?: (workout: Workout) => void;
 }
 
-export function DailySessions({
+export const DailySessions = memo(function DailySessions({
   title,
   workouts,
   sportMap,
@@ -135,4 +136,4 @@ export function DailySessions({
       </div>
     </div>
   );
-}
+});

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { memo, useMemo } from 'react';
 import { parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
@@ -33,7 +33,7 @@ interface SportDistributionProps {
   onShift: (direction: 'prev' | 'next') => void;
 }
 
-export function SportDistribution({
+export const SportDistribution = memo(function SportDistribution({
   workouts,
   events,
   sportTypes,
@@ -211,4 +211,4 @@ export function SportDistribution({
       </div>
     </div>
   );
-}
+});

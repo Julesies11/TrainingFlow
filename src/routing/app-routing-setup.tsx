@@ -2,6 +2,8 @@ import { AuthRouting } from '@/auth/auth-routing';
 import { RequireAuth } from '@/auth/require-auth';
 import { ErrorRouting } from '@/errors/error-routing';
 import { Demo1Layout } from '@/layouts/demo1/layout';
+import { EventPrioritiesPage } from '@/pages/account/event-priorities';
+import { EventTypesPage } from '@/pages/account/event-types';
 import { ProfilePage } from '@/pages/account/profile';
 import { GarminMappingsPage } from '@/pages/account/garmin-mappings';
 import { SportTypesPage } from '@/pages/account/sport-types';
@@ -50,6 +52,11 @@ export function AppRoutingSetup() {
             path="/account/settings"
             element={<PlaceholderPage title="settings" />}
           />
+          <Route
+            path="/account/event-priorities"
+            element={<EventPrioritiesPage />}
+          />
+          <Route path="/account/event-types" element={<EventTypesPage />} />
           <Route path="/account/sport-types" element={<SportTypesPage />} />
           <Route path="/admin/sport-types" element={<SportTypesAdminPage />} />
           <Route path="/admin/event-types" element={<EventTypesAdminPage />} />

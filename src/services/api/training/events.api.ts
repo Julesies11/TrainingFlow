@@ -69,8 +69,12 @@ function mapDbEvent(e: {
 }
 
 export const eventsApi = {
-  async getAll(userId: string): Promise<Event[]> {
-    const { data, error } = await supabase
+  async getAll(
+    userId: string,
+    fromDate?: string,
+    toDate?: string,
+  ): Promise<Event[]> {
+    let query = supabase
       .from('tf_events')
       .select(
         `
@@ -94,8 +98,16 @@ export const eventsApi = {
         )
       `,
       )
-      .eq('user_id', userId)
-      .order('date', { ascending: true });
+      .eq('user_id', userId);
+
+    if (fromDate) {
+      query = query.gte('date', fromDate);
+    }
+    if (toDate) {
+      query = query.lte('date', toDate);
+    }
+
+    const { data, error } = await query.order('date', { ascending: true });
 
     if (error) throw error;
 

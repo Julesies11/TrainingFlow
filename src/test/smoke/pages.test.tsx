@@ -1,3 +1,5 @@
+import { EventPrioritiesPage } from '@/pages/account/event-priorities';
+import { EventTypesPage } from '@/pages/account/event-types';
 import { ProfilePage } from '@/pages/account/profile';
 import { SportTypesPage } from '@/pages/account/sport-types';
 import { EventPrioritiesAdminPage } from '@/pages/admin/event-priorities';
@@ -110,6 +112,28 @@ describe('Smoke Test: Main Pages', () => {
   it('renders Sport Types Admin page without crashing', async () => {
     render(<SportTypesAdminPage />);
     expect(screen.getByText(/sport types admin/i)).toBeDefined();
+  });
+
+  it('renders Event Priorities Settings page without crashing', async () => {
+    render(<EventPrioritiesPage />);
+    await waitFor(() => {
+      expect(screen.queryByText(/loading event priorities/i)).toBeNull();
+    });
+    expect(
+      screen.getByText(
+        /manage global system and your custom event priorities/i,
+      ),
+    ).toBeDefined();
+  });
+
+  it('renders Event Types Settings page without crashing', async () => {
+    render(<EventTypesPage />);
+    await waitFor(() => {
+      expect(screen.queryByText(/loading event types/i)).toBeNull();
+    });
+    expect(
+      screen.getByText(/manage global system and your custom event types/i),
+    ).toBeDefined();
   });
 
   it('renders Sport Types Settings page without crashing', async () => {

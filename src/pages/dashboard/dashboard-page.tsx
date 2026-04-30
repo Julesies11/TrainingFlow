@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react';
-import { format, parseISO } from 'date-fns';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
+import { addMonths, format, parseISO, subMonths } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Event, Workout } from '@/types/training';
 import {
@@ -25,15 +25,33 @@ import { WorkoutDialog } from '../training/calendar/components/workout-dialog';
 import { DailySessions } from './components/daily-sessions';
 import { SportDistribution } from './components/sport-distribution';
 import { UpcomingEvents } from './components/upcoming-events';
-import { VolumeChart } from './components/volume-chart';
+
+// PHASE 4: Lazy Loading
+const VolumeChart = lazy(() =>
+  import('./components/volume-chart').then((m) => ({ default: m.VolumeChart })),
+);
 
 type ProgressMetric = 'distance' | 'duration';
 type ViewType = 'week' | 'month';
 
 export function DashboardPage() {
-  const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
-  const { data: events = [], isLoading: loadingEvents } = useEvents();
-  const { data: notes = [] } = useNotes();
+  const [pivotDate, setPivotDate] = useState(new Date());
+
+  // PHASE 1: Range-Based Fetching
+  // Decouple from pivotDate to prevent full page reloads when shifting the chart.
+  // We fetch a wide static range relative to today's date for optimal caching.
+  const dateRange = useMemo(() => {
+    const today = new Date();
+    return {
+      from: format(subMonths(today, 12), 'yyyy-MM-dd'),
+      to: format(addMonths(today, 24), 'yyyy-MM-dd'),
+    };
+  }, []); // Static range based on app initialization
+
+  const { data: workouts = [], isLoading: loadingWorkouts } =
+    useWorkouts(dateRange);
+  const { data: events = [], isLoading: loadingEvents } = useEvents(dateRange);
+  const { data: notes = [] } = useNotes(dateRange);
   const { data: goals = [], isLoading: loadingGoals } = useGoals();
   const { data: sportTypes = [], isLoading: loadingSports } = useSportTypes();
   const { data: userSettings = [], isLoading: loadingSettings } =
@@ -49,7 +67,6 @@ export function DashboardPage() {
   const [metric, setMetric] = useState<ProgressMetric>('duration');
   const [sport, setSport] = useState<string | 'All'>('All');
   const [viewType, setViewType] = useState<ViewType>('week');
-  const [pivotDate, setPivotDate] = useState(new Date());
   const [showEvents, setShowEvents] = useState(true);
   const [showNotes, setShowNotes] = useState(true);
   const [distViewType, setDistViewType] = useState<ViewType>('week');
@@ -77,16 +94,16 @@ export function DashboardPage() {
   const todayWorkouts = useMemo(() => {
     return workouts
       .filter((w) => w.date === todayStr)
-      .sort((a, b) => (a.workout_order ?? 0) - (b.workout_order ?? 0));
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }, [workouts, todayStr]);
 
   const tomorrowWorkouts = useMemo(() => {
     return workouts
       .filter((w) => w.date === tomorrowStr)
-      .sort((a, b) => (a.workout_order ?? 0) - (b.workout_order ?? 0));
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   }, [workouts, tomorrowStr]);
 
-  const upcomingEvents = useMemo(() => {
+  const upcomingEventsData = useMemo(() => {
     return events
       .filter((e) => {
         const eventDate = parseISO(e.date);
@@ -96,6 +113,7 @@ export function DashboardPage() {
       .slice(0, 3);
   }, [events, today]);
 
+  // PHASE 2: Memoized Handlers
   const handleShift = useCallback(
     (direction: 'prev' | 'next') => {
       const newPivot = new Date(pivotDate);
@@ -124,6 +142,32 @@ export function DashboardPage() {
       setDistPivotDate(newPivot);
     },
     [distPivotDate, distViewType],
+  );
+
+  const handleEditWorkout = useCallback((workout: Workout) => {
+    setWorkoutToEdit(workout);
+  }, []);
+
+  const handleDeleteWorkout = useCallback(
+    (workout: Workout) => {
+      if (confirm(`Delete workout "${workout.title || workout.sportName}"?`)) {
+        deleteWorkout.mutate({ id: workout.id, mode: 'single' });
+      }
+    },
+    [deleteWorkout],
+  );
+
+  const handleEditEvent = useCallback((event: Event) => {
+    setEventToEdit(event);
+  }, []);
+
+  const handleDeleteEvent = useCallback(
+    (event: Event) => {
+      if (confirm(`Delete event "${event.title}"?`)) {
+        deleteEvent.mutate(event.id);
+      }
+    },
+    [deleteEvent],
   );
 
   const isLoading =
@@ -292,19 +336,27 @@ export function DashboardPage() {
               </div>
             </div>
             <div className="p-5">
-              <VolumeChart
-                workouts={workouts}
-                events={events}
-                notes={notes}
-                goals={goals}
-                sportTypes={sportTypes}
-                metric={metric}
-                sport={sport}
-                viewType={viewType}
-                pivotDate={pivotDate}
-                showEvents={showEvents}
-                showNotes={showNotes}
-              />
+              <Suspense
+                fallback={
+                  <div className="h-[300px] flex items-center justify-center text-muted-foreground text-xs lowercase">
+                    loading chart...
+                  </div>
+                }
+              >
+                <VolumeChart
+                  workouts={workouts}
+                  events={events}
+                  notes={notes}
+                  goals={goals}
+                  sportTypes={sportTypes}
+                  metric={metric}
+                  sport={sport}
+                  viewType={viewType}
+                  pivotDate={pivotDate}
+                  showEvents={showEvents}
+                  showNotes={showNotes}
+                />
+              </Suspense>
             </div>
           </div>
 
@@ -331,45 +383,25 @@ export function DashboardPage() {
                 workouts={todayWorkouts}
                 sportMap={sportMap}
                 settingsMap={settingsMap}
-                onEdit={(workout) => setWorkoutToEdit(workout)}
-                onDelete={(workout) => {
-                  if (
-                    confirm(
-                      `Delete workout "${workout.title || workout.sportName}"?`,
-                    )
-                  ) {
-                    deleteWorkout.mutate({ id: workout.id, mode: 'single' });
-                  }
-                }}
+                onEdit={handleEditWorkout}
+                onDelete={handleDeleteWorkout}
               />
               <DailySessions
                 title="tomorrow's sessions"
                 workouts={tomorrowWorkouts}
                 sportMap={sportMap}
                 settingsMap={settingsMap}
-                onEdit={(workout) => setWorkoutToEdit(workout)}
-                onDelete={(workout) => {
-                  if (
-                    confirm(
-                      `Delete workout "${workout.title || workout.sportName}"?`,
-                    )
-                  ) {
-                    deleteWorkout.mutate({ id: workout.id, mode: 'single' });
-                  }
-                }}
+                onEdit={handleEditWorkout}
+                onDelete={handleDeleteWorkout}
               />
             </div>
             <UpcomingEvents
-              events={upcomingEvents}
+              events={upcomingEventsData}
               today={today}
               sportTypes={sportTypes}
               userSettingsMap={settingsMap}
-              onEdit={(event) => setEventToEdit(event)}
-              onDelete={(event) => {
-                if (confirm(`Delete event "${event.title}"?`)) {
-                  deleteEvent.mutate(event.id);
-                }
-              }}
+              onEdit={handleEditEvent}
+              onDelete={handleDeleteEvent}
             />
           </div>
         </div>
@@ -399,11 +431,7 @@ export function DashboardPage() {
           sportTypes={sportTypes}
           userSettings={userSettings}
           onSave={(e: Partial<Event>) => {
-            if (e.id) {
-              updateEvent.mutate(e as Event);
-            } else {
-              createEvent.mutate(e);
-            }
+            updateEvent.mutate(e as Event);
             setEventToEdit(null);
           }}
           onDelete={(id) => {

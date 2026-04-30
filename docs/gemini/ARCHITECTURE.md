@@ -13,6 +13,12 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 - **Image Processing**: Client-side compression and resizing are handled by `browser-image-compression` in `src/lib/utils/image.ts`. All uploads are orchestrated via `src/lib/api/storage.ts` to ensure consistent optimization.
 - **Data-Driven Sport Logic**: Training math (pace, speed, distance conversion) is based on the `pace_unit` and `distance_unit` defined in the `tf_sport_types` table. Use `src/services/training/pace-utils.ts` for all calculations.
 
+## Performance & Scalability
+- **Range-Based Fetching**: To prevent data overfetching, workouts, events, and notes are queried using date range filters (`fromDate`, `toDate`) in the API and TanStack Query hooks. This ensures the client only processes data relevant to the current view (e.g., Dashboard window).
+- **Lazy Loading**: Heavy components like the `VolumeChart` (which uses ApexCharts) are lazy-loaded via `React.lazy` and `Suspense` to minimize the initial bundle size and improve page load speed.
+- **Efficient Aggregation**: Training charts use $O(N+M)$ Map-based aggregation instead of nested filtering. Data is pre-grouped by date once, allowing for constant-time lookups during bucket generation.
+- **Component Memoization**: Pure presentational components and high-level dashboard widgets are wrapped in `React.memo` to eliminate unnecessary re-renders during state updates.
+
 ## Data Fetching & Mutations
 - All external data flows through **Supabase**.
 - Services are located in `src/services/` and should be used within TanStack Query hooks.

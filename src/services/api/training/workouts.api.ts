@@ -50,8 +50,12 @@ function toDbPayload(w: Partial<Workout>, userId: string) {
 }
 
 export const workoutsApi = {
-  async getAll(userId: string): Promise<Workout[]> {
-    const { data, error } = await supabase
+  async getAll(
+    userId: string,
+    fromDate?: string,
+    toDate?: string,
+  ): Promise<Workout[]> {
+    let query = supabase
       .from('tf_workouts')
       .select(
         `
@@ -76,8 +80,16 @@ export const workoutsApi = {
         tf_sport_types(name)
       `,
       )
-      .eq('user_id', userId)
-      .order('date', { ascending: false });
+      .eq('user_id', userId);
+
+    if (fromDate) {
+      query = query.gte('date', fromDate);
+    }
+    if (toDate) {
+      query = query.lte('date', toDate);
+    }
+
+    const { data, error } = await query.order('date', { ascending: false });
 
     if (error) throw error;
     return (data || []).map(mapDbWorkout);

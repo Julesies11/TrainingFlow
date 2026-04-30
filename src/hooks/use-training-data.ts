@@ -28,11 +28,14 @@ import { useSupabaseUserId } from './use-supabase-user';
 
 // ─── Query Keys ──────────────────────────────────────────────
 const KEYS = {
-  workouts: (uid: string) => ['workouts', uid] as const,
+  workouts: (uid: string, from?: string, to?: string) =>
+    ['workouts', uid, from, to].filter(Boolean) as const,
   library: (uid: string) => ['library', uid] as const,
-  events: (uid: string) => ['events', uid] as const,
+  events: (uid: string, from?: string, to?: string) =>
+    ['events', uid, from, to].filter(Boolean) as const,
   goals: (uid: string) => ['goals', uid] as const,
-  notes: (uid: string) => ['notes', uid] as const,
+  notes: (uid: string, from?: string, to?: string) =>
+    ['notes', uid, from, to].filter(Boolean) as const,
   profile: (uid: string) => ['profile', uid] as const,
   sportTypes: ['sportTypes'] as const,
   userSportSettings: (uid: string) => ['userSportSettings', uid] as const,
@@ -230,12 +233,13 @@ export function useDeleteSportType() {
 }
 
 // ─── Workouts ────────────────────────────────────────────────
-export function useWorkouts() {
+export function useWorkouts(range?: { from?: string; to?: string }) {
   const userId = useSupabaseUserId();
   return useQuery({
-    queryKey: KEYS.workouts(userId ?? ''),
-    queryFn: () => workoutsApi.getAll(userId!),
+    queryKey: KEYS.workouts(userId ?? '', range?.from, range?.to),
+    queryFn: () => workoutsApi.getAll(userId!, range?.from, range?.to),
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -333,6 +337,7 @@ export function useLibrary() {
     queryKey: KEYS.library(userId ?? ''),
     queryFn: () => libraryApi.getAll(userId!),
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -372,12 +377,13 @@ export function useDeleteLibraryWorkout() {
 }
 
 // ─── Events ──────────────────────────────────────────────────
-export function useEvents() {
+export function useEvents(range?: { from?: string; to?: string }) {
   const userId = useSupabaseUserId();
   return useQuery({
-    queryKey: KEYS.events(userId ?? ''),
-    queryFn: () => eventsApi.getAll(userId!),
+    queryKey: KEYS.events(userId ?? '', range?.from, range?.to),
+    queryFn: () => eventsApi.getAll(userId!, range?.from, range?.to),
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -432,6 +438,7 @@ export function useGoals() {
     queryKey: KEYS.goals(userId ?? ''),
     queryFn: () => goalsApi.getAll(userId!),
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -469,12 +476,13 @@ export function useDeleteGoal() {
 }
 
 // ─── Notes ──────────────────────────────────────────────────
-export function useNotes() {
+export function useNotes(range?: { from?: string; to?: string }) {
   const userId = useSupabaseUserId();
   return useQuery({
-    queryKey: KEYS.notes(userId ?? ''),
-    queryFn: () => notesApi.getAll(userId!),
+    queryKey: KEYS.notes(userId ?? '', range?.from, range?.to),
+    queryFn: () => notesApi.getAll(userId!, range?.from, range?.to),
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
