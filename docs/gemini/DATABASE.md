@@ -6,7 +6,7 @@ TrainingFlow utilizes the default `public` PostgreSQL schema to manage its entit
 User profiles are stored in the `public.tf_profiles` table, which is linked to Supabase's `auth.users` via a foreign key on the `id` column.
 
 ### Core Tables
-- `tf_profiles`: Stores user preferences (theme, avatar_url, effort_settings, calendar_stats_mode, role).
+- `tf_profiles`: Stores user preferences (theme, avatar_url, effort_settings, role).
 - `tf_sport_types`: Defines available sports and their default effort level configurations.
 - `tf_user_sport_settings`: User-specific overrides for sport effort levels.
 - `tf_workouts`: Individual training sessions.

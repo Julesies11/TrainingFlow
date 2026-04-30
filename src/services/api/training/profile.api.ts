@@ -26,7 +26,6 @@ function mapDbProfile(p: any): UserProfile {
     updated_at: p.updated_at,
     theme: p.theme || 'light',
     role: p.role || 'user',
-    calendar_stats_mode: p.calendar_stats_mode ?? true,
     avatar_url: p.avatar_url,
     workout_type_options: workoutTypeOptions || {
       Swim: ['Easy', 'Hard'],
@@ -77,7 +76,6 @@ export const profileApi = {
         updated_at, 
         theme, 
         role, 
-        calendar_stats_mode, 
         avatar_url, 
         workout_type_options, 
         effort_settings
@@ -96,8 +94,6 @@ export const profileApi = {
   ): Promise<UserProfile> {
     const dbPayload: Record<string, unknown> = {};
     if (updates.theme !== undefined) dbPayload.theme = updates.theme;
-    if (updates.calendar_stats_mode !== undefined)
-      dbPayload.calendar_stats_mode = updates.calendar_stats_mode;
     if (updates.avatar_url !== undefined)
       dbPayload.avatar_url = updates.avatar_url;
     if (updates.workout_type_options !== undefined)

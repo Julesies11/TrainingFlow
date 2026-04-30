@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@/test/test-utils';
+import { render, screen, waitFor } from '@/test/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as trainingHooks from '@/hooks/use-training-data';
 import { CalendarView } from '../calendar-view';
@@ -90,7 +90,7 @@ describe('CalendarView Features', () => {
       isLoading: false,
     } as unknown as ReturnType<typeof trainingHooks.useUserSportSettings>);
     vi.mocked(trainingHooks.useProfile).mockReturnValue({
-      data: { theme: 'light', effort_settings: {}, calendar_stats_mode: true },
+      data: { theme: 'light', effort_settings: {} },
       isLoading: false,
     } as unknown as ReturnType<typeof trainingHooks.useProfile>);
     vi.mocked(trainingHooks.useUpdateProfile).mockReturnValue({
@@ -98,26 +98,16 @@ describe('CalendarView Features', () => {
     } as unknown as ReturnType<typeof trainingHooks.useUpdateProfile>);
   });
 
-  it('toggles stats and persists preference', async () => {
+  it('renders action buttons with library as primary', async () => {
     render(<CalendarView />);
 
     await waitFor(() => {
       expect(screen.queryByText(/loading training data/i)).toBeNull();
     });
 
-    // Check if stats label is present (desktop header has "stats" label for the switch)
-    const statsLabel = screen.getByText(/stats/i);
-    expect(statsLabel).toBeDefined();
-
-    // Find the switch. The Switch component usually has a button role.
-    const statsSwitch = screen.getByRole('switch');
-    expect(statsSwitch).toBeDefined();
-
-    // Toggle off
-    fireEvent.click(statsSwitch);
-
-    // Verify updateProfile mutation was called
-    expect(mockMutate).toHaveBeenCalledWith({ calendar_stats_mode: false });
+    // Check if Library button is present (it has text)
+    const libraryButton = screen.getByRole('button', { name: /library/i });
+    expect(libraryButton).toBeDefined();
   });
 
   it('preserves user casing in workout titles', async () => {

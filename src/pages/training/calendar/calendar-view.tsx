@@ -24,12 +24,10 @@ import {
   useGoals,
   useLibrary,
   useNotes,
-  useProfile,
   useSportTypes,
   useUpdateEvent,
   useUpdateLibraryWorkout,
   useUpdateNote,
-  useUpdateProfile,
   useUpdateWorkout,
   useUserSportSettings,
   useWorkouts,
@@ -59,7 +57,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch, SwitchWrapper } from '@/components/ui/switch';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { EventDialog } from '../_shared/components/event-dialog';
 import { BulkDeleteDialog } from './components/bulk-delete-dialog';
 import { CalendarDay } from './components/calendar-day';
@@ -79,9 +81,7 @@ export function CalendarView() {
   const { data: sportTypes = [], isLoading: loadingSports } = useSportTypes();
   const { data: userSportSettings = [], isLoading: loadingSettings } =
     useUserSportSettings();
-  const { data: profile } = useProfile();
 
-  const updateProfile = useUpdateProfile();
   const updateWorkout = useUpdateWorkout();
   const createWorkout = useCreateWorkout();
   const createWorkoutsBulk = useCreateWorkoutsBulk();
@@ -99,14 +99,6 @@ export function CalendarView() {
   const [selectedDate, setSelectedDate] = useState<string>(
     formatDateToLocalISO(new Date()),
   );
-  const [showStats, setShowStats] = useState<boolean>(true);
-
-  // Sync showStats with profile
-  useEffect(() => {
-    if (profile?.calendar_stats_mode !== undefined) {
-      setShowStats(profile.calendar_stats_mode);
-    }
-  }, [profile?.calendar_stats_mode]);
 
   const [displayMonth, setDisplayMonth] = useState<number>(
     new Date().getMonth(),
@@ -117,12 +109,6 @@ export function CalendarView() {
 
   const todayRef = useRef<HTMLDivElement>(null);
   const hasInitialScrolled = useRef(false);
-
-  // Toggle helper
-  const handleToggleStats = (checked: boolean) => {
-    setShowStats(checked);
-    updateProfile.mutate({ calendar_stats_mode: checked });
-  };
 
   // Modal state
   const [workoutToEdit, setWorkoutToEdit] = useState<Partial<Workout> | null>(
@@ -434,9 +420,8 @@ export function CalendarView() {
     setWorkoutToEdit(null);
   };
 
-  const gridColsClass = showStats
-    ? 'grid-cols-7 lg:grid-cols-[repeat(7,minmax(0,1fr))_120px]'
-    : 'grid-cols-7';
+  const gridColsClass =
+    'grid-cols-7 lg:grid-cols-[repeat(7,minmax(0,1fr))_120px]';
 
   const isLoading =
     !userId || loadingWorkouts || loadingSports || loadingSettings;
@@ -542,73 +527,58 @@ export function CalendarView() {
           </div>
 
           <div className="flex w-full justify-between gap-1.5 lg:w-auto lg:justify-end lg:gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
-                stats
-              </span>
-              <SwitchWrapper>
-                <Switch
-                  checked={showStats}
-                  onCheckedChange={handleToggleStats}
-                />
-              </SwitchWrapper>
-            </div>
+            <div className="flex items-center gap-1 lg:gap-1.5">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowBulkDeleteDialog(true)}
+                    className="h-9 w-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Bulk Delete</TooltipContent>
+              </Tooltip>
 
-            <div className="flex items-center gap-1.5 lg:gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowImportDialog(true)}
+                    className="h-9 w-9"
+                  >
+                    <FileUp className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Import AI Program</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowGarminImportDialog(true)}
+                    className="h-9 w-9"
+                  >
+                    <Watch className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Import Garmin Activities</TooltipContent>
+              </Tooltip>
+
               <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowBulkDeleteDialog(true)}
-                className="gap-2 text-destructive hover:bg-destructive/5 border-destructive/20"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest lg:hidden">
-                  del
-                </span>
-                <span className="hidden text-[10px] font-black uppercase tracking-widest lg:inline">
-                  bulk delete
-                </span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowImportDialog(true)}
-                className="gap-2"
-              >
-                <FileUp className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest lg:hidden">
-                  imp
-                </span>
-                <span className="hidden text-[10px] font-black uppercase tracking-widest lg:inline">
-                  import
-                </span>
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowGarminImportDialog(true)}
-                className="gap-2"
-              >
-                <Watch className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest lg:hidden">
-                  gar
-                </span>
-                <span className="hidden text-[10px] font-black uppercase tracking-widest lg:inline">
-                  garmin
-                </span>
-              </Button>
-              <Button
-                variant={showLibrary ? 'primary' : 'outline'}
+                variant="primary"
                 size="sm"
                 onClick={() => setShowLibrary(!showLibrary)}
-                className="gap-2"
+                className="gap-2 px-4 ml-1"
               >
                 <BookOpen className="h-4 w-4" />
-                <span className="text-[10px] font-black uppercase tracking-widest lg:hidden">
-                  lib
-                </span>
-                <span className="hidden text-[10px] font-black uppercase tracking-widest lg:inline">
-                  library
+                <span className="text-[10px] font-black uppercase tracking-widest">
+                  Library
                 </span>
               </Button>
             </div>
@@ -629,11 +599,9 @@ export function CalendarView() {
                   {day}
                 </div>
               ))}
-              {showStats && (
-                <div className="text-primary hidden py-2 text-center text-[9px] font-black lowercase tracking-widest lg:block">
-                  totals
-                </div>
-              )}
+              <div className="text-primary hidden py-2 text-center text-[9px] font-black lowercase tracking-widest lg:block">
+                totals
+              </div>
             </div>
 
             {/* Weeks */}
@@ -691,7 +659,7 @@ export function CalendarView() {
                             }}
                             sportMap={sportMap}
                             userSettingsMap={userSettingsMap}
-                            showStats={showStats}
+                            showStats={true}
                             onEditWorkout={setWorkoutToEdit}
                             onEditNote={setNoteToEdit}
                             onEditEvent={setEventWithSegmentsToEdit}
@@ -703,193 +671,185 @@ export function CalendarView() {
                       })}
 
                       {/* Week summary column - desktop only */}
-                      {showStats && (
-                        <div className="bg-primary/5 hidden flex-col gap-3 border-l p-3 lg:flex">
-                          <div className="text-primary text-xl font-black leading-none">
-                            {formatMinsShort(weekTotals.duration)}
-                          </div>
-                          <div className="border-primary/10 space-y-2.5 border-t pt-3">
-                            {Object.entries(sportTotals).map(
-                              ([stId, sTotal]) => {
-                                if (sTotal.duration === 0) return null;
-                                const st = sportMap.get(stId);
-                                const sportColor = getEffortColor(
-                                  st,
-                                  2,
-                                  userSettingsMap.get(stId),
-                                );
-                                return (
-                                  <div key={stId} className="flex flex-col">
-                                    <div className="flex items-center gap-1.5">
-                                      <span
-                                        className="h-2 w-2 shrink-0 rounded-full"
-                                        style={{
-                                          backgroundColor: sportColor,
-                                        }}
-                                      />
-                                      <span className="text-muted-foreground text-[10px] font-bold">
-                                        {st?.name || 'Unknown'}
-                                      </span>
-                                    </div>
-                                    <div className="flex flex-col gap-0.5 pl-3.5">
-                                      <span className="text-[10px] font-bold leading-none">
-                                        {formatMinsShort(sTotal.duration)}
-                                      </span>
-                                      {sTotal.distance > 0 &&
-                                        isPaceRelevant(
-                                          !!st?.paceRelevant,
-                                          st?.paceUnit,
-                                        ) && (
-                                          <span className="text-muted-foreground text-[9px] leading-none">
-                                            {sTotal.distance.toFixed(1)}
-                                            {st.distanceUnit || 'km'}
-                                          </span>
-                                        )}
-
-                                      {/* Goal Progress */}
-                                      {activeGoals
-                                        .filter((g) => g.sportTypeId === stId)
-                                        .map((goal) => {
-                                          const actual =
-                                            goal.metric === 'duration'
-                                              ? sTotal.duration
-                                              : sTotal.distance;
-                                          const target = goal.targetValue;
-                                          const percent = Math.min(
-                                            100,
-                                            Math.round(
-                                              (actual / (target || 1)) * 100,
-                                            ),
-                                          );
-                                          return (
-                                            <div
-                                              key={goal.id}
-                                              className="mt-1.5 flex flex-col gap-1"
-                                            >
-                                              <div className="flex justify-between text-[8px] font-black uppercase opacity-60">
-                                                <span>goal: {percent}%</span>
-                                                <span>
-                                                  {goal.metric === 'duration'
-                                                    ? formatMinsShort(target)
-                                                    : `${target}${st?.distanceUnit || 'km'}`}
-                                                </span>
-                                              </div>
-                                              <div className="h-1 w-full rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
-                                                <div
-                                                  className={`h-full ${actual >= target ? 'bg-green-500' : 'bg-red-500'}`}
-                                                  style={{
-                                                    width: `${percent}%`,
-                                                  }}
-                                                />
-                                              </div>
-                                            </div>
-                                          );
-                                        })}
-                                    </div>
-                                  </div>
-                                );
-                              },
-                            )}
-                          </div>
+                      <div className="bg-primary/5 hidden flex-col gap-3 border-l p-3 lg:flex">
+                        <div className="text-primary text-xl font-black leading-none">
+                          {formatMinsShort(weekTotals.duration)}
                         </div>
-                      )}
+                        <div className="border-primary/10 space-y-2.5 border-t pt-3">
+                          {Object.entries(sportTotals).map(([stId, sTotal]) => {
+                            if (sTotal.duration === 0) return null;
+                            const st = sportMap.get(stId);
+                            const sportColor = getEffortColor(
+                              st,
+                              2,
+                              userSettingsMap.get(stId),
+                            );
+                            return (
+                              <div key={stId} className="flex flex-col">
+                                <div className="flex items-center gap-1.5">
+                                  <span
+                                    className="h-2 w-2 shrink-0 rounded-full"
+                                    style={{
+                                      backgroundColor: sportColor,
+                                    }}
+                                  />
+                                  <span className="text-muted-foreground text-[10px] font-bold">
+                                    {st?.name || 'Unknown'}
+                                  </span>
+                                </div>
+                                <div className="flex flex-col gap-0.5 pl-3.5">
+                                  <span className="text-[10px] font-bold leading-none">
+                                    {formatMinsShort(sTotal.duration)}
+                                  </span>
+                                  {sTotal.distance > 0 &&
+                                    isPaceRelevant(
+                                      !!st?.paceRelevant,
+                                      st?.paceUnit,
+                                    ) && (
+                                      <span className="text-muted-foreground text-[9px] leading-none">
+                                        {sTotal.distance.toFixed(1)}
+                                        {st.distanceUnit || 'km'}
+                                      </span>
+                                    )}
+
+                                  {/* Goal Progress */}
+                                  {activeGoals
+                                    .filter((g) => g.sportTypeId === stId)
+                                    .map((goal) => {
+                                      const actual =
+                                        goal.metric === 'duration'
+                                          ? sTotal.duration
+                                          : sTotal.distance;
+                                      const target = goal.targetValue;
+                                      const percent = Math.min(
+                                        100,
+                                        Math.round(
+                                          (actual / (target || 1)) * 100,
+                                        ),
+                                      );
+                                      return (
+                                        <div
+                                          key={goal.id}
+                                          className="mt-1.5 flex flex-col gap-1"
+                                        >
+                                          <div className="flex justify-between text-[8px] font-black uppercase opacity-60">
+                                            <span>goal: {percent}%</span>
+                                            <span>
+                                              {goal.metric === 'duration'
+                                                ? formatMinsShort(target)
+                                                : `${target}${st?.distanceUnit || 'km'}`}
+                                            </span>
+                                          </div>
+                                          <div className="h-1 w-full rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
+                                            <div
+                                              className={`h-full ${actual >= target ? 'bg-green-500' : 'bg-red-500'}`}
+                                              style={{
+                                                width: `${percent}%`,
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      );
+                                    })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
 
                     {/* Week summary row - mobile only */}
-                    {showStats && (
-                      <div className="bg-primary/5 px-3 py-2 lg:hidden border-t">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-2">
-                            {Object.entries(sportTotals).map(
-                              ([stId, sTotal]) => {
-                                if (sTotal.duration === 0) return null;
-                                const st = sportMap.get(stId);
-                                const sportName = st?.name || 'Unknown';
-                                const IconComponent = getSportIcon(
-                                  sportName,
-                                  st?.paceUnit,
-                                );
-                                const sportColor = getEffortColor(
-                                  st,
-                                  2,
-                                  userSettingsMap.get(stId),
-                                );
+                    <div className="bg-primary/5 px-3 py-2 lg:hidden border-t">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-2">
+                          {Object.entries(sportTotals).map(([stId, sTotal]) => {
+                            if (sTotal.duration === 0) return null;
+                            const st = sportMap.get(stId);
+                            const sportName = st?.name || 'Unknown';
+                            const IconComponent = getSportIcon(
+                              sportName,
+                              st?.paceUnit,
+                            );
+                            const sportColor = getEffortColor(
+                              st,
+                              2,
+                              userSettingsMap.get(stId),
+                            );
 
-                                return (
-                                  <div
-                                    key={stId}
-                                    className="flex items-center gap-1.5"
-                                  >
-                                    <div className="flex items-center gap-1">
-                                      {IconComponent && (
-                                        <IconComponent
-                                          className="h-3 w-3 shrink-0"
-                                          style={{ color: sportColor }}
-                                        />
-                                      )}
-                                      <span className="text-[10px] font-bold opacity-70">
-                                        {sportName}
-                                      </span>
-                                    </div>
-                                    <div className="flex flex-col">
-                                      <div className="flex items-baseline gap-1">
-                                        <span className="text-[10px] font-bold leading-none">
-                                          {formatMinsShort(sTotal.duration)}
+                            return (
+                              <div
+                                key={stId}
+                                className="flex items-center gap-1.5"
+                              >
+                                <div className="flex items-center gap-1">
+                                  {IconComponent && (
+                                    <IconComponent
+                                      className="h-3 w-3 shrink-0"
+                                      style={{ color: sportColor }}
+                                    />
+                                  )}
+                                  <span className="text-[10px] font-bold opacity-70">
+                                    {sportName}
+                                  </span>
+                                </div>
+                                <div className="flex flex-col">
+                                  <div className="flex items-baseline gap-1">
+                                    <span className="text-[10px] font-bold leading-none">
+                                      {formatMinsShort(sTotal.duration)}
+                                    </span>
+                                    {sTotal.distance > 0 &&
+                                      isPaceRelevant(
+                                        !!st?.paceRelevant,
+                                        st?.paceUnit,
+                                      ) && (
+                                        <span className="text-muted-foreground text-[9px] font-bold leading-none italic">
+                                          {sTotal.distance.toFixed(1)}
+                                          {st.distanceUnit || 'km'}
                                         </span>
-                                        {sTotal.distance > 0 &&
-                                          isPaceRelevant(
-                                            !!st?.paceRelevant,
-                                            st?.paceUnit,
-                                          ) && (
-                                            <span className="text-muted-foreground text-[9px] font-bold leading-none italic">
-                                              {sTotal.distance.toFixed(1)}
-                                              {st.distanceUnit || 'km'}
-                                            </span>
-                                          )}
-                                      </div>
-
-                                      {/* Mobile Goal Progress */}
-                                      {activeGoals
-                                        .filter((g) => g.sportTypeId === stId)
-                                        .map((goal) => {
-                                          const actual =
-                                            goal.metric === 'duration'
-                                              ? sTotal.duration
-                                              : sTotal.distance;
-                                          const target = goal.targetValue;
-                                          const percent = Math.min(
-                                            100,
-                                            Math.round(
-                                              (actual / (target || 1)) * 100,
-                                            ),
-                                          );
-                                          return (
-                                            <div
-                                              key={goal.id}
-                                              className="h-0.5 w-12 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden mt-0.5"
-                                            >
-                                              <div
-                                                className={`h-full ${actual >= target ? 'bg-green-500' : 'bg-red-500'}`}
-                                                style={{ width: `${percent}%` }}
-                                              />
-                                            </div>
-                                          );
-                                        })}
-                                    </div>
+                                      )}
                                   </div>
-                                );
-                              },
-                            )}
-                          </div>
 
-                          <div className="shrink-0 border-l border-primary/10 pl-3 pt-0.5">
-                            <span className="text-primary text-xs font-bold">
-                              {formatMinsShort(weekTotals.duration)}
-                            </span>
-                          </div>
+                                  {/* Mobile Goal Progress */}
+                                  {activeGoals
+                                    .filter((g) => g.sportTypeId === stId)
+                                    .map((goal) => {
+                                      const actual =
+                                        goal.metric === 'duration'
+                                          ? sTotal.duration
+                                          : sTotal.distance;
+                                      const target = goal.targetValue;
+                                      const percent = Math.min(
+                                        100,
+                                        Math.round(
+                                          (actual / (target || 1)) * 100,
+                                        ),
+                                      );
+                                      return (
+                                        <div
+                                          key={goal.id}
+                                          className="h-0.5 w-12 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden mt-0.5"
+                                        >
+                                          <div
+                                            className={`h-full ${actual >= target ? 'bg-green-500' : 'bg-red-500'}`}
+                                            style={{ width: `${percent}%` }}
+                                          />
+                                        </div>
+                                      );
+                                    })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        <div className="shrink-0 border-l border-primary/10 pl-3 pt-0.5">
+                          <span className="text-primary text-xs font-bold">
+                            {formatMinsShort(weekTotals.duration)}
+                          </span>
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 );
               })}

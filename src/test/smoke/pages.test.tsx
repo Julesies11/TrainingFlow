@@ -32,7 +32,7 @@ vi.mock('@/hooks/use-training-data', () => ({
   useEventPriorities: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useUserSportSettings: vi.fn().mockReturnValue({ data: [], isLoading: false }),
   useProfile: vi.fn().mockReturnValue({
-    data: { theme: 'light', effort_settings: {}, calendar_stats_mode: true },
+    data: { theme: 'light', effort_settings: {} },
     isLoading: false,
   }),
   useUpdateProfile: vi.fn().mockReturnValue({ mutate: vi.fn() }),

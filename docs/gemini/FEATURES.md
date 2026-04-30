@@ -18,7 +18,7 @@ TrainingFlow is designed as a management platform with the following core module
     - **Global Admin**: Developers can manage system-wide sport types, units (pace/distance), and default effort levels.
     - **Personalized Settings**: Users can customize effort level colors and labels for each sport to match their training philosophy.
 - **Workout Library**: Save and reuse workout templates.
-- **Weekly Stats & Metrics**: Persistent toggle to show/hide detailed weekly summaries and sport-specific totals.
+- **Weekly Stats & Metrics**: Detailed weekly summaries and sport-specific totals are permanently displayed on the calendar (stats toggle removed).
 - **Mobile-Optimized Experience**: Enhanced calendar views for mobile devices with compact stats and intuitive navigation.
 - **Data Casing Preservation**: Ensures all user-entered workout and event titles preserve original capitalization for improved readability and personalization.
 - **Athlete Dashboard**: 
