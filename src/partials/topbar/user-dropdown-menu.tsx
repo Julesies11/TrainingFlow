@@ -77,6 +77,23 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
           </Link>
         </DropdownMenuItem>
 
+        <DropdownMenuItem asChild>
+          <Link to="/account/event-types" className="flex items-center gap-2">
+            <Tag />
+            Event Types
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link
+            to="/account/event-priorities"
+            className="flex items-center gap-2"
+          >
+            <Tag />
+            Event Priorities
+          </Link>
+        </DropdownMenuItem>
+
         {isDeveloper && (
           <>
             <DropdownMenuItem asChild>

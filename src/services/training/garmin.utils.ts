@@ -123,6 +123,8 @@ export async function parseGarminCSV(
         description: `Imported from Garmin. Calories: ${raw['Calories'] || '--'}`,
         plannedDurationMinutes: duration || 1, // Default to 1 if 0
         plannedDistanceKilometers: distance,
+        actualDurationMinutes: duration || 1,
+        actualDistanceKilometers: distance,
         effortLevel: 1, // Default to recovery/base
         isKeyWorkout: false,
         isCompleted: true, // Garmin imports are COMPLETED activities
