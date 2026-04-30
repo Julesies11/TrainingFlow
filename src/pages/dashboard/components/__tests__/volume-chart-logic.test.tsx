@@ -14,7 +14,6 @@ describe('VolumeChart Logic', () => {
       sportName: 'Run',
       plannedDistanceKilometers: 10,
       plannedDurationMinutes: 60,
-      isCompleted: false,
       sportTypeId: 'run-id',
     },
     {
@@ -22,9 +21,8 @@ describe('VolumeChart Logic', () => {
       title: 'Workout 2',
       date: '2026-05-02', // Saturday
       sportName: 'Bike',
-      actualDistanceKilometers: 40,
-      actualDurationMinutes: 120,
-      isCompleted: true,
+      plannedDistanceKilometers: 40,
+      plannedDurationMinutes: 120,
       sportTypeId: 'bike-id',
     },
   ];

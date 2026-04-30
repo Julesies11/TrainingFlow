@@ -24,6 +24,7 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -146,7 +147,7 @@ When generating the program, the "sportName" column must exactly match one of my
 Provide it as a downloadable CSV file.
 
 Required Columns:
-1. "date" - The date of the workout in YYYY-MM-DD format (e.g., 2026-05-01).
+1. "date" - The date of the workout in YYYY-MM-DD format.
 2. "sportName" - The name of the sport (must exactly match one of the sports listed above).
 3. "title" - A short, descriptive title for the workout.
 4. "description" - Details of the workout structure.
@@ -155,11 +156,9 @@ Required Columns:
 7. "effortLevel" - A numeric value representing intensity from 1 to 4 (1=Recovery, 2=Base, 3=Tempo, 4=VO2).
 8. "isKeyWorkout" - Either "true" or "false" to indicate if this is a high-priority session.
 
-Example CSV:
+Example row for ${sportTypes[0]?.name || 'Sport'}:
 date,sportName,title,description,plannedDurationMinutes,plannedDistanceKilometers,effortLevel,isKeyWorkout
-2026-05-01,Run,Easy Base Run,"Warm up 10 mins, steady run 40 mins at effort level 1, cool down 10 mins.",60,10,1,false
-2026-05-02,Bike,Tempo Intervals,"15 min warm up, 3x10 mins at effort level 3 with 5 min recovery, 15 min cool down.",90,45,3,true
-2026-05-03,Swim,Endurance Swim,"Continuous swim focusing on technique and steady pacing.",45,2.5,2,false
+${new Date().toISOString().split('T')[0]},${sportTypes[0]?.name || 'Sport'},Steady Session,Description,60,10,2,false
 
 Before you start, ask me any questions you need to ensure you have full context`;
   };
@@ -182,7 +181,7 @@ Before you start, ask me any questions you need to ensure you have full context`
     ];
     const sampleRow = [
       new Date().toISOString().split('T')[0],
-      sportTypes[0]?.name || 'Run',
+      sportTypes[0]?.name || 'Sport',
       'Sample Workout',
       'Description of the session',
       '60',
@@ -220,6 +219,9 @@ Before you start, ask me any questions you need to ensure you have full context`
             <DialogTitle className="text-lg md:text-xl font-black lowercase tracking-tight">
               import training plan
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Import training plans from AI-generated files or text.
+            </DialogDescription>
           </DialogHeader>
 
           <div

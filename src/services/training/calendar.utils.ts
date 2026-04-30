@@ -41,19 +41,19 @@ export function getWorkoutPace(
   distanceKm: number,
 ): string {
   if (!sport || distanceKm <= 0 || durationMinutes <= 0) return '';
-  if (isSwimSport(sport.name, sport.paceUnit)) {
+  if (isSwimSport(sport.paceUnit)) {
     const per100m = (durationMinutes * 60) / (distanceKm * 10);
     const mins = Math.floor(per100m / 60);
     const secs = Math.round(per100m % 60);
     return `${mins}:${String(secs).padStart(2, '0')}/100m`;
   }
-  if (isRunSport(sport.name, sport.paceUnit)) {
+  if (isRunSport(sport.paceUnit)) {
     const perKm = durationMinutes / distanceKm;
     const mins = Math.floor(perKm);
     const secs = Math.round((perKm - mins) * 60);
     return `${mins}:${String(secs).padStart(2, '0')}/km`;
   }
-  if (isBikeSport(sport.name, sport.paceUnit)) {
+  if (isBikeSport(sport.paceUnit)) {
     const speed = distanceKm / (durationMinutes / 60);
     return `${speed.toFixed(1)} km/h`;
   }

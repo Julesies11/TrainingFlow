@@ -22,7 +22,6 @@ export interface FCEvent {
     effortLevel?: number;
     duration?: number;
     distance?: number;
-    isCompleted?: boolean;
     isKeyWorkout?: boolean;
   };
 }
@@ -63,13 +62,8 @@ export function useCalendarDataFC(
           workout,
           sportTypeId: workout.sportTypeId,
           effortLevel: workout.effortLevel || 1,
-          duration: workout.isCompleted
-            ? workout.actualDurationMinutes || 0
-            : workout.plannedDurationMinutes || 0,
-          distance: workout.isCompleted
-            ? workout.actualDistanceKilometers || 0
-            : workout.plannedDistanceKilometers || 0,
-          isCompleted: workout.isCompleted,
+          duration: workout.plannedDurationMinutes || 0,
+          distance: workout.plannedDistanceKilometers || 0,
           isKeyWorkout: workout.isKeyWorkout,
         },
       });

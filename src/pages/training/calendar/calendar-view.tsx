@@ -346,17 +346,13 @@ export function CalendarView() {
       workouts
         .filter((w) => w.date === dateStr)
         .forEach((w) => {
-          const dur = w.isCompleted
-            ? w.actualDurationMinutes || 0
-            : w.plannedDurationMinutes || 0;
-          let dist = w.isCompleted
-            ? w.actualDistanceKilometers || 0
-            : w.plannedDistanceKilometers || 0;
+          const dur = w.plannedDurationMinutes || 0;
+          let dist = w.plannedDistanceKilometers || 0;
           const stId = w.sportTypeId || 'unknown';
           const st = sportMap.get(stId);
 
           // Convert km to meters if the sport uses meters
-          if (st && isMetersDistance(st.distanceUnit, st.name)) {
+          if (st && isMetersDistance(st.distanceUnit)) {
             dist = dist * 1000;
           }
 
@@ -809,7 +805,10 @@ export function CalendarView() {
                                 if (sTotal.duration === 0) return null;
                                 const st = sportMap.get(stId);
                                 const sportName = st?.name || 'Unknown';
-                                const IconComponent = getSportIcon(sportName);
+                                const IconComponent = getSportIcon(
+                                  sportName,
+                                  st?.paceUnit,
+                                );
                                 const sportColor = getEffortColor(
                                   st,
                                   2,

@@ -4,11 +4,12 @@ import { ErrorRouting } from '@/errors/error-routing';
 import { Demo1Layout } from '@/layouts/demo1/layout';
 import { EventPrioritiesPage } from '@/pages/account/event-priorities';
 import { EventTypesPage } from '@/pages/account/event-types';
-import { ProfilePage } from '@/pages/account/profile';
 import { GarminMappingsPage } from '@/pages/account/garmin-mappings';
+import { ProfilePage } from '@/pages/account/profile';
 import { SportTypesPage } from '@/pages/account/sport-types';
 import { EventPrioritiesAdminPage } from '@/pages/admin/event-priorities';
 import { EventTypesAdminPage } from '@/pages/admin/event-types';
+import { GarminMappingsAdminPage } from '@/pages/admin/garmin-mappings';
 import { SportTypesAdminPage } from '@/pages/admin/sport-types';
 import { DashboardPage } from '@/pages/dashboard';
 import { CalendarView } from '@/pages/training/calendar';
@@ -60,6 +61,10 @@ export function AppRoutingSetup() {
           <Route path="/account/sport-types" element={<SportTypesPage />} />
           <Route path="/admin/sport-types" element={<SportTypesAdminPage />} />
           <Route path="/admin/event-types" element={<EventTypesAdminPage />} />
+          <Route
+            path="/admin/garmin-mappings"
+            element={<GarminMappingsAdminPage />}
+          />
           <Route
             path="/admin/event-priorities"
             element={<EventPrioritiesAdminPage />}

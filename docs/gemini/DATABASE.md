@@ -9,7 +9,7 @@ User profiles are stored in the `public.tf_profiles` table, which is linked to S
 - `tf_profiles`: Stores user preferences (theme, avatar_url, effort_settings, calendar_stats_mode, role).
 - `tf_sport_types`: Defines available sports and their default effort level configurations.
 - `tf_user_sport_settings`: User-specific overrides for sport effort levels.
-- `tf_workouts`: Individual training sessions planned or completed by the user.
+- `tf_workouts`: Individual training sessions.
 - `tf_events`: Target races or goals, with optional `tf_event_segments` mapping to specific sports/efforts. Linked to `tf_event_types` and `tf_event_priorities`.
 - `tf_event_types`: Lookup table for event categories (Race, Goal, Test). Supports system-wide and user-specific custom types.
 - `tf_event_priorities`: Lookup table for event priorities (A, B, C). Supports system-wide and user-specific custom entries.

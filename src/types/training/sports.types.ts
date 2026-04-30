@@ -46,7 +46,8 @@ export interface WorkoutTypeOptions {
 export interface GarminSportMapping {
   id: string;
   garminActivityType: string;
-  sportTypeId: string;
+  sportTypeId: string | null;
+  garminDistanceUnit: 'km' | 'm';
   userId?: string;
   isSystem: boolean;
 }

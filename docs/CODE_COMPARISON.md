@@ -141,12 +141,8 @@ const calculateWeekSummary = (week: Date[]) => {
     workouts
       .filter((w) => w.date === dateStr)
       .forEach((w) => {
-        const dur = w.isCompleted
-          ? w.actualDurationMinutes || 0
-          : w.plannedDurationMinutes || 0;
-        const dist = w.isCompleted
-          ? w.actualDistanceKilometers || 0
-          : w.plannedDistanceKilometers || 0;
+        const dur = w.plannedDurationMinutes || 0;
+        const dist = w.plannedDistanceKilometers || 0;
         const stId = w.sportTypeId || 'unknown';
         if (!sportTotals[stId]) sportTotals[stId] = { distance: 0, duration: 0 };
         sportTotals[stId].duration += dur;
@@ -178,14 +174,10 @@ const calculateWeekSummary = (week: Date[]) => {
   const itemIndex = dayEvents.length + wIdx;
   const wSt = sportMap.get(w.sportTypeId);
   const bg = getEffortColor(wSt, w.effortLevel || 1, userSettingsMap.get(w.sportTypeId));
-  const dur = w.isCompleted
-    ? w.actualDurationMinutes || 0
-    : w.plannedDurationMinutes || 0;
-  const distKm = w.isCompleted
-    ? w.actualDistanceKilometers || 0
-    : w.plannedDistanceKilometers || 0;
-  const dist = wSt?.name === 'Swim' ? distKm * 1000 : distKm;
-  const pace = calculatePace(wSt?.name || '', dur, dist);
+  const dur = w.plannedDurationMinutes || 0;
+  const distKm = w.plannedDistanceKilometers || 0;
+  const dist = isMetersDistance(wSt?.distanceUnit) ? distKm * 1000 : distKm;
+  const pace = calculatePace(wSt?.paceUnit, dur, dist, wSt?.name);
   
   return (
     <React.Fragment key={w.id}>
@@ -218,20 +210,16 @@ const calculateWeekSummary = (week: Date[]) => {
 // Clean, simple rendering function
 const renderEventContent = (info: any) => {
   const event = info.event;
-  const { type, workout, isCompleted, isKeyWorkout } = event.extendedProps;
+  const { type, workout, isKeyWorkout } = event.extendedProps;
 
   if (type === 'workout' && workout) {
     const sport = sportMap.get(workout.sportTypeId);
-    const dur = isCompleted
-      ? workout.actualDurationMinutes || 0
-      : workout.plannedDurationMinutes || 0;
-    const distKm = isCompleted
-      ? workout.actualDistanceKilometers || 0
-      : workout.plannedDistanceKilometers || 0;
-    const dist = sport?.name === 'Swim' ? distKm * 1000 : distKm;
-    const pace = calculatePace(sport?.name || '', dur, dist);
+    const dur = workout.plannedDurationMinutes || 0;
+    const distKm = workout.plannedDistanceKilometers || 0;
+    const dist = isMetersDistance(sport?.distanceUnit) ? distKm * 1000 : distKm;
+    const pace = calculatePace(sport?.paceUnit, dur, dist, sport?.name);
     const sportName = workout.sportName || sport?.name || 'Unknown';
-    const IconComponent = getSportIcon(sportName);
+    const IconComponent = getSportIcon(sportName, sport?.paceUnit);
 
     return (
       <div className="flex h-full w-full flex-col gap-0.5 overflow-hidden p-1">

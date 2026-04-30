@@ -61,7 +61,6 @@ export function WorkoutDialog({
     effortLevel: initialWorkout.effortLevel ?? 2,
     isKeyWorkout: initialWorkout.isKeyWorkout ?? false,
     intervals: initialWorkout.intervals || [],
-    isCompleted: initialWorkout.isCompleted ?? false,
     order: initialWorkout.order || Date.now(),
     recurrenceId: initialWorkout.recurrenceId,
     recurrenceRule: initialWorkout.recurrenceRule,
@@ -135,7 +134,6 @@ export function WorkoutDialog({
       id: undefined,
       recurrenceId: undefined,
       recurrenceRule: undefined,
-      isCompleted: false,
       order: Date.now(),
     });
     setIsRecurring(false);
@@ -220,7 +218,7 @@ export function WorkoutDialog({
               {dialogTitle}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              [Description]
+              Create, edit, or duplicate a training session on your calendar.
             </DialogDescription>
           </DialogHeader>
 

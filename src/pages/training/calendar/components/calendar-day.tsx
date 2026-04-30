@@ -212,12 +212,8 @@ export const CalendarDay = React.memo(
               w.effortLevel || 1,
               userSettingsMap.get(w.sportTypeId),
             );
-            const dur = w.isCompleted
-              ? w.actualDurationMinutes || 0
-              : w.plannedDurationMinutes || 0;
-            const distKm = w.isCompleted
-              ? w.actualDistanceKilometers || 0
-              : w.plannedDistanceKilometers || 0;
+            const dur = w.plannedDurationMinutes || 0;
+            const distKm = w.plannedDistanceKilometers || 0;
             const dist = isMetersDistance(wSt?.distanceUnit, wSt?.name)
               ? distKm * 1000
               : distKm;
@@ -273,11 +269,7 @@ export const CalendarDay = React.memo(
             <div className="text-muted-foreground text-[10px] lg:text-xs">
               {formatMinsShort(
                 workouts.reduce(
-                  (sum, w) =>
-                    sum +
-                    (w.isCompleted
-                      ? w.actualDurationMinutes || 0
-                      : w.plannedDurationMinutes || 0),
+                  (sum, w) => sum + (w.plannedDurationMinutes || 0),
                   0,
                 ),
               )}
@@ -335,7 +327,7 @@ const EventSegment = ({ seg, sportMap, userSettingsMap }: any) => {
     sport?.name,
   );
   const sportName = seg.sportName || sport?.name || 'Unknown';
-  const IconComponent = getSportIcon(sportName);
+  const IconComponent = getSportIcon(sportName, sport?.paceUnit);
 
   return (
     <div
@@ -373,7 +365,7 @@ const WorkoutContent = ({
   showStats,
 }: any) => {
   const sportName = workout.sportName || sport?.name || 'Unknown';
-  const IconComponent = getSportIcon(sportName);
+  const IconComponent = getSportIcon(sportName, sport?.paceUnit);
 
   const header = (
     <div className="flex items-center gap-1 truncate text-[10px] opacity-70 lg:text-xs">

@@ -6,7 +6,8 @@ function mapDbGarminMapping(m: any): GarminSportMapping {
   return {
     id: m.id,
     garminActivityType: m.garmin_activity_type,
-    sportTypeId: m.sport_type_id,
+    sportTypeId: m.sport_type_id || null,
+    garminDistanceUnit: (m.garmin_distance_unit as 'km' | 'm') || 'km',
     userId: m.user_id || undefined,
     isSystem: m.is_system || false,
   };
@@ -27,14 +28,20 @@ export const garminMappingApi = {
     mapping: Partial<GarminSportMapping>,
     userId: string,
   ): Promise<GarminSportMapping> {
+    const isSystem = mapping.isSystem || false;
     const { data, error } = await supabase
       .from('tf_garmin_sport_mapping')
-      .upsert({
-        garmin_activity_type: mapping.garminActivityType,
-        sport_type_id: mapping.sportTypeId,
-        user_id: userId,
-        is_system: false, // Users can only create non-system mappings
-      })
+      .upsert(
+        {
+          id: mapping.id, // Include ID for updates
+          garmin_activity_type: mapping.garminActivityType,
+          sport_type_id: mapping.sportTypeId || null,
+          garmin_distance_unit: mapping.garminDistanceUnit || 'km',
+          user_id: isSystem ? null : userId,
+          is_system: isSystem,
+        },
+        { onConflict: 'garmin_activity_type,user_id' },
+      )
       .select()
       .single();
 

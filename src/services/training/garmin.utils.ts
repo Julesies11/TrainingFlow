@@ -33,13 +33,15 @@ export function parseGarminTimeToMinutes(timeStr: string): number {
 }
 
 /**
- * Resolves Garmin Activity Type to Sport Type ID using mappings
+ * Resolves Garmin Activity Type mapping
  */
-export function resolveGarminSportType(
+export function resolveGarminMapping(
   garminType: string,
   mappings: GarminSportMapping[],
   userId: string | undefined,
-): string | undefined {
+): GarminSportMapping | undefined {
+  if (!garminType.trim()) return undefined;
+
   // 1. Check user-specific mappings first
   if (userId) {
     const userMatch = mappings.find(
@@ -47,16 +49,15 @@ export function resolveGarminSportType(
         m.garminActivityType.toLowerCase() === garminType.toLowerCase() &&
         m.userId === userId,
     );
-    if (userMatch) return userMatch.sportTypeId;
+    if (userMatch) return userMatch;
   }
 
   // 2. Fallback to system mappings
-  const systemMatch = mappings.find(
+  return mappings.find(
     (m) =>
       m.garminActivityType.toLowerCase() === garminType.toLowerCase() &&
       m.isSystem,
   );
-  return systemMatch?.sportTypeId;
 }
 
 /**
@@ -98,22 +99,51 @@ export async function parseGarminCSV(
       errors.push(`Invalid date format: ${rawDate}`);
     }
 
-    // 2. Process Sport Type
-    const sportTypeId = resolveGarminSportType(garminType, mappings, userId);
-    if (!sportTypeId) {
+    // 2. Process Mapping
+    const mapping = resolveGarminMapping(garminType, mappings, userId);
+    const sportTypeId = mapping?.sportTypeId;
+
+    if (mapping && sportTypeId === null) {
+      isValid = false;
+      errors.push(`Ignored: ${garminType}`);
+    } else if (!mapping) {
       isValid = false;
       errors.push(`Unmapped activity type: ${garminType}`);
     }
 
     // 3. Process Duration
     const duration = parseGarminTimeToMinutes(rawTime);
-    if (duration <= 0 && garminType !== 'Strength Training') {
-      // Strength training might have 0 distance/time in some exports?
-      // But usually we want at least 1 min.
+
+    // 4. Process Distance (Unit-aware normalization)
+    const rawDistanceVal = parseFloat(rawDistance.replace(',', '')) || 0;
+    let distance = rawDistanceVal;
+
+    if (mapping?.garminDistanceUnit === 'm') {
+      distance = rawDistanceVal / 1000;
     }
 
-    // 4. Process Distance
-    const distance = parseFloat(rawDistance.replace(',', '')) || 0;
+    // Helper to parse numeric values safely (Garmin uses '--' for empty)
+    const parseNum = (val: string | number | undefined | null) => {
+      if (!val || val === '--') return undefined;
+      const parsed = parseFloat(val.toString().replace(',', ''));
+      return isNaN(parsed) ? undefined : parsed;
+    };
+
+    // 5. Enrichment Data (HR, Power, TSS, Elevation, etc.)
+    const avgHR = parseNum(raw['Avg HR']);
+    const maxHR = parseNum(raw['Max HR']);
+    const avgPower = parseNum(raw['Avg Power']);
+    const maxPower = parseNum(raw['Max Power']);
+    const normalizedPower = parseNum(raw['Normalized Power® (NP®)']);
+    const actualTSS = parseNum(raw['Training Stress Score®']);
+    const totalAscent = parseNum(raw['Total Ascent']);
+    const totalDescent = parseNum(raw['Total Descent']);
+    const avgCadence =
+      parseNum(raw['Avg Bike Cadence']) ||
+      parseNum(raw['Avg Run Cadence']) ||
+      parseNum(raw['Avg Cadence']);
+    const calories = parseNum(raw['Calories']);
+    const trainingEffect = parseNum(raw['Aerobic TE']);
 
     if (isValid) {
       workout = {
@@ -125,9 +155,20 @@ export async function parseGarminCSV(
         plannedDistanceKilometers: distance,
         actualDurationMinutes: duration || 1,
         actualDistanceKilometers: distance,
+        avgHR,
+        maxHR,
+        avgPower,
+        maxPower,
+        normalizedPower,
+        actualTSS,
+        actual_datetime: rawDate, // Garmin timestamp
+        totalAscent,
+        totalDescent,
+        avgCadence,
+        calories,
+        trainingEffect,
         effortLevel: 1, // Default to recovery/base
         isKeyWorkout: false,
-        isCompleted: true, // Garmin imports are COMPLETED activities
         intervals: [],
       };
     }
@@ -139,6 +180,7 @@ export async function parseGarminCSV(
         title,
         plannedDurationMinutes: duration,
         plannedDistanceKilometers: distance,
+        actual_datetime: rawDate,
       },
       workout,
       errors,

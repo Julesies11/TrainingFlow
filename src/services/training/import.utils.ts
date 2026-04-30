@@ -22,8 +22,9 @@ export const ImportWorkoutSchema = z.object({
 export type ImportWorkoutRow = z.infer<typeof ImportWorkoutSchema>;
 
 export interface ProcessedImportRow {
-  row: Partial<ImportWorkoutRow>;
+  row: Partial<ImportWorkoutRow & { actual_datetime?: string }>;
   workout?: Partial<Workout>;
+  syncStatus?: 'NEW' | 'SYNC' | 'RE-SYNC';
   errors: string[];
   isValid: boolean;
 }
@@ -128,7 +129,6 @@ export async function parseImportData(
         plannedDistanceKilometers: result.data.plannedDistanceKilometers,
         effortLevel: result.data.effortLevel,
         isKeyWorkout: result.data.isKeyWorkout,
-        isCompleted: false,
         intervals: [],
       };
     }

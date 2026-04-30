@@ -3,47 +3,32 @@
  * Calculations are now based on paceUnit and distanceUnit rather than hardcoded names.
  */
 
-// Legacy aliases for fallback support
-export const SWIM_ALIASES = ['swim', 'swimming'];
-export const BIKE_ALIASES = ['bike', 'cycling', 'biking'];
-export const RUN_ALIASES = ['run', 'running'];
-
 /**
- * Checks if the sport is swimming based on name or unit.
+ * Checks if the sport is swimming based on unit.
  */
-export function isSwimSport(name?: string, paceUnit?: string): boolean {
-  if (paceUnit === 'min/100m') return true;
-  if (!name) return false;
-  return SWIM_ALIASES.includes(name.trim().toLowerCase());
+export function isSwimSport(paceUnit?: string): boolean {
+  return paceUnit === 'min/100m';
 }
 
 /**
- * Checks if the sport is biking based on name or unit.
+ * Checks if the sport is biking based on unit.
  */
-export function isBikeSport(name?: string, paceUnit?: string): boolean {
-  if (paceUnit === 'km/h') return true;
-  if (!name) return false;
-  return BIKE_ALIASES.includes(name.trim().toLowerCase());
+export function isBikeSport(paceUnit?: string): boolean {
+  return paceUnit === 'km/h';
 }
 
 /**
- * Checks if the sport is running based on name or unit.
+ * Checks if the sport is running based on unit.
  */
-export function isRunSport(name?: string, paceUnit?: string): boolean {
-  if (paceUnit === 'min/km') return true;
-  if (!name) return false;
-  return RUN_ALIASES.includes(name.trim().toLowerCase());
+export function isRunSport(paceUnit?: string): boolean {
+  return paceUnit === 'min/km';
 }
 
 /**
  * Checks if the distance should be treated as meters (requiring conversion from database km).
  */
-export function isMetersDistance(
-  distanceUnit?: string,
-  sportName?: string,
-): boolean {
-  if (distanceUnit === 'm') return true;
-  return isSwimSport(sportName);
+export function isMetersDistance(distanceUnit?: string): boolean {
+  return distanceUnit === 'm';
 }
 
 /**
@@ -58,15 +43,13 @@ export function calculatePace(
   paceUnit: string | undefined,
   durationMinutes: number,
   distance: number,
-  sportName?: string,
 ): string {
   if (durationMinutes <= 0 || distance <= 0) return '';
 
-  // Determine calculation type based on paceUnit or fallback sportName
-  const isSwim =
-    paceUnit === 'min/100m' || (!paceUnit && isSwimSport(sportName));
-  const isBike = paceUnit === 'km/h' || (!paceUnit && isBikeSport(sportName));
-  const isRun = paceUnit === 'min/km' || (!paceUnit && isRunSport(sportName));
+  // Determine calculation type based on paceUnit
+  const isSwim = paceUnit === 'min/100m';
+  const isBike = paceUnit === 'km/h';
+  const isRun = paceUnit === 'min/km';
 
   if (isSwim) {
     // Pace in min/100m — distance is in meters
@@ -96,13 +79,8 @@ export function calculatePace(
 /**
  * Returns the distance unit label for a sport.
  */
-export function getDistanceUnit(
-  distanceUnit?: string,
-  sportName?: string,
-): string {
+export function getDistanceUnit(distanceUnit?: string): string {
   if (distanceUnit) return distanceUnit;
-  if (isSwimSport(sportName)) return 'm';
-  if (isBikeSport(sportName) || isRunSport(sportName)) return 'km';
   return '';
 }
 

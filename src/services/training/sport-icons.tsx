@@ -1,18 +1,20 @@
 import { Bike, Dumbbell, Footprints, LucideIcon, Waves } from 'lucide-react';
-import { isBikeSport, isRunSport, isSwimSport } from './pace-utils';
 
 /**
- * Get the icon component for a sport name
- * Handles case-insensitive matching
+ * Get the icon component based on sport properties
  */
-export function getSportIcon(sportName: string | undefined): LucideIcon | null {
-  if (!sportName) return null;
+export function getSportIcon(
+  sportName: string | undefined,
+  paceUnit?: string,
+): LucideIcon | null {
+  if (paceUnit === 'min/100m') return Waves;
+  if (paceUnit === 'km/h') return Bike;
+  if (paceUnit === 'min/km') return Footprints;
 
-  if (isSwimSport(sportName)) return Waves;
-  if (isBikeSport(sportName)) return Bike;
-  if (isRunSport(sportName)) return Footprints;
-
-  const normalized = sportName.toLowerCase().trim();
+  // Strength/Gym doesn't have a standardized unit yet,
+  // so we use a very limited name check as a last resort
+  // or a default icon.
+  const normalized = sportName?.toLowerCase().trim() || '';
   if (
     normalized === 'strength' ||
     normalized === 'weights' ||

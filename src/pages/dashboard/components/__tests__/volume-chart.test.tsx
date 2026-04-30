@@ -11,9 +11,8 @@ describe('VolumeChart', () => {
       title: 'Run 1',
       date: '2026-04-28',
       sportName: 'Run',
-      actualDistanceKilometers: 10,
-      actualDurationMinutes: 60,
-      isCompleted: true,
+      plannedDistanceKilometers: 10,
+      plannedDurationMinutes: 60,
     },
   ];
 

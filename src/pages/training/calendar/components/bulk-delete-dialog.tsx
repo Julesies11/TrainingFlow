@@ -15,6 +15,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -109,6 +110,10 @@ export function BulkDeleteDialog({
             <Trash2 className="h-5 w-5" />
             Bulk Delete Workouts
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Are you sure you want to bulk delete the selected workouts? This
+            action is permanent.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="p-6 space-y-6">

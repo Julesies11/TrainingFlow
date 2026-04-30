@@ -178,7 +178,10 @@ export const UpcomingEvents = memo(function UpcomingEvents({
 
                         const sportName =
                           segment.sportName || sport?.name || 'Unknown';
-                        const IconComponent = getSportIcon(sportName);
+                        const IconComponent = getSportIcon(
+                          sportName,
+                          sport?.paceUnit,
+                        );
 
                         return (
                           <div

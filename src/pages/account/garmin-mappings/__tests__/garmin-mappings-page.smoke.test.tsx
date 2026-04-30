@@ -36,7 +36,7 @@ describe('GarminMappingsPage Smoke Test', () => {
   it('renders correctly', () => {
     render(<GarminMappingsPage />);
 
-    expect(screen.getByText(/garmin mappings/i)).toBeInTheDocument();
+    expect(screen.getByText(/garmin activity mappings/i)).toBeInTheDocument();
     // Using getAllByText because it appears in both a description and a label
     expect(screen.getAllByText(/garmin activity type/i).length).toBeGreaterThan(
       0,

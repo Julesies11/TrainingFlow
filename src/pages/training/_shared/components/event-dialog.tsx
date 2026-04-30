@@ -135,7 +135,7 @@ export function EventDialog({
               {isEdit ? 'edit event' : 'new event'}
             </DialogTitle>
             <DialogDescription className="sr-only">
-              [Description]
+              Manage your target races, events, and training goals.
             </DialogDescription>
           </DialogHeader>
 

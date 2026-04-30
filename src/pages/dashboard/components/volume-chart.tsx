@@ -126,9 +126,7 @@ export const VolumeChart = memo(function VolumeChart({
           if (sport !== 'All' && w.sportName !== sport) return;
 
           if (metric === 'distance') {
-            const distKm = w.isCompleted
-              ? w.actualDistanceKilometers || 0
-              : w.plannedDistanceKilometers || 0;
+            const distKm = w.plannedDistanceKilometers || 0;
             const sportRec = sportMap.get(w.sportTypeId);
             const dist =
               sport !== 'All' &&
@@ -138,9 +136,7 @@ export const VolumeChart = memo(function VolumeChart({
                 : distKm;
             val += dist;
           } else {
-            val += w.isCompleted
-              ? w.actualDurationMinutes || 0
-              : w.plannedDurationMinutes || 0;
+            val += w.plannedDurationMinutes || 0;
           }
         });
 

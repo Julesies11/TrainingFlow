@@ -69,9 +69,7 @@ export const SportDistribution = memo(function SportDistribution({
     });
 
     let totalDuration = filteredWorkouts.reduce((sum, w) => {
-      const dur = w.isCompleted
-        ? w.actualDurationMinutes || 0
-        : w.plannedDurationMinutes || 0;
+      const dur = w.plannedDurationMinutes || 0;
       return sum + dur;
     }, 0);
 
@@ -90,9 +88,7 @@ export const SportDistribution = memo(function SportDistribution({
         let sportDuration = filteredWorkouts
           .filter((w) => w.sportName === st.name)
           .reduce((sum, w) => {
-            const dur = w.isCompleted
-              ? w.actualDurationMinutes || 0
-              : w.plannedDurationMinutes || 0;
+            const dur = w.plannedDurationMinutes || 0;
             return sum + dur;
           }, 0);
 

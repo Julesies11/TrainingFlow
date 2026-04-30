@@ -31,7 +31,7 @@ TrainingFlow is designed as a management platform with the following core module
     - **Target Overlays**: Dashboard charts show a "Target" line to track actual volume against goals.
     - **Progress Tracking**: Weekly summary columns on the calendar display real-time progress bars towards active goals.
 - **Garmin Integration**:
-    - **Activity Import**: Seamlessly import completed workouts from Garmin Connect via CSV files.
+    - **Activity Import**: Seamlessly import training sessions from Garmin Connect via CSV files.
     - **Intelligent Mapping**: Two-tiered mapping system (system defaults + user overrides) to link Garmin activity types to internal sports.
     - **On-the-fly Configuration**: Automatically detects unmapped Garmin activities and prompts users to configure them during the import process.
 
