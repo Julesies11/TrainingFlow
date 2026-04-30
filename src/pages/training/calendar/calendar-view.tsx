@@ -7,6 +7,7 @@ import {
   FileUp,
   Plus,
   Trash2,
+  Watch,
 } from 'lucide-react';
 import { Event, LibraryWorkout, Note, Workout } from '@/types/training';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';
@@ -62,6 +63,7 @@ import { Switch, SwitchWrapper } from '@/components/ui/switch';
 import { EventDialog } from '../_shared/components/event-dialog';
 import { BulkDeleteDialog } from './components/bulk-delete-dialog';
 import { CalendarDay } from './components/calendar-day';
+import { GarminImportDialog } from './components/garmin-import-dialog';
 import { ImportDialog } from './components/import-dialog';
 import { LibraryDrawer } from './components/library-drawer';
 import { NoteDialog } from './components/note-dialog';
@@ -131,6 +133,7 @@ export function CalendarView() {
     useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showGarminImportDialog, setShowGarminImportDialog] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
 
   // Drag and drop state
@@ -585,6 +588,20 @@ export function CalendarView() {
                 </span>
               </Button>
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowGarminImportDialog(true)}
+                className="gap-2"
+              >
+                <Watch className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest lg:hidden">
+                  gar
+                </span>
+                <span className="hidden text-[10px] font-black uppercase tracking-widest lg:inline">
+                  garmin
+                </span>
+              </Button>
+              <Button
                 variant={showLibrary ? 'primary' : 'outline'}
                 size="sm"
                 onClick={() => setShowLibrary(!showLibrary)}
@@ -981,6 +998,10 @@ export function CalendarView() {
         <ImportDialog
           open={showImportDialog}
           onOpenChange={setShowImportDialog}
+        />
+        <GarminImportDialog
+          open={showGarminImportDialog}
+          onOpenChange={setShowGarminImportDialog}
         />
         <BulkDeleteDialog
           open={showBulkDeleteDialog}

@@ -29,3 +29,24 @@ export interface UserSportSettings {
   effort3Label?: string;
   effort4Label?: string;
 }
+
+export interface IntensitySettings {
+  [key: string]: {
+    [level: number]: {
+      label: string;
+      hexColor: string;
+    };
+  };
+}
+
+export interface WorkoutTypeOptions {
+  [key: string]: string[];
+}
+
+export interface GarminSportMapping {
+  id: string;
+  garminActivityType: string;
+  sportTypeId: string;
+  userId?: string;
+  isSystem: boolean;
+}

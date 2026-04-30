@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useAuth } from '@/auth/context/auth-context';
-import { Dumbbell, Moon, ShieldCheck, UserCircle } from 'lucide-react';
+import { Dumbbell, Moon, ShieldCheck, UserCircle, Watch } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { Link } from 'react-router-dom';
 import { useIsDeveloper } from '@/hooks/use-is-developer';
@@ -74,6 +74,16 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
           <Link to="/account/sport-types" className="flex items-center gap-2">
             <Dumbbell />
             Sport Types
+          </Link>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem asChild>
+          <Link
+            to="/account/garmin-mappings"
+            className="flex items-center gap-2"
+          >
+            <Watch />
+            Garmin Mappings
           </Link>
         </DropdownMenuItem>
 

@@ -3,6 +3,7 @@ import { RequireAuth } from '@/auth/require-auth';
 import { ErrorRouting } from '@/errors/error-routing';
 import { Demo1Layout } from '@/layouts/demo1/layout';
 import { ProfilePage } from '@/pages/account/profile';
+import { GarminMappingsPage } from '@/pages/account/garmin-mappings';
 import { SportTypesPage } from '@/pages/account/sport-types';
 import { EventPrioritiesAdminPage } from '@/pages/admin/event-priorities';
 import { EventTypesAdminPage } from '@/pages/admin/event-types';
@@ -41,6 +42,10 @@ export function AppRoutingSetup() {
           <Route path="/training/goals" element={<GoalsPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/account/profile" element={<ProfilePage />} />
+          <Route
+            path="/account/garmin-mappings"
+            element={<GarminMappingsPage />}
+          />
           <Route
             path="/account/settings"
             element={<PlaceholderPage title="settings" />}
