@@ -1,4 +1,5 @@
 import { Component, ErrorInfo, ReactNode } from 'react';
+import { Error500 } from '@/errors/error-500';
 import { errorLogsApi } from '@/services/api/system/error-logs.api';
 
 interface Props {
@@ -46,33 +47,18 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-background text-center">
-          <div className="max-w-md w-full space-y-6">
-            <h1 className="text-4xl font-black lowercase tracking-tighter">
-              oops.
-            </h1>
-            <p className="text-muted-foreground">
-              Something went wrong while rendering this page. The error has been
-              logged and we're looking into it.
-            </p>
-            <div className="pt-4">
-              <button
-                onClick={() => window.location.reload()}
-                className="btn btn-primary"
-              >
-                Reload Page
-              </button>
+          <Error500 />
+
+          {process.env.NODE_ENV === 'development' && this.state.error && (
+            <div className="mt-12 w-full max-w-4xl p-4 bg-muted rounded-lg text-left overflow-auto max-h-[400px]">
+              <p className="font-mono text-xs text-destructive">
+                {this.state.error.toString()}
+              </p>
+              <pre className="mt-2 font-mono text-[10px] text-muted-foreground">
+                {this.state.error.stack}
+              </pre>
             </div>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
-              <div className="mt-8 p-4 bg-muted rounded-lg text-left overflow-auto max-h-[300px]">
-                <p className="font-mono text-xs text-destructive">
-                  {this.state.error.toString()}
-                </p>
-                <pre className="mt-2 font-mono text-[10px] text-muted-foreground">
-                  {this.state.error.stack}
-                </pre>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       );
     }

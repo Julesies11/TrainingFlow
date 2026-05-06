@@ -34,6 +34,12 @@ This project is a React 19 application built on the **Metronic 9** template, opt
     - `admin` / `developer`: Elevated permissions to manage system-wide lookups and settings.
 - **Row Level Security**: Enforced at the database level to isolate user data and protect global system entries.
 
+## Error Handling & Reliability
+- **Global Error Boundary**: A top-level `ErrorBoundary` in `src/App.tsx` catches rendering crashes across the application. 
+- **Graceful Recovery**: When a crash occurs, the boundary renders the standard Metronic `Error500` component. To ensure reliable recovery, the `Error500` page uses native `<a>` tags for navigation, forcing a full page reload to clear any corrupted application state.
+- **Error Logging**: All uncaught errors are automatically logged to the `tf_error_logs` table in Supabase via `errorLogsApi.capture()`, including stack traces and component context.
+- **Developer Experience**: In development environments, the boundary displays the raw stack trace below the polished error UI for immediate diagnosis.
+
 ## Important Constraints
 - **React 19**: Ensure compatibility with React 19 features (e.g., `use` hook, improved `ref` handling).
 - **Tailwind 4**: Use modern Tailwind 4 utility classes and configuration.

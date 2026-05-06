@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { differenceInDays, format, isBefore, parseISO } from 'date-fns';
-import { Calendar, Pencil, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Pencil, Plus, Trash2, Trophy } from 'lucide-react';
 import { Event } from '@/types/training';
 import {
   useCreateEvent,

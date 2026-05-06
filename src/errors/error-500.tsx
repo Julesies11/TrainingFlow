@@ -1,5 +1,4 @@
 import { Fragment } from 'react/jsx-runtime';
-import { Link } from 'react-router-dom';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -40,7 +39,7 @@ export function Error500() {
       </div>
 
       <Button asChild>
-        <Link to="/">Back to Home</Link>
+        <a href="/">Back to Home</a>
       </Button>
     </Fragment>
   );
