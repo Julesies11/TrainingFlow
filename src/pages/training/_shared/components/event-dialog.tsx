@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { SegmentEditor } from '@/pages/training/events/components/segment-editor';
 import { format } from 'date-fns';
+import { Copy, Info } from 'lucide-react';
 import { Event, SportTypeRecord, UserSportSettings } from '@/types/training';
 import { useEventPriorities, useEventTypes } from '@/hooks/use-training-data';
 import { buildUserSettingsMap } from '@/services/training/effort-colors';
@@ -46,6 +47,7 @@ export function EventDialog({
   onCancel,
 }: EventDialogProps) {
   const isEdit = !!event?.id;
+  const [isDuplicated, setIsDuplicated] = useState(false);
   const { data: eventTypes = [] } = useEventTypes();
   const { data: eventPriorities = [] } = useEventPriorities();
   const [showMasterDialog, setShowMasterDialog] = useState(false);
@@ -79,6 +81,7 @@ export function EventDialog({
         description: event.description || '',
         segments: event.segments || [],
       });
+      setIsDuplicated(false);
     }
   }, [event]);
 
@@ -99,6 +102,20 @@ export function EventDialog({
       setFormData((prev) => ({ ...prev, eventPriorityId: defaultPriority.id }));
     }
   }, [eventPriorities, formData.eventPriorityId]);
+
+  const handleDuplicate = () => {
+    setFormData((prev) => ({
+      ...prev,
+      id: undefined,
+      title: `${prev.title} (copy)`,
+      segments: prev.segments?.map((seg) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, eventId, ...rest } = seg;
+        return rest;
+      }),
+    }));
+    setIsDuplicated(true);
+  };
 
   const handleSubmit = () => {
     if (!formData.title?.trim()) {
@@ -125,6 +142,12 @@ export function EventDialog({
     } as Event);
   };
 
+  const title = isDuplicated
+    ? 'duplicate event'
+    : isEdit
+      ? 'edit event'
+      : 'new event';
+
   return (
     <Dialog open={true} onOpenChange={() => onCancel()}>
       <DialogContent className="max-h-[95vh] w-full max-w-3xl overflow-hidden p-0 flex flex-col">
@@ -132,7 +155,7 @@ export function EventDialog({
         <div className="flex flex-col grow overflow-hidden">
           <DialogHeader className="shrink-0 p-6 pb-0">
             <DialogTitle className="text-2xl font-black lowercase tracking-tight">
-              {isEdit ? 'edit event' : 'new event'}
+              {title}
             </DialogTitle>
             <DialogDescription className="sr-only">
               Manage your target races, events, and training goals.
@@ -141,6 +164,16 @@ export function EventDialog({
 
           <DialogBody className="grow overflow-y-auto scrollable-y p-6 py-4">
             <div className="space-y-6">
+              {isDuplicated && (
+                <div className="flex items-center gap-3 rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-700">
+                  <Info className="h-5 w-5 shrink-0" />
+                  <p className="text-xs font-semibold">
+                    this is a duplicated event. please select a new date and
+                    save to create a new record.
+                  </p>
+                </div>
+              )}
+
               {/* Title */}
               <div>
                 <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
@@ -293,7 +326,17 @@ export function EventDialog({
           </DialogBody>
 
           <DialogFooter className="shrink-0 p-6 pt-0 gap-3">
-            {isEdit && onDelete && (
+            {isEdit && !isDuplicated && (
+              <Button
+                variant="outline"
+                onClick={handleDuplicate}
+                className="w-full sm:w-auto gap-2"
+              >
+                <Copy className="h-3 w-3" />
+                duplicate
+              </Button>
+            )}
+            {isEdit && !isDuplicated && onDelete && (
               <Button
                 variant="outline"
                 onClick={() => onDelete(formData.id!)}
@@ -310,7 +353,7 @@ export function EventDialog({
               cancel
             </Button>
             <Button onClick={handleSubmit} className="w-full sm:flex-1">
-              {isEdit ? 'save changes' : 'create event'}
+              {isEdit && !isDuplicated ? 'save changes' : 'create event'}
             </Button>
           </DialogFooter>
         </div>

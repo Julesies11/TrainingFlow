@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { differenceInDays, format, isBefore, parseISO } from 'date-fns';
-import { Calendar, Pencil, Plus, Trash2, Trophy } from 'lucide-react';
+import { Calendar, Copy, Pencil, Plus, Trash2, Trophy } from 'lucide-react';
 import { Event } from '@/types/training';
 import {
   useCreateEvent,
@@ -86,6 +86,30 @@ export function EventsPage() {
       });
     }
   };
+
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const handleDuplicate = (event: Event) => {
+    const {
+      id,
+      eventTypeName,
+      eventTypeIcon,
+      eventTypeColorTheme,
+      eventPriorityName,
+      ...rest
+    } = event;
+
+    const duplicatedEvent: Partial<Event> = {
+      ...rest,
+      title: `${event.title} (copy)`,
+      segments: event.segments?.map((segment) => {
+        const { id, eventId, ...segRest } = segment;
+        return segRest;
+      }),
+    };
+
+    createEvent.mutate(duplicatedEvent);
+  };
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   const handleDelete = (id: string) => {
     deleteEvent.mutate(id, {
@@ -293,6 +317,15 @@ export function EventsPage() {
             >
               <Pencil className="h-3 w-3" />
               Edit
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDuplicate(event)}
+              className="flex-1 gap-2"
+            >
+              <Copy className="h-3 w-3" />
+              Duplicate
             </Button>
             <Button
               variant="outline"

@@ -11,6 +11,7 @@ TrainingFlow is designed as a management platform with the following core module
 - **Interactive Calendar**: Drag-and-drop workout planning with support for bidirectional reordering (moving items above or below each other) on the same day.
 - **Calendar Notes**: Add simple text notes to any day on the calendar. Notes are draggable, editable, and visually distinct from workouts.
 - **Session Duplication**: Quickly copy and paste workouts to different dates via the "Duplicate" feature.
+- **Event Duplication**: Easily duplicate existing events (races, goals) with all their segments and disciplines via the "Duplicate" button on the events page.
 - **Dynamic Lookups**: 
     - **Global Admin**: Developers and admins can manage system-wide Event Types and Priorities.
     - **Personalized Management**: Standard users have dedicated account pages to create, view, and manage their own custom Event Types and Event Priorities, allowing them to personalize themes, icons, and labels.
