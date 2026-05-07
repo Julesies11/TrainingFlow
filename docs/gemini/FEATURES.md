@@ -26,6 +26,7 @@ TrainingFlow is designed as a management platform with the following core module
     - **Optimized Volume Summary**: Real-time aggregation of training volume (distance/duration) with $O(N+M)$ performance and a decoupled pre-fetching window (-12 to +24 months) for instant, flash-free navigation.
     - **Annotation Toggles**: Independently show/hide **Events** and **Notes** on the progression chart.
     - **Contextual Tooltips**: Hover over data points to see full event titles and note content alongside volume totals.
+    - **Sport & Effort Distribution**: Side-by-side charts showing how training time is split across different sports and effort/intensity levels (Recovery, Endurance, Tempo, Threshold).
     - **Sport Distribution**: Dynamic breakdown of training time across different sport types, respecting user-customized colors.
 - **Training Goals**: 
     - **Periodized Targets**: Set specific weekly or monthly targets (e.g., "Bike 200km/week") for defined training blocks.

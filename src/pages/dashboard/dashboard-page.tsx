@@ -23,6 +23,7 @@ import { Switch, SwitchWrapper } from '@/components/ui/switch';
 import { EventDialog } from '../training/_shared/components/event-dialog';
 import { WorkoutDialog } from '../training/calendar/components/workout-dialog';
 import { DailySessions } from './components/daily-sessions';
+import { EffortDistribution } from './components/effort-distribution';
 import { SportDistribution } from './components/sport-distribution';
 import { UpcomingEvents } from './components/upcoming-events';
 
@@ -361,13 +362,23 @@ export function DashboardPage() {
           </div>
 
           {/* Secondary Grid */}
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-6 lg:grid-cols-2">
             {/* Sport Distribution */}
             <SportDistribution
               workouts={workouts}
               events={events}
               sportTypes={sportTypes}
               userSettingsMap={settingsMap}
+              distViewType={distViewType}
+              distPivotDate={distPivotDate}
+              setDistViewType={setDistViewType}
+              onShift={handleDistShift}
+            />
+
+            {/* Effort Distribution */}
+            <EffortDistribution
+              workouts={workouts}
+              events={events}
               distViewType={distViewType}
               distPivotDate={distPivotDate}
               setDistViewType={setDistViewType}
