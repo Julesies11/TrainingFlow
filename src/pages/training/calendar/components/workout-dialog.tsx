@@ -32,6 +32,8 @@ interface WorkoutDialogProps {
   onSwitchToNote?: () => void;
   onCancel: () => void;
   hideDate?: boolean;
+  isTemplateMode?: boolean;
+  totalWeeks?: number;
 }
 
 export function WorkoutDialog({
@@ -46,6 +48,8 @@ export function WorkoutDialog({
   onSwitchToNote,
   onCancel,
   hideDate,
+  isTemplateMode = false,
+  totalWeeks = 4,
 }: WorkoutDialogProps) {
   const isExisting = existingWorkouts.some((w) => w.id === initialWorkout.id);
 
@@ -63,6 +67,8 @@ export function WorkoutDialog({
     order: initialWorkout.order || Date.now(),
     recurrenceId: initialWorkout.recurrenceId,
     recurrenceRule: initialWorkout.recurrenceRule,
+    weekNumber: initialWorkout.weekNumber || 1,
+    dayOfWeek: initialWorkout.dayOfWeek || 1,
   }));
 
   const [isRecurring, setIsRecurring] = useState(!!initialWorkout.recurrenceId);
@@ -204,8 +210,8 @@ export function WorkoutDialog({
             {isDuplicated && (
               <div className="mb-6 rounded-xl border border-primary/30 bg-primary/10 p-4 text-center">
                 <p className="text-primary text-xs font-bold lowercase">
-                  this is a duplicated session. please select a new date and
-                  save.
+                  this is a duplicated session. please select a new{' '}
+                  {isTemplateMode ? 'week/day' : 'date'} and save.
                 </p>
               </div>
             )}
@@ -213,25 +219,86 @@ export function WorkoutDialog({
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
               {/* Left column */}
               <div className="space-y-6">
-                {/* Date (at the top) */}
-                {!hideDate && (
-                  <div>
-                    <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                      schedule date
-                    </Label>
-                    <Input
-                      type="date"
-                      value={workout.date}
-                      className={
-                        isDuplicated
-                          ? 'border-primary ring-primary/20 ring-2'
-                          : ''
-                      }
-                      onChange={(e) =>
-                        setWorkout({ ...workout, date: e.target.value })
-                      }
-                    />
+                {/* Date / Week selection (at the top) */}
+                {isTemplateMode && (isDuplicated || !hideDate) ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="weekNumber"
+                        className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest"
+                      >
+                        week number
+                      </Label>
+                      <Input
+                        id="weekNumber"
+                        type="number"
+                        min="1"
+                        max={totalWeeks}
+                        value={workout.weekNumber}
+                        className={
+                          isDuplicated
+                            ? 'border-primary ring-primary/20 ring-2'
+                            : ''
+                        }
+                        onChange={(e) =>
+                          setWorkout({
+                            ...workout,
+                            weekNumber: parseInt(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label
+                        htmlFor="dayOfWeek"
+                        className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest"
+                      >
+                        day of week
+                      </Label>
+                      <Input
+                        id="dayOfWeek"
+                        type="number"
+                        min="1"
+                        max="7"
+                        value={workout.dayOfWeek}
+                        className={
+                          isDuplicated
+                            ? 'border-primary ring-primary/20 ring-2'
+                            : ''
+                        }
+                        onChange={(e) =>
+                          setWorkout({
+                            ...workout,
+                            dayOfWeek: parseInt(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
                   </div>
+                ) : (
+                  !hideDate && (
+                    <div>
+                      <Label
+                        htmlFor="scheduleDate"
+                        className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest"
+                      >
+                        schedule date
+                      </Label>
+                      <Input
+                        id="scheduleDate"
+                        type="date"
+                        value={workout.date}
+                        className={
+                          isDuplicated
+                            ? 'border-primary ring-primary/20 ring-2'
+                            : ''
+                        }
+                        onChange={(e) =>
+                          setWorkout({ ...workout, date: e.target.value })
+                        }
+                      />
+                    </div>
+                  )
                 )}
 
                 {/* Recurring Series Info */}

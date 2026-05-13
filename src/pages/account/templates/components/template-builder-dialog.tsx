@@ -436,7 +436,14 @@ export function TemplateBuilderDialog({
   };
 
   const handleSaveWorkout = (w: Partial<Workout>) => {
-    const { weekNumber, dayOfWeek } = getCoordinatesFromDate(w.date!);
+    let { weekNumber, dayOfWeek } = w;
+
+    if (weekNumber === undefined || dayOfWeek === undefined) {
+      const coords = getCoordinatesFromDate(w.date!);
+      weekNumber = coords.weekNumber;
+      dayOfWeek = coords.dayOfWeek;
+    }
+
     const tw: PlanTemplateWorkout = {
       id: w.id || crypto.randomUUID(),
       templateId: formData.id || '',
@@ -472,7 +479,14 @@ export function TemplateBuilderDialog({
       const newWorkouts = [...(prev.workouts || [])];
 
       ws.forEach((w) => {
-        const { weekNumber, dayOfWeek } = getCoordinatesFromDate(w.date!);
+        let { weekNumber, dayOfWeek } = w;
+
+        if (weekNumber === undefined || dayOfWeek === undefined) {
+          const coords = getCoordinatesFromDate(w.date!);
+          weekNumber = coords.weekNumber;
+          dayOfWeek = coords.dayOfWeek;
+        }
+
         const tw: PlanTemplateWorkout = {
           id: w.id || crypto.randomUUID(),
           templateId: formData.id || '',
@@ -863,9 +877,10 @@ export function TemplateBuilderDialog({
             }}
             onCancel={() => setWorkoutToEdit(null)}
             hideDate={true}
+            isTemplateMode={true}
+            totalWeeks={formData.totalWeeks}
           />
         )}
-
         {noteToEdit && (
           <NoteDialog
             note={noteToEdit}
