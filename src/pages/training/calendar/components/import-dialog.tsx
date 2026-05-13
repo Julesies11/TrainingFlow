@@ -20,6 +20,7 @@ import {
   parseImportData,
   ProcessedImportRow,
 } from '@/services/training/import.utils';
+import { getImportPrompt } from '../constants/import-prompt';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -67,6 +68,13 @@ export function ImportDialog({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
+  // Reset state when opening
+  useEffect(() => {
+    if (open) {
+      resetState();
+    }
+  }, [open]);
+
   // Auto-scroll to bottom when tab changes
   useEffect(() => {
     if (scrollContainerRef.current) {
@@ -75,7 +83,7 @@ export function ImportDialog({
           top: scrollContainerRef.current.scrollHeight,
           behavior: 'smooth',
         });
-      }, 50); // Small delay to allow tab content to render
+      }, 100); // Increased delay to allow tab content to render
     }
   }, [activeTab]);
 
@@ -145,46 +153,12 @@ export function ImportDialog({
     setShowStats(false);
     setPastedText('');
     setParseError(null);
+    setActiveTab('upload');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const getPromptText = () => {
-    const validSports =
-      sportTypes.map((st) => st.name).join(', ') || 'Run, Bike, Swim';
-
-    return `Please act as an expert [ENTER SPORT TYPE] coach and design a training program for me. 
-
-[INSERT YOUR EVENT DETAILS, TIMEFRAME, CURRENT FITNESS LEVEL, EVENT DATE, AND GOALS HERE]
-
-When generating the program, the "sportName" column must exactly match one of my configured sports from the database: ${validSports}. Do not use any different types, they need to match exactly.
-
-Provide it as a downloadable CSV file.
-
-Required Columns:
-1. "date" OR ("weekNumber" AND "dayOfWeek")
-   - Use "date" in YYYY-MM-DD format for calendar imports.
-   - Use "weekNumber" (starting from 1) and "dayOfWeek" (1=Monday, 2=Tuesday, ..., 7=Sunday) for generic training plans.
-2. "sportName" - The name of the sport (must exactly match one of the sports listed above).
-3. "title" - A short, descriptive title for the workout.
-4. "description" - Details of the workout structure.
-5. "plannedDurationMinutes" - The total planned duration in minutes as a whole number.
-6. "plannedDistanceKilometers" - The planned distance in kilometers (use 0 if not applicable).
-7. "effortLevel" - A numeric value representing intensity from 1 to 4 (1=Recovery, 2=Base, 3=Tempo, 4=VO2).
-8. "isKeyWorkout" - Either "true" or "false" to indicate if this is a high-priority session.
-
-Example row for ${sportTypes[0]?.name || 'Sport'} (Plan Template):
-weekNumber,dayOfWeek,sportName,title,description,plannedDurationMinutes,plannedDistanceKilometers,effortLevel,isKeyWorkout
-1,1,${sportTypes[0]?.name || 'Sport'},Steady Session,Description,60,10,2,false
-
-Example row for ${sportTypes[0]?.name || 'Sport'} (Calendar):
-date,sportName,title,description,plannedDurationMinutes,plannedDistanceKilometers,effortLevel,isKeyWorkout
-${new Date().toISOString().split('T')[0]},${sportTypes[0]?.name || 'Sport'},Steady Session,Description,60,10,2,false
-
-Before you start, ask me any questions you need to ensure you have full context`;
-  };
-
   const handleCopyPrompt = () => {
-    copyToClipboard(getPromptText());
+    copyToClipboard(getImportPrompt(sportTypes));
     toast.success('AI prompt copied to clipboard');
   };
 
@@ -252,10 +226,7 @@ Before you start, ask me any questions you need to ensure you have full context`
   return (
     <Dialog
       open={open}
-      onOpenChange={(o) => {
-        onOpenChange(o);
-        if (!o) resetState();
-      }}
+      onOpenChange={onOpenChange}
     >
       <DialogContent className="max-w-4xl w-[95vw] md:w-full max-h-[95vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden">
         <>
@@ -318,7 +289,7 @@ Before you start, ask me any questions you need to ensure you have full context`
                     </span>
                     <Textarea
                       readOnly
-                      value={getPromptText()}
+                      value={getImportPrompt(sportTypes)}
                       className="min-h-[120px] md:min-h-[160px] text-[11px] font-mono bg-background/50 border-primary/10 resize-none overflow-y-auto leading-relaxed"
                     />
                   </div>
@@ -430,10 +401,29 @@ Before you start, ask me any questions you need to ensure you have full context`
                 </div>
 
                 {hasErrors && (
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-[10px] md:text-xs font-bold">
-                    <AlertTriangle className="h-4 w-4 shrink-0" />
-                    Warning: {totalCount - validCount} rows failed validation.
-                    Please review the highlighted errors below.
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-[10px] md:text-xs font-bold">
+                      <AlertTriangle className="h-4 w-4 shrink-0" />
+                      Warning: {totalCount - validCount} rows failed validation.
+                      Please review the highlighted errors below.
+                    </div>
+                    {processedRows.some((r) =>
+                      r.errors.some((e) => e.includes('Too many fields')),
+                    ) && (
+                      <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 text-[10px] md:text-xs text-primary/80">
+                        <p className="font-bold flex items-center gap-1.5 mb-1">
+                          <Info className="h-3 w-3" />
+                          Troubleshooting Tip
+                        </p>
+                        <p>
+                          Some rows have "Too many fields". This usually happens
+                          when a description contains a comma but isn't wrapped
+                          in quotes (e.g.,{' '}
+                          <code>"Power focus, reduced load"</code>). Please
+                          ensure all columns are correctly separated.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -86,7 +86,8 @@ export async function parseImportData(
       dynamicTyping: false,
     });
 
-    if (result.errors.length > 0) {
+    // If we have no data at all, it's a fatal structural error
+    if (result.data.length === 0 && result.errors.length > 0) {
       const errorMessages = result.errors.map((err) => {
         const rowInfo = err.row !== undefined ? ` (row ${err.row + 2})` : '';
         return `${err.message}${rowInfo}`;
@@ -99,64 +100,79 @@ export async function parseImportData(
         finalMessage +=
           '. Tip: It looks like you might be using semi-colons (;) instead of commas (,). Please use standard comma-separated format.';
       }
+      throw new Error(`Failed to parse CSV: ${finalMessage}`);
+    }
 
-      // If we have no data at all, it's a fatal structural error
-      if (result.data.length === 0) {
-        throw new Error(`Failed to parse CSV: ${finalMessage}`);
+    // Map rows and collect errors
+    return (result.data as Record<string, unknown>[]).map((raw, idx) => {
+      const errors: string[] = [];
+      let isValid = true;
+      let workout:
+        | Partial<Workout & { weekNumber?: number; dayOfWeek?: number }>
+        | undefined;
+
+      // Add PapaParse errors for this specific row
+      const rowErrors = result.errors.filter((e) => e.row === idx);
+      rowErrors.forEach((err) => {
+        let msg = err.message;
+        if (err.code === 'TooManyFields') {
+          msg = 'Too many columns detected. If a field (like description) contains a comma, please surround the entire text with double quotes (e.g., "Text, with comma").';
+        } else if (err.code === 'TooFewFields') {
+          msg = 'Too few columns detected. Ensure all required columns are present and separated by commas.';
+        }
+        errors.push(msg);
+        isValid = false;
+      });
+
+      const zodResult = ImportWorkoutSchema.safeParse(raw);
+
+      if (!zodResult.success) {
+        isValid = false;
+        zodResult.error.errors.forEach((err) => {
+          const field = err.path[0]?.toString() || '';
+          const friendlyField = field
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^planned\s/, '')
+            .toLowerCase();
+          errors.push(`${friendlyField}: ${err.message}`);
+        });
       }
 
-      throw new Error(`CSV formatting errors found: ${finalMessage}`);
-    }
+      const sportNameStr = (raw.sportName as string) || '';
+      const sportTypeId = zodResult.success
+        ? mapSportNameToId(zodResult.data.sportName, sportTypes)
+        : mapSportNameToId(sportNameStr, sportTypes);
 
-    rawData = result.data as Record<string, unknown>[];
-  }
+      if (!sportTypeId) {
+        isValid = false;
+        const available = sportTypes.map((st) => st.name).join(', ');
+        errors.push(
+          `Sport "${sportNameStr || 'unknown'}" not found. Available: ${available}`,
+        );
+      }
 
-  return rawData.map((raw) => {
-    const errors: string[] = [];
-    let isValid = true;
-    let workout:
-      | Partial<Workout & { weekNumber?: number; dayOfWeek?: number }>
-      | undefined;
+      if (isValid && zodResult.success) {
+        workout = {
+          date: zodResult.data.date || '',
+          weekNumber: zodResult.data.weekNumber,
+          dayOfWeek: zodResult.data.dayOfWeek,
+          sportTypeId,
+          title: zodResult.data.title,
+          description: zodResult.data.description,
+          plannedDurationMinutes: zodResult.data.plannedDurationMinutes,
+          plannedDistanceKilometers: zodResult.data.plannedDistanceKilometers,
+          effortLevel: zodResult.data.effortLevel,
+          isKeyWorkout: zodResult.data.isKeyWorkout,
+          intervals: [],
+        };
+      }
 
-    const result = ImportWorkoutSchema.safeParse(raw);
-
-    if (!result.success) {
-      isValid = false;
-      result.error.errors.forEach((err) => {
-        errors.push(`${err.path.join('.')}: ${err.message}`);
-      });
-    }
-
-    const sportTypeId = result.success
-      ? mapSportNameToId(result.data.sportName, sportTypes)
-      : mapSportNameToId(raw.sportName || '', sportTypes);
-
-    if (!sportTypeId) {
-      isValid = false;
-      errors.push(`Sport "${raw.sportName || 'unknown'}" not found`);
-    }
-
-    if (isValid && result.success) {
-      workout = {
-        date: result.data.date || '',
-        weekNumber: result.data.weekNumber,
-        dayOfWeek: result.data.dayOfWeek,
-        sportTypeId,
-        title: result.data.title,
-        description: result.data.description,
-        plannedDurationMinutes: result.data.plannedDurationMinutes,
-        plannedDistanceKilometers: result.data.plannedDistanceKilometers,
-        effortLevel: result.data.effortLevel,
-        isKeyWorkout: result.data.isKeyWorkout,
-        intervals: [],
+      return {
+        row: raw,
+        workout,
+        errors,
+        isValid,
       };
-    }
-
-    return {
-      row: raw,
-      workout,
-      errors,
-      isValid,
-    };
-  });
+    });
+  }
 }
