@@ -1,7 +1,6 @@
 import { mockApexChart } from '@/test/setup';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { render } from '@/test/test-utils';
-import { parseISO } from 'date-fns';
 import { describe, expect, it, vi } from 'vitest';
 import { VolumeChart } from '../../../training/_shared/components/volume-chart';
 

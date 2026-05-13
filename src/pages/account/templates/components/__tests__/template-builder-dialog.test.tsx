@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { TemplateBuilderDialog } from '../template-builder-dialog';
 
 // Mock dependencies
-const mockSportTypes = [] as any[];
-const mockLibrary = [] as any[];
+const mockSportTypes: unknown[] = [];
+const mockLibrary: unknown[] = [];
 
 vi.mock('@/hooks/use-training-data', () => ({
   useLibrary: () => ({ data: mockLibrary }),
@@ -109,7 +109,7 @@ describe('TemplateBuilderDialog', () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText(/Bulk Delete Workouts/i)).toBeInTheDocument();
+        expect(screen.getByText(/Bulk Delete Template Sessions/i)).toBeInTheDocument();
       },
       { timeout: 2000 },
     );

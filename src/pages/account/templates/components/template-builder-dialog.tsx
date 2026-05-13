@@ -129,37 +129,27 @@ export function TemplateBuilderDialog({
   }, [sportTypes]);
 
   // ─── Unsaved Changes Detection ─────────────────────────────
-  // Stabilize initial state for comparison
-  const initialStateString = useMemo(() => {
+  const getPlanStateString = useCallback((plan: Partial<PlanTemplate>) => {
     return JSON.stringify({
-      name: initialTemplate.name || '',
-      totalWeeks: initialTemplate.totalWeeks || 4,
-      description: initialTemplate.description || '',
-      is_system: initialTemplate.is_system || false,
-      workouts: (initialTemplate.workouts || []).sort(
+      name: plan.name || '',
+      totalWeeks: plan.totalWeeks || 4,
+      description: plan.description || '',
+      is_system: plan.is_system || false,
+      workouts: (plan.workouts || []).sort(
         (a, b) => (a.order ?? 0) - (b.order ?? 0),
       ),
-      notes: (initialTemplate.notes || []).sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0),
-      ),
+      notes: (plan.notes || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)),
     });
-  }, [initialTemplate]);
+  }, []);
+
+  const [initialStateString, setInitialStateString] = useState(() =>
+    getPlanStateString(initialTemplate),
+  );
 
   const isDirty = useMemo(() => {
-    const current = JSON.stringify({
-      name: formData.name || '',
-      totalWeeks: formData.totalWeeks || 4,
-      description: formData.description || '',
-      is_system: formData.is_system || false,
-      workouts: (formData.workouts || []).sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0),
-      ),
-      notes: (formData.notes || []).sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0),
-      ),
-    });
+    const current = getPlanStateString(formData);
     return current !== initialStateString;
-  }, [formData, initialStateString]);
+  }, [formData, initialStateString, getPlanStateString]);
 
   // ─── Local UI State ─────────────────────────────────────────
   const [showChart, setShowChart] = useState(false);
@@ -436,13 +426,9 @@ export function TemplateBuilderDialog({
   };
 
   const handleSaveWorkout = (w: Partial<Workout>) => {
-    let { weekNumber, dayOfWeek } = w;
-
-    if (weekNumber === undefined || dayOfWeek === undefined) {
-      const coords = getCoordinatesFromDate(w.date!);
-      weekNumber = coords.weekNumber;
-      dayOfWeek = coords.dayOfWeek;
-    }
+    // Always calculate coordinates from the date to ensure sync with the grid,
+    // especially for recurring sessions which are generated via date increments.
+    const { weekNumber, dayOfWeek } = getCoordinatesFromDate(w.date!);
 
     const tw: PlanTemplateWorkout = {
       id: w.id || crypto.randomUUID(),
@@ -479,13 +465,9 @@ export function TemplateBuilderDialog({
       const newWorkouts = [...(prev.workouts || [])];
 
       ws.forEach((w) => {
-        let { weekNumber, dayOfWeek } = w;
-
-        if (weekNumber === undefined || dayOfWeek === undefined) {
-          const coords = getCoordinatesFromDate(w.date!);
-          weekNumber = coords.weekNumber;
-          dayOfWeek = coords.dayOfWeek;
-        }
+        // Always calculate coordinates from the date to ensure sync with the grid,
+        // especially for recurring sessions which are generated via date increments.
+        const { weekNumber, dayOfWeek } = getCoordinatesFromDate(w.date!);
 
         const tw: PlanTemplateWorkout = {
           id: w.id || crypto.randomUUID(),
@@ -511,7 +493,6 @@ export function TemplateBuilderDialog({
           newWorkouts.push(tw);
         }
       });
-
       return { ...prev, workouts: newWorkouts };
     });
     setWorkoutToEdit(null);
@@ -585,7 +566,7 @@ export function TemplateBuilderDialog({
       updateTemplate.mutate(formData as PlanTemplate, {
         onSuccess: () => {
           toast.success('Plan updated successfully');
-          onClose();
+          setInitialStateString(getPlanStateString(formData));
         },
         onError: (err) => {
           console.error('Failed to update plan:', err);
@@ -594,9 +575,15 @@ export function TemplateBuilderDialog({
       });
     } else {
       createTemplate.mutate(formData, {
-        onSuccess: () => {
+        onSuccess: (newPlan) => {
           toast.success('Plan created successfully');
-          onClose();
+          if (newPlan?.id) {
+            const updated = { ...formData, id: newPlan.id };
+            setFormData(updated);
+            setInitialStateString(getPlanStateString(updated));
+          } else {
+            setInitialStateString(getPlanStateString(formData));
+          }
         },
         onError: (err) => {
           console.error('Failed to create plan:', err);
@@ -784,40 +771,40 @@ export function TemplateBuilderDialog({
               isDraggingId={isDraggingId}
               dragOverInfo={dragOverInfo}
               hideDates={true}
-          />
+            />
 
-          <Sheet open={showChart} onOpenChange={setShowChart}>
-            <SheetContent
-              side="right"
-              className="sm:max-w-xl md:max-w-2xl lg:max-w-3xl xl:max-w-4xl p-0 overflow-hidden flex flex-col"
-            >
-              <SheetHeader className="px-6 py-5 border-b shrink-0 bg-muted/5">
-                <SheetTitle className="text-xl font-black lowercase tracking-tighter flex items-center gap-2.5">
-                  <BarChart3 className="h-5 w-5 text-primary" />
-                  Training Plan Analytics
-                </SheetTitle>
-                <SheetDescription className="sr-only">
-                  Visualize volume and performance progression for this training
-                  plan.
-                </SheetDescription>
-              </SheetHeader>
+            <Sheet open={showChart} onOpenChange={setShowChart}>
+              <SheetContent
+                side="right"
+                className="sm:max-w-xl md:max-w-2xl lg:max-w-3xl xl:max-w-4xl p-0 overflow-hidden flex flex-col"
+              >
+                <SheetHeader className="px-6 py-5 border-b shrink-0 bg-muted/5">
+                  <SheetTitle className="text-xl font-black lowercase tracking-tighter flex items-center gap-2.5">
+                    <BarChart3 className="h-5 w-5 text-primary" />
+                    Training Plan Analytics
+                  </SheetTitle>
+                  <SheetDescription className="sr-only">
+                    Visualize volume and performance progression for this
+                    training plan.
+                  </SheetDescription>
+                </SheetHeader>
 
-              <div className="flex-1 min-h-0 overflow-y-auto p-6 bg-muted/5">
-                <VolumeChartWidget
-                  workouts={projectedWorkouts}
-                  events={[]}
-                  notes={projectedNotes}
-                  goals={[]}
-                  sportTypes={sportTypes}
-                  initialPivotDate={addWeeks(DUMMY_BASE_DATE, 6)}
-                  title="Plan Load Progression"
-                  templateMode={true}
-                  totalWeeks={formData.totalWeeks}
-                />
-              </div>
-            </SheetContent>
-          </Sheet>
-        </div>
+                <div className="flex-1 min-h-0 overflow-y-auto p-6 bg-muted/5">
+                  <VolumeChartWidget
+                    workouts={projectedWorkouts}
+                    events={[]}
+                    notes={projectedNotes}
+                    goals={[]}
+                    sportTypes={sportTypes}
+                    initialPivotDate={addWeeks(DUMMY_BASE_DATE, 6)}
+                    title="Plan Load Progression"
+                    templateMode={true}
+                    totalWeeks={formData.totalWeeks}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
+          </div>
 
           {/* Library Drawer - Integrated exactly like calendar */}
           <LibraryDrawer

@@ -41,9 +41,15 @@ describe('BulkDeleteDialog', () => {
     // Check sports selection (all should be checked)
     const runRow = screen.getByText('Run').closest('div');
     const bikeRow = screen.getByText('Bike').closest('div');
-    
-    expect(runRow?.querySelector('button[role="checkbox"]')).toHaveAttribute('data-state', 'checked');
-    expect(bikeRow?.querySelector('button[role="checkbox"]')).toHaveAttribute('data-state', 'checked');
+
+    expect(runRow?.querySelector('button[role="checkbox"]')).toHaveAttribute(
+      'data-state',
+      'checked',
+    );
+    expect(bikeRow?.querySelector('button[role="checkbox"]')).toHaveAttribute(
+      'data-state',
+      'checked',
+    );
 
     // Check days selection (7 days should be present and selected)
     // In our implementation, they are ToggleGroupItems with text M, T, W, T, F, S, S
@@ -109,30 +115,44 @@ describe('BulkDeleteDialog', () => {
 
     const runRow = screen.getByText('Run').closest('div');
     const bikeRow = screen.getByText('Bike').closest('div');
-    
-    expect(runRow?.querySelector('button[role="checkbox"]')).toHaveAttribute('data-state', 'unchecked');
-    expect(bikeRow?.querySelector('button[role="checkbox"]')).toHaveAttribute('data-state', 'unchecked');
+
+    expect(runRow?.querySelector('button[role="checkbox"]')).toHaveAttribute(
+      'data-state',
+      'unchecked',
+    );
+    expect(bikeRow?.querySelector('button[role="checkbox"]')).toHaveAttribute(
+      'data-state',
+      'unchecked',
+    );
 
     fireEvent.click(screen.getByText(/Select All/i));
-    expect(runRow?.querySelector('button[role="checkbox"]')).toHaveAttribute('data-state', 'checked');
-    expect(bikeRow?.querySelector('button[role="checkbox"]')).toHaveAttribute('data-state', 'checked');
+    expect(runRow?.querySelector('button[role="checkbox"]')).toHaveAttribute(
+      'data-state',
+      'checked',
+    );
+    expect(bikeRow?.querySelector('button[role="checkbox"]')).toHaveAttribute(
+      'data-state',
+      'checked',
+    );
   });
 
   it('renders template mode with week inputs', async () => {
     render(
-      <BulkDeleteDialog 
-        open={true} 
-        onOpenChange={mockOnOpenChange} 
+      <BulkDeleteDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
         isTemplateMode={true}
         totalWeeks={12}
-      />
+      />,
     );
 
-    expect(screen.getByText(/Bulk Delete Template Sessions/i)).toBeInTheDocument();
-    
+    expect(
+      screen.getByText(/Bulk Delete Template Sessions/i),
+    ).toBeInTheDocument();
+
     const fromWeekInput = screen.getByLabelText(/From Week/i);
     const toWeekInput = screen.getByLabelText(/To Week/i);
-    
+
     expect(fromWeekInput).toHaveValue(1);
     expect(toWeekInput).toHaveValue(12);
   });
@@ -140,13 +160,13 @@ describe('BulkDeleteDialog', () => {
   it('calls onBulkDelete with week numbers in template mode', async () => {
     const mockOnBulkDelete = vi.fn();
     render(
-      <BulkDeleteDialog 
-        open={true} 
-        onOpenChange={mockOnOpenChange} 
+      <BulkDeleteDialog
+        open={true}
+        onOpenChange={mockOnOpenChange}
         onBulkDelete={mockOnBulkDelete}
         isTemplateMode={true}
         totalWeeks={12}
-      />
+      />,
     );
 
     const deleteBtn = screen.getByRole('button', { name: /Delete Workouts/i });
@@ -157,7 +177,7 @@ describe('BulkDeleteDialog', () => {
         '1',
         '12',
         ['1', '2'],
-        [1, 2, 3, 4, 5, 6, 7]
+        [1, 2, 3, 4, 5, 6, 7],
       );
     });
   });

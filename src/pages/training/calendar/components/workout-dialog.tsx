@@ -14,6 +14,13 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { EffortIntensityGrid } from '../../_shared/components/effort-intensity-grid';
@@ -36,6 +43,16 @@ interface WorkoutDialogProps {
   totalWeeks?: number;
 }
 
+const DAYS_OF_WEEK = [
+  { value: '1', label: 'Monday' },
+  { value: '2', label: 'Tuesday' },
+  { value: '3', label: 'Wednesday' },
+  { value: '4', label: 'Thursday' },
+  { value: '5', label: 'Friday' },
+  { value: '6', label: 'Saturday' },
+  { value: '7', label: 'Sunday' },
+];
+
 export function WorkoutDialog({
   workout: initialWorkout,
   sportTypes,
@@ -53,23 +70,47 @@ export function WorkoutDialog({
 }: WorkoutDialogProps) {
   const isExisting = existingWorkouts.some((w) => w.id === initialWorkout.id);
 
-  const [workout, setWorkout] = useState<Partial<Workout>>(() => ({
-    id: initialWorkout.id,
-    date: initialWorkout.date || formatDateToLocalISO(new Date()),
-    sportTypeId: initialWorkout.sportTypeId || sportTypes[0]?.id || '',
-    title: initialWorkout.title || '',
-    description: initialWorkout.description || '',
-    plannedDurationMinutes: initialWorkout.plannedDurationMinutes ?? 60,
-    plannedDistanceKilometers: initialWorkout.plannedDistanceKilometers ?? 0,
-    effortLevel: initialWorkout.effortLevel ?? 2,
-    isKeyWorkout: initialWorkout.isKeyWorkout ?? false,
-    intervals: initialWorkout.intervals || [],
-    order: initialWorkout.order || Date.now(),
-    recurrenceId: initialWorkout.recurrenceId,
-    recurrenceRule: initialWorkout.recurrenceRule,
-    weekNumber: initialWorkout.weekNumber || 1,
-    dayOfWeek: initialWorkout.dayOfWeek || 1,
-  }));
+  const [workout, setWorkout] = useState<Partial<Workout>>(() => {
+    const baseDate = initialWorkout.date || formatDateToLocalISO(new Date());
+
+    // For template mode, if week/day are missing, derive them from the date
+    let weekNumber = initialWorkout.weekNumber;
+    let dayOfWeek = initialWorkout.dayOfWeek;
+
+    if (
+      isTemplateMode &&
+      (weekNumber === undefined || dayOfWeek === undefined)
+    ) {
+      const date = new Date(baseDate.replace(/-/g, '/'));
+      // This logic should match getCoordinatesFromDate in TemplateBuilderDialog
+      // assuming the base year is 2024 and Jan 1 is Monday.
+      const dummyBase = new Date(2024, 0, 1);
+      const diffDays = Math.floor(
+        (date.getTime() - dummyBase.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      weekNumber = Math.floor(diffDays / 7) + 1;
+      dayOfWeek = date.getDay();
+      if (dayOfWeek === 0) dayOfWeek = 7;
+    }
+
+    return {
+      id: initialWorkout.id,
+      date: baseDate,
+      sportTypeId: initialWorkout.sportTypeId || sportTypes[0]?.id || '',
+      title: initialWorkout.title || '',
+      description: initialWorkout.description || '',
+      plannedDurationMinutes: initialWorkout.plannedDurationMinutes ?? 60,
+      plannedDistanceKilometers: initialWorkout.plannedDistanceKilometers ?? 0,
+      effortLevel: initialWorkout.effortLevel ?? 2,
+      isKeyWorkout: initialWorkout.isKeyWorkout ?? false,
+      intervals: initialWorkout.intervals || [],
+      order: initialWorkout.order || Date.now(),
+      recurrenceId: initialWorkout.recurrenceId,
+      recurrenceRule: initialWorkout.recurrenceRule,
+      weekNumber: weekNumber || 1,
+      dayOfWeek: dayOfWeek || 1,
+    };
+  });
 
   const [isRecurring, setIsRecurring] = useState(!!initialWorkout.recurrenceId);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -255,24 +296,33 @@ export function WorkoutDialog({
                       >
                         day of week
                       </Label>
-                      <Input
-                        id="dayOfWeek"
-                        type="number"
-                        min="1"
-                        max="7"
-                        value={workout.dayOfWeek}
-                        className={
-                          isDuplicated
-                            ? 'border-primary ring-primary/20 ring-2'
-                            : ''
-                        }
-                        onChange={(e) =>
+                      <Select
+                        value={workout.dayOfWeek?.toString()}
+                        onValueChange={(val) =>
                           setWorkout({
                             ...workout,
-                            dayOfWeek: parseInt(e.target.value),
+                            dayOfWeek: parseInt(val),
                           })
                         }
-                      />
+                      >
+                        <SelectTrigger
+                          id="dayOfWeek"
+                          className={
+                            isDuplicated
+                              ? 'border-primary ring-primary/20 ring-2'
+                              : ''
+                          }
+                        >
+                          <SelectValue placeholder="Select day" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DAYS_OF_WEEK.map((day) => (
+                            <SelectItem key={day.value} value={day.value}>
+                              {day.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 ) : (

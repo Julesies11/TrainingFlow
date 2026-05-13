@@ -20,7 +20,6 @@ import {
   parseImportData,
   ProcessedImportRow,
 } from '@/services/training/import.utils';
-import { getImportPrompt } from '../constants/import-prompt';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -40,6 +39,7 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { getImportPrompt } from '../constants/import-prompt';
 
 interface ImportDialogProps {
   open: boolean;
@@ -224,10 +224,7 @@ export function ImportDialog({
   const hasErrors = totalCount > validCount;
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-[95vw] md:w-full max-h-[95vh] md:max-h-[90vh] flex flex-col p-0 overflow-hidden">
         <>
           <DialogHeader className="px-4 py-3 md:px-6 md:py-4 border-b">

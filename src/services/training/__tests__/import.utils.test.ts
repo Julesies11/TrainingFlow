@@ -100,6 +100,20 @@ describe('Import Utilities', () => {
       expect(results[0].workout?.dayOfWeek).toBe(7);
     });
 
+    it('correctly parses isKeyWorkout boolean from CSV strings', async () => {
+      const csv =
+        'date,sportName,title,plannedDurationMinutes,isKeyWorkout\n2026-05-01,Run,Key Run,60,true\n2026-05-02,Run,Normal Run,45,false';
+
+      const results = await parseImportData(csv, 'csv', mockSports);
+      expect(results).toHaveLength(2);
+
+      expect(results[0].isValid).toBe(true);
+      expect(results[0].workout?.isKeyWorkout).toBe(true);
+
+      expect(results[1].isValid).toBe(true);
+      expect(results[1].workout?.isKeyWorkout).toBe(false);
+    });
+
     it('handles invalid sport names', async () => {
       const json = JSON.stringify([
         {
@@ -112,7 +126,7 @@ describe('Import Utilities', () => {
 
       const results = await parseImportData(json, 'json', mockSports);
       expect(results[0].isValid).toBe(false);
-      expect(results[0].errors).toContain('Sport "InvalidSport" not found');
+      expect(results[0].errors[0]).toMatch(/Sport "InvalidSport" not found/);
     });
 
     it('handles schema validation errors', async () => {

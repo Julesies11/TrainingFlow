@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@/test/test-utils';
+import { fireEvent, render, screen } from '@/test/test-utils';
+import { Workout } from '@/types/training';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { WorkoutDialog } from '../workout-dialog';
 
@@ -8,7 +9,7 @@ describe('WorkoutDialog', () => {
   const mockSportTypes = [
     { id: '1', name: 'Run' },
     { id: '2', name: 'Bike' },
-  ];
+  ] as any;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -21,19 +22,19 @@ describe('WorkoutDialog', () => {
       weekNumber: 2,
       dayOfWeek: 3,
       sportTypeId: '1',
-    };
+    } as unknown as Workout;
 
     render(
       <WorkoutDialog
         workout={workout}
         sportTypes={mockSportTypes}
         userSettingsMap={new Map()}
-        existingWorkouts={[workout as any]}
+        existingWorkouts={[workout]}
         onSave={mockOnSave}
         onCancel={mockOnCancel}
         isTemplateMode={true}
         totalWeeks={12}
-      />
+      />,
     );
 
     // Find and click duplicate button
@@ -41,18 +42,24 @@ describe('WorkoutDialog', () => {
     fireEvent.click(duplicateBtn);
 
     // Verify duplication message
-    expect(screen.getByText(/please select a new week\/day/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/please select a new week\/day/i),
+    ).toBeInTheDocument();
 
     // Verify week and day inputs are visible and have correct values
     const weekInput = screen.getByLabelText(/week number/i);
-    const dayInput = screen.getByLabelText(/day of week/i);
+    const dayTrigger = screen.getByLabelText(/day of week/i);
 
     expect(weekInput).toHaveValue(2);
-    expect(dayInput).toHaveValue(3);
+    expect(dayTrigger).toHaveTextContent(/wednesday/i);
 
     // Change values
     fireEvent.change(weekInput, { target: { value: '3' } });
-    fireEvent.change(dayInput, { target: { value: '5' } });
+
+    // Change day via Select
+    fireEvent.click(dayTrigger);
+    const fridayOption = await screen.findByRole('option', { name: /friday/i });
+    fireEvent.click(fridayOption);
 
     // Save
     const saveBtn = screen.getByRole('button', { name: /save session/i });
@@ -64,7 +71,7 @@ describe('WorkoutDialog', () => {
         weekNumber: 3,
         dayOfWeek: 5,
         id: undefined, // Should be undefined for new duplicate
-      })
+      }),
     );
   });
 });
