@@ -26,6 +26,12 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 
 ## UI Patterns
 - **Lookup Master Pattern**: Standard values (Event Types, Priorities) are database-backed. Standard users can personalize their experience by managing private custom entries via master dialogs, while administrators can manage global "System" defaults via a dedicated admin interface.
+- **Shared Training Forms**: Common workout entry fields (Sport Selection, Effort Grids, and Metrics/Pace calculations) are extracted into shared components (`SportSelector`, `EffortIntensityGrid`, `WorkoutMetricsFields`) to ensure absolute parity between the Calendar and Workout Library.
+- **Shared Calendar Architecture**: To ensure visual and logic consistency, the core training calendar is built as a shared `CalendarGrid` presentational component. It handles complex week-row mapping, drag-and-drop feedback, and real-time daily/weekly volume aggregation.
+- **Shared Analytics Architecture**: Volume and performance visualization is centralized in a shared `VolumeChartWidget`. It encapsulates the chart rendering and all navigation/metric controls. In **Template Mode**, the chart dynamically scales its X-axis to the exact length of the training plan, utilizing relative "Week N" labels starting from a normalized base (Monday, Jan 1, 2024) to ensure cross-template comparability.
+- **Flexible Plan Application**: Athletes can apply training plans either forward from a selected start date (Phase 1 start) or backward from a target event date (Phase N aligned with Race Day). The generator engine automatically aligns the plan's week/day matrix with the calendar timeline.
+- **Advanced Training Plans**: The plan builder supports full drag-and-drop reordering, repeating session recurrence, and series extensions. Sub-dialogs are rendered at the component root level (outside the main `DialogContent`) to prevent Radix UI focus-trap loops and ensure stable runtime performance.
+- **Dialog Stability**: All bulk actions and import wizards utilize stable state initialization to prevent infinite rendering cycles, particularly when interacting with global sport type data.
 - **Lazy Profile Creation**: On first login, the `SupabaseAdapter` ensures a relational record exists in `tf_profiles` for the authenticated user, synchronizing essential metadata.
 
 ## Security & RBAC

@@ -52,6 +52,18 @@ export const notesApi = {
     return mapDbNote(data);
   },
 
+  async createBulk(inputs: CreateNoteInput[], userId: string): Promise<void> {
+    const { error } = await supabase.from('tf_notes').insert(
+      inputs.map((n) => ({
+        user_id: userId,
+        date: n.date,
+        content: n.content,
+      })),
+    );
+
+    if (error) throw error;
+  },
+
   async update(input: UpdateNoteInput, userId: string): Promise<Note> {
     const { id, ...updates } = input;
     const { data, error } = await supabase

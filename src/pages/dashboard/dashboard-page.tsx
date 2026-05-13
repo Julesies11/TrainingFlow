@@ -1,6 +1,5 @@
-import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { addMonths, format, parseISO, subMonths } from 'date-fns';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Event, Workout } from '@/types/training';
 import {
   useDeleteEvent,
@@ -18,26 +17,17 @@ import {
   buildSportMap,
   buildUserSettingsMap,
 } from '@/services/training/effort-colors';
-import { Label } from '@/components/ui/label';
-import { Switch, SwitchWrapper } from '@/components/ui/switch';
 import { EventDialog } from '../training/_shared/components/event-dialog';
+import { VolumeChartWidget } from '../training/_shared/components/volume-chart-widget';
 import { WorkoutDialog } from '../training/calendar/components/workout-dialog';
 import { DailySessions } from './components/daily-sessions';
 import { EffortDistribution } from './components/effort-distribution';
 import { SportDistribution } from './components/sport-distribution';
 import { UpcomingEvents } from './components/upcoming-events';
 
-// PHASE 4: Lazy Loading
-const VolumeChart = lazy(() =>
-  import('./components/volume-chart').then((m) => ({ default: m.VolumeChart })),
-);
-
-type ProgressMetric = 'distance' | 'duration';
 type ViewType = 'week' | 'month';
 
 export function DashboardPage() {
-  const [pivotDate, setPivotDate] = useState(new Date());
-
   // PHASE 1: Range-Based Fetching
   // Decouple from pivotDate to prevent full page reloads when shifting the chart.
   // We fetch a wide static range relative to today's date for optimal caching.
@@ -65,11 +55,6 @@ export function DashboardPage() {
   const [workoutToEdit, setWorkoutToEdit] = useState<Workout | null>(null);
   const [eventToEdit, setEventToEdit] = useState<Event | null>(null);
 
-  const [metric, setMetric] = useState<ProgressMetric>('duration');
-  const [sport, setSport] = useState<string | 'All'>('All');
-  const [viewType, setViewType] = useState<ViewType>('week');
-  const [showEvents, setShowEvents] = useState(true);
-  const [showNotes, setShowNotes] = useState(true);
   const [distViewType, setDistViewType] = useState<ViewType>('week');
   const [distPivotDate, setDistPivotDate] = useState(new Date());
 
@@ -115,21 +100,6 @@ export function DashboardPage() {
   }, [events, today]);
 
   // PHASE 2: Memoized Handlers
-  const handleShift = useCallback(
-    (direction: 'prev' | 'next') => {
-      const newPivot = new Date(pivotDate);
-      if (viewType === 'week') {
-        newPivot.setDate(newPivot.getDate() + (direction === 'next' ? 7 : -7));
-      } else {
-        newPivot.setMonth(
-          newPivot.getMonth() + (direction === 'next' ? 1 : -1),
-        );
-      }
-      setPivotDate(newPivot);
-    },
-    [pivotDate, viewType],
-  );
-
   const handleDistShift = useCallback(
     (direction: 'prev' | 'next') => {
       const newPivot = new Date(distPivotDate);
@@ -205,161 +175,13 @@ export function DashboardPage() {
           </header>
 
           {/* Volume Summary Chart - Full Width */}
-          <div className="bg-card overflow-hidden rounded-2xl border shadow-sm w-full">
-            <div className="border-b bg-muted/30 px-5 py-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                <h3 className="text-base md:text-lg font-black lowercase tracking-tight">
-                  volume summary
-                </h3>
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-1 rounded-lg border bg-background p-0.5">
-                    <button
-                      onClick={() => setMetric('duration')}
-                      className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                        metric === 'duration'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      duration
-                    </button>
-                    <button
-                      onClick={() => setMetric('distance')}
-                      className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                        metric === 'distance'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      distance
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1 rounded-lg border bg-background p-0.5">
-                    <button
-                      onClick={() => setSport('All')}
-                      className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                        sport === 'All'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      all
-                    </button>
-                    {sportTypes.map((st) => (
-                      <button
-                        key={st.id}
-                        onClick={() => setSport(st.name)}
-                        className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                          sport === st.name
-                            ? 'bg-primary text-primary-foreground'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
-                      >
-                        {st.name.toLowerCase()}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-1 rounded-lg border bg-background p-0.5">
-                    <button
-                      onClick={() => setViewType('week')}
-                      className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                        viewType === 'week'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      week
-                    </button>
-                    <button
-                      onClick={() => setViewType('month')}
-                      className={`px-2 py-1 text-xs font-bold lowercase rounded transition-colors ${
-                        viewType === 'month'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      month
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-1 mr-auto md:mr-0">
-                    <button
-                      onClick={() => handleShift('prev')}
-                      className="p-1 rounded hover:bg-muted transition-colors"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleShift('next')}
-                      className="p-1 rounded hover:bg-muted transition-colors"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
-                  </div>
-
-                  <div className="flex items-center gap-2 ml-auto">
-                    <div className="flex items-center gap-3 bg-muted/50 rounded-lg border px-3 py-1.5 shadow-inner">
-                      <div className="flex items-center gap-2 pr-3 border-r border-muted-foreground/20">
-                        <Label
-                          htmlFor="notes-toggle"
-                          className="text-[10px] font-black uppercase tracking-widest text-gray-600 cursor-pointer"
-                        >
-                          notes
-                        </Label>
-                        <SwitchWrapper>
-                          <Switch
-                            id="notes-toggle"
-                            checked={showNotes}
-                            onCheckedChange={setShowNotes}
-                            size="sm"
-                          />
-                        </SwitchWrapper>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Label
-                          htmlFor="events-toggle"
-                          className="text-[10px] font-black uppercase tracking-widest text-primary cursor-pointer"
-                        >
-                          events
-                        </Label>
-                        <SwitchWrapper>
-                          <Switch
-                            id="events-toggle"
-                            checked={showEvents}
-                            onCheckedChange={setShowEvents}
-                            size="sm"
-                          />
-                        </SwitchWrapper>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="p-5">
-              <Suspense
-                fallback={
-                  <div className="h-[300px] flex items-center justify-center text-muted-foreground text-xs lowercase">
-                    loading chart...
-                  </div>
-                }
-              >
-                <VolumeChart
-                  workouts={workouts}
-                  events={events}
-                  notes={notes}
-                  goals={goals}
-                  sportTypes={sportTypes}
-                  metric={metric}
-                  sport={sport}
-                  viewType={viewType}
-                  pivotDate={pivotDate}
-                  showEvents={showEvents}
-                  showNotes={showNotes}
-                />
-              </Suspense>
-            </div>
-          </div>
+          <VolumeChartWidget
+            workouts={workouts}
+            events={events}
+            notes={notes}
+            goals={goals}
+            sportTypes={sportTypes}
+          />
 
           {/* Secondary Grid */}
           <div className="grid gap-6 lg:grid-cols-2">

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { parseISO } from 'date-fns';
 import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
   FileUp,
   Plus,
+  Sparkles,
   Trash2,
   Watch,
 } from 'lucide-react';
@@ -16,6 +16,7 @@ import {
   useCreateNote,
   useCreateWorkout,
   useCreateWorkoutsBulk,
+  useDeleteByPlan,
   useDeleteEvent,
   useDeleteLibraryWorkout,
   useDeleteNote,
@@ -33,22 +34,14 @@ import {
   useWorkouts,
 } from '@/hooks/use-training-data';
 import {
-  DAY_HEADERS,
   formatDateToLocalISO,
-  formatMinsShort,
   getMonday,
   MONTH_NAMES,
 } from '@/services/training/calendar.utils';
 import {
   buildSportMap,
   buildUserSettingsMap,
-  getEffortColor,
 } from '@/services/training/effort-colors';
-import {
-  isMetersDistance,
-  isPaceRelevant,
-} from '@/services/training/pace-utils';
-import { getSportIcon } from '@/services/training/sport-icons';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -64,11 +57,12 @@ import {
 } from '@/components/ui/tooltip';
 import { EventDialog } from '../_shared/components/event-dialog';
 import { BulkDeleteDialog } from './components/bulk-delete-dialog';
-import { CalendarDay } from './components/calendar-day';
+import { CalendarGrid } from './components/calendar-grid';
 import { GarminImportDialog } from './components/garmin-import-dialog';
 import { ImportDialog } from './components/import-dialog';
 import { LibraryDrawer } from './components/library-drawer';
 import { NoteDialog } from './components/note-dialog';
+import { PlanGeneratorWizard } from './components/plan-generator-wizard';
 import { WorkoutDialog } from './components/workout-dialog';
 
 export function CalendarView() {
@@ -88,9 +82,19 @@ export function CalendarView() {
   const deleteWorkout = useDeleteWorkout();
   const updateEvent = useUpdateEvent();
   const deleteEvent = useDeleteEvent();
+
+  const handleDeletePlan = (planId: string) => {
+    deleteByPlan.mutate(planId, {
+      onSuccess: () => {
+        setWorkoutToEdit(null);
+      },
+    });
+  };
+
   const createNote = useCreateNote();
   const updateNote = useUpdateNote();
   const deleteNote = useDeleteNote();
+  const deleteByPlan = useDeleteByPlan();
   const createLibrary = useCreateLibraryWorkout();
   const updateLibrary = useUpdateLibraryWorkout();
   const deleteLibrary = useDeleteLibraryWorkout();
@@ -121,6 +125,7 @@ export function CalendarView() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [showGarminImportDialog, setShowGarminImportDialog] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
+  const [showPlanGenerator, setShowPlanGenerator] = useState(false);
 
   // Drag and drop state
   const [isDraggingId, setIsDraggingId] = useState<string | null>(null);
@@ -278,117 +283,57 @@ export function CalendarView() {
     }
 
     const itemId = e.dataTransfer.getData('text/plain');
+    const libData = e.dataTransfer.getData('libraryWorkout');
 
-    const workout = workouts.find((w) => w.id === itemId);
-    if (workout) {
-      // Calculate new order based on drop index
-      const dropIndex = dragOverInfo?.index ?? 0;
+    if (itemId) {
+      const workout = workouts.find((w) => w.id === itemId);
+      if (workout) {
+        // Calculate new order based on drop index
+        const dropIndex = dragOverInfo?.index ?? 0;
 
-      // Get all items that would be in that day
-      const dayEvents = events.filter((e) => e.date === dateStr);
-      const dayNotes = notes.filter((n) => n.date === dateStr);
-      // Get workouts in that day, excluding the one being moved if it's the same day
-      const dayWorkouts = workouts
-        .filter((w) => w.date === dateStr && w.id !== itemId)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        // Get all items that would be in that day
+        const dayEvents = events.filter((e) => e.date === dateStr);
+        const dayNotes = notes.filter((n) => n.date === dateStr);
+        // Get workouts in that day, excluding the one being moved if it's the same day
+        const dayWorkouts = workouts
+          .filter((w) => w.date === dateStr && w.id !== itemId)
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-      // Calculate relative index within workouts
-      // Events and Notes are always rendered first in CalendarDay.tsx
-      const relIndex = Math.max(
-        0,
-        dropIndex - (dayEvents.length + dayNotes.length),
-      );
+        // Calculate relative index within workouts
+        // Events and Notes are always rendered first in CalendarDay.tsx
+        const relIndex = Math.max(
+          0,
+          dropIndex - (dayEvents.length + dayNotes.length),
+        );
 
-      let newOrder: number;
-      if (dayWorkouts.length === 0) {
-        newOrder = Date.now();
-      } else if (relIndex <= 0) {
-        // Drop at the very beginning of workouts
-        newOrder = (dayWorkouts[0].order ?? 0) - 1000;
-      } else if (relIndex >= dayWorkouts.length) {
-        // Drop at the very end of workouts
-        newOrder = (dayWorkouts[dayWorkouts.length - 1].order ?? 0) + 1000;
-      } else {
-        // Drop between two workouts
-        const prevOrder = dayWorkouts[relIndex - 1].order ?? 0;
-        const nextOrder = dayWorkouts[relIndex].order ?? 0;
-        newOrder = Math.round((prevOrder + nextOrder) / 2);
+        let newOrder: number;
+        if (dayWorkouts.length === 0) {
+          newOrder = Date.now();
+        } else if (relIndex <= 0) {
+          // Drop at the very beginning of workouts
+          newOrder = (dayWorkouts[0].order ?? 0) - 1000;
+        } else if (relIndex >= dayWorkouts.length) {
+          // Drop at the very end of workouts
+          newOrder = (dayWorkouts[dayWorkouts.length - 1].order ?? 0) + 1000;
+        } else {
+          // Drop between two workouts
+          const prevOrder = dayWorkouts[relIndex - 1].order ?? 0;
+          const nextOrder = dayWorkouts[relIndex].order ?? 0;
+          newOrder = Math.round((prevOrder + nextOrder) / 2);
+        }
+
+        updateWorkout.mutate({ ...workout, date: dateStr, order: newOrder });
       }
-
-      updateWorkout.mutate({ ...workout, date: dateStr, order: newOrder });
+    } else if (libData) {
+      const template = JSON.parse(libData) as LibraryWorkout;
+      createWorkout.mutate({
+        ...template,
+        date: dateStr,
+        id: undefined,
+        order: Date.now(),
+      });
     }
     handleDragEnd();
-  };
-
-  // Week summary
-  const calculateWeekSummary = (week: Date[]) => {
-    const sportTotals: Record<string, { distance: number; duration: number }> =
-      {};
-    const weekTotals = { distance: 0, duration: 0 };
-    week.forEach((date) => {
-      const dateStr = formatDateToLocalISO(date);
-
-      // Add workout totals
-      workouts
-        .filter((w) => w.date === dateStr)
-        .forEach((w) => {
-          const dur = w.plannedDurationMinutes || 0;
-          let dist = w.plannedDistanceKilometers || 0;
-          const stId = w.sportTypeId || 'unknown';
-          const st = sportMap.get(stId);
-
-          // Convert km to meters if the sport uses meters
-          if (st && isMetersDistance(st.distanceUnit)) {
-            dist = dist * 1000;
-          }
-
-          if (!sportTotals[stId])
-            sportTotals[stId] = { distance: 0, duration: 0 };
-          sportTotals[stId].duration += dur;
-          sportTotals[stId].distance += dist;
-          weekTotals.duration += dur;
-          if (isPaceRelevant(!!st?.paceRelevant, st?.paceUnit))
-            weekTotals.distance += dist;
-        });
-
-      // Add event segment totals
-      events
-        .filter((e) => e.date === dateStr)
-        .forEach((e) => {
-          if (e.segments && e.segments.length > 0) {
-            e.segments.forEach((seg) => {
-              const dur = seg.plannedDurationMinutes || 0;
-              let dist = seg.plannedDistanceKilometers || 0;
-              const stId = seg.sportTypeId || 'unknown';
-              const st = sportMap.get(stId);
-
-              // Convert km to meters if the sport uses meters
-              if (st && isMetersDistance(st.distanceUnit, st.name)) {
-                dist = dist * 1000;
-              }
-
-              if (!sportTotals[stId])
-                sportTotals[stId] = { distance: 0, duration: 0 };
-              sportTotals[stId].duration += dur;
-              sportTotals[stId].distance += dist;
-              weekTotals.duration += dur;
-              if (isPaceRelevant(!!st?.paceRelevant, st?.paceUnit))
-                weekTotals.distance += dist;
-            });
-          }
-        });
-    });
-
-    // Find active goals for this week
-    const weekStart = week[0];
-    const weekEnd = week[week.length - 1];
-    const activeGoals = goals.filter((g) => {
-      const gStart = parseISO(g.startDate);
-      const gEnd = parseISO(g.endDate);
-      return gStart <= weekEnd && gEnd >= weekStart;
-    });
-
-    return { sportTotals, weekTotals, activeGoals };
   };
 
   // Save handler
@@ -419,9 +364,6 @@ export function CalendarView() {
     });
     setWorkoutToEdit(null);
   };
-
-  const gridColsClass =
-    'grid-cols-7 lg:grid-cols-[repeat(7,minmax(0,1fr))_120px]';
 
   const isLoading =
     !userId || loadingWorkouts || loadingSports || loadingSettings;
@@ -570,11 +512,25 @@ export function CalendarView() {
                 <TooltipContent>Import Garmin Activities</TooltipContent>
               </Tooltip>
 
+              <div className="mx-1 h-6 w-px bg-border" />
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowPlanGenerator(true)}
+                className="gap-1.5 border-primary/20 text-primary hover:bg-primary/5"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
+                  Generate
+                </span>
+              </Button>
+
               <Button
                 variant="primary"
                 size="sm"
                 onClick={() => setShowLibrary(!showLibrary)}
-                className="gap-2 px-4 ml-1"
+                className="gap-2 px-4"
               >
                 <BookOpen className="h-4 w-4" />
                 <span className="text-[10px] font-black uppercase tracking-widest">
@@ -586,275 +542,33 @@ export function CalendarView() {
         </header>
         {/* Calendar Grid */}
         <div className="relative flex flex-col gap-4 lg:flex-row">
-          <div className="bg-card relative flex flex-1 flex-col rounded-2xl border shadow-sm">
-            {/* Day headers */}
-            <div
-              className={`bg-muted/50 z-[80] grid shrink-0 border-b ${gridColsClass}`}
-            >
-              {DAY_HEADERS.map((day) => (
-                <div
-                  key={day}
-                  className="text-muted-foreground py-2 text-center text-[9px] font-black uppercase tracking-widest lg:text-[10px]"
-                >
-                  {day}
-                </div>
-              ))}
-              <div className="text-primary hidden py-2 text-center text-[9px] font-black lowercase tracking-widest lg:block">
-                totals
-              </div>
-            </div>
-
-            {/* Weeks */}
-            <div className="flex flex-col gap-2 p-2 lg:block lg:p-0">
-              {weeks.map((week, wIdx) => {
-                const { sportTotals, weekTotals, activeGoals } =
-                  calculateWeekSummary(week);
-                const weekStart = formatDateToLocalISO(week[0]);
-                return (
-                  <div
-                    key={wIdx}
-                    className="flex flex-col rounded-xl border bg-card shadow-sm overflow-hidden lg:contents"
-                    data-week-start={weekStart}
-                  >
-                    {/* Week grid */}
-                    <div
-                      className={`grid min-h-[120px] lg:border-b lg:min-h-[160px] ${gridColsClass}`}
-                    >
-                      {week.map((date, dIdx) => {
-                        const dateStr = formatDateToLocalISO(date);
-                        const dayWorkouts = workouts
-                          .filter((w) => w.date === dateStr)
-                          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-                        const dayNotes = notes.filter(
-                          (n) => n.date === dateStr,
-                        );
-                        const dayEvents = events.filter(
-                          (e) => e.date === dateStr,
-                        );
-                        const isToday =
-                          formatDateToLocalISO(new Date()) === dateStr;
-                        const isSelected = selectedDate === dateStr;
-                        const isSameMonth = date.getMonth() === displayMonth;
-
-                        return (
-                          <CalendarDay
-                            key={dIdx}
-                            date={date}
-                            workouts={dayWorkouts}
-                            notes={dayNotes}
-                            events={dayEvents}
-                            isToday={isToday}
-                            isSelected={isSelected}
-                            isSameMonth={isSameMonth}
-                            displayMonth={displayMonth}
-                            onSelect={setSelectedDate}
-                            onDragOver={handleDragOverCell}
-                            onDragLeave={() => setDragOverInfo(null)}
-                            onDrop={handleDrop}
-                            onDragStart={handleDragStart}
-                            onDragEnd={handleDragEnd}
-                            onEventDragStart={(e, event) => {
-                              e.dataTransfer.setData('eventId', event.id);
-                              setIsDraggingId(event.id);
-                            }}
-                            sportMap={sportMap}
-                            userSettingsMap={userSettingsMap}
-                            showStats={true}
-                            onEditWorkout={setWorkoutToEdit}
-                            onEditNote={setNoteToEdit}
-                            onEditEvent={setEventWithSegmentsToEdit}
-                            isDraggingId={isDraggingId}
-                            dragOverInfo={dragOverInfo}
-                            todayRef={todayRef}
-                          />
-                        );
-                      })}
-
-                      {/* Week summary column - desktop only */}
-                      <div className="bg-primary/5 hidden flex-col gap-3 border-l p-3 lg:flex">
-                        <div className="text-primary text-xl font-black leading-none">
-                          {formatMinsShort(weekTotals.duration)}
-                        </div>
-                        <div className="border-primary/10 space-y-2.5 border-t pt-3">
-                          {Object.entries(sportTotals).map(([stId, sTotal]) => {
-                            if (sTotal.duration === 0) return null;
-                            const st = sportMap.get(stId);
-                            const sportColor = getEffortColor(
-                              st,
-                              2,
-                              userSettingsMap.get(stId),
-                            );
-                            return (
-                              <div key={stId} className="flex flex-col">
-                                <div className="flex items-center gap-1.5">
-                                  <span
-                                    className="h-2 w-2 shrink-0 rounded-full"
-                                    style={{
-                                      backgroundColor: sportColor,
-                                    }}
-                                  />
-                                  <span className="text-muted-foreground text-[10px] font-bold">
-                                    {st?.name || 'Unknown'}
-                                  </span>
-                                </div>
-                                <div className="flex flex-col gap-0.5 pl-3.5">
-                                  <span className="text-[10px] font-bold leading-none">
-                                    {formatMinsShort(sTotal.duration)}
-                                  </span>
-                                  {sTotal.distance > 0 &&
-                                    isPaceRelevant(
-                                      !!st?.paceRelevant,
-                                      st?.paceUnit,
-                                    ) && (
-                                      <span className="text-muted-foreground text-[9px] leading-none">
-                                        {sTotal.distance.toFixed(1)}
-                                        {st.distanceUnit || 'km'}
-                                      </span>
-                                    )}
-
-                                  {/* Goal Progress */}
-                                  {activeGoals
-                                    .filter((g) => g.sportTypeId === stId)
-                                    .map((goal) => {
-                                      const actual =
-                                        goal.metric === 'duration'
-                                          ? sTotal.duration
-                                          : sTotal.distance;
-                                      const target = goal.targetValue;
-                                      const percent = Math.min(
-                                        100,
-                                        Math.round(
-                                          (actual / (target || 1)) * 100,
-                                        ),
-                                      );
-                                      return (
-                                        <div
-                                          key={goal.id}
-                                          className="mt-1.5 flex flex-col gap-1"
-                                        >
-                                          <div className="flex justify-between text-[8px] font-black uppercase opacity-60">
-                                            <span>goal: {percent}%</span>
-                                            <span>
-                                              {goal.metric === 'duration'
-                                                ? formatMinsShort(target)
-                                                : `${target}${st?.distanceUnit || 'km'}`}
-                                            </span>
-                                          </div>
-                                          <div className="h-1 w-full rounded-full bg-black/5 dark:bg-white/10 overflow-hidden">
-                                            <div
-                                              className={`h-full ${actual >= target ? 'bg-green-500' : 'bg-red-500'}`}
-                                              style={{
-                                                width: `${percent}%`,
-                                              }}
-                                            />
-                                          </div>
-                                        </div>
-                                      );
-                                    })}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Week summary row - mobile only */}
-                    <div className="bg-primary/5 px-3 py-2 lg:hidden border-t">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex flex-1 flex-wrap items-center gap-x-4 gap-y-2">
-                          {Object.entries(sportTotals).map(([stId, sTotal]) => {
-                            if (sTotal.duration === 0) return null;
-                            const st = sportMap.get(stId);
-                            const sportName = st?.name || 'Unknown';
-                            const IconComponent = getSportIcon(
-                              sportName,
-                              st?.paceUnit,
-                            );
-                            const sportColor = getEffortColor(
-                              st,
-                              2,
-                              userSettingsMap.get(stId),
-                            );
-
-                            return (
-                              <div
-                                key={stId}
-                                className="flex items-center gap-1.5"
-                              >
-                                <div className="flex items-center gap-1">
-                                  {IconComponent && (
-                                    <IconComponent
-                                      className="h-3 w-3 shrink-0"
-                                      style={{ color: sportColor }}
-                                    />
-                                  )}
-                                  <span className="text-[10px] font-bold opacity-70">
-                                    {sportName}
-                                  </span>
-                                </div>
-                                <div className="flex flex-col">
-                                  <div className="flex items-baseline gap-1">
-                                    <span className="text-[10px] font-bold leading-none">
-                                      {formatMinsShort(sTotal.duration)}
-                                    </span>
-                                    {sTotal.distance > 0 &&
-                                      isPaceRelevant(
-                                        !!st?.paceRelevant,
-                                        st?.paceUnit,
-                                      ) && (
-                                        <span className="text-muted-foreground text-[9px] font-bold leading-none italic">
-                                          {sTotal.distance.toFixed(1)}
-                                          {st.distanceUnit || 'km'}
-                                        </span>
-                                      )}
-                                  </div>
-
-                                  {/* Mobile Goal Progress */}
-                                  {activeGoals
-                                    .filter((g) => g.sportTypeId === stId)
-                                    .map((goal) => {
-                                      const actual =
-                                        goal.metric === 'duration'
-                                          ? sTotal.duration
-                                          : sTotal.distance;
-                                      const target = goal.targetValue;
-                                      const percent = Math.min(
-                                        100,
-                                        Math.round(
-                                          (actual / (target || 1)) * 100,
-                                        ),
-                                      );
-                                      return (
-                                        <div
-                                          key={goal.id}
-                                          className="h-0.5 w-12 rounded-full bg-black/10 dark:bg-white/10 overflow-hidden mt-0.5"
-                                        >
-                                          <div
-                                            className={`h-full ${actual >= target ? 'bg-green-500' : 'bg-red-500'}`}
-                                            style={{ width: `${percent}%` }}
-                                          />
-                                        </div>
-                                      );
-                                    })}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-
-                        <div className="shrink-0 border-l border-primary/10 pl-3 pt-0.5">
-                          <span className="text-primary text-xs font-bold">
-                            {formatMinsShort(weekTotals.duration)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <CalendarGrid
+            weeks={weeks}
+            workouts={workouts}
+            notes={notes}
+            events={events}
+            goals={goals}
+            sportMap={sportMap}
+            userSettingsMap={userSettingsMap}
+            selectedDate={selectedDate}
+            displayMonth={displayMonth}
+            onSelect={setSelectedDate}
+            onDragOver={handleDragOverCell}
+            onDragLeave={() => setDragOverInfo(null)}
+            onDrop={handleDrop}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onEventDragStart={(e, event) => {
+              e.dataTransfer.setData('eventId', event.id);
+              setIsDraggingId(event.id);
+            }}
+            onEditWorkout={setWorkoutToEdit}
+            onEditNote={setNoteToEdit}
+            onEditEvent={setEventWithSegmentsToEdit}
+            isDraggingId={isDraggingId}
+            dragOverInfo={dragOverInfo}
+            todayRef={todayRef}
+          />
 
           {/* Library Drawer */}
           <LibraryDrawer
@@ -894,6 +608,7 @@ export function CalendarView() {
             onSave={handleSaveWorkout}
             onSaveBulk={handleSaveBulk}
             onDelete={handleDeleteWorkout}
+            onDeletePlan={handleDeletePlan}
             onCancel={() => setWorkoutToEdit(null)}
             onSwitchToNote={() => {
               const d = workoutToEdit.date;
@@ -958,6 +673,10 @@ export function CalendarView() {
           open={showImportDialog}
           onOpenChange={setShowImportDialog}
         />
+        {/* Plan Generator Wizard */}
+        {showPlanGenerator && (
+          <PlanGeneratorWizard onClose={() => setShowPlanGenerator(false)} />
+        )}
         <GarminImportDialog
           open={showGarminImportDialog}
           onOpenChange={setShowGarminImportDialog}

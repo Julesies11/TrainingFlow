@@ -2,7 +2,7 @@ import { mockApexChart } from '@/test/setup';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { render, screen } from '@/test/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { VolumeChart } from '../volume-chart';
+import { VolumeChart } from '../../../training/_shared/components/volume-chart';
 
 describe('VolumeChart', () => {
   const mockWorkouts = [

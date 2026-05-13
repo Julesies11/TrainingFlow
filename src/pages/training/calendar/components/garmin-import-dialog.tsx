@@ -58,11 +58,13 @@ import { GarminMappingsDialog } from './garmin-mappings-dialog';
 interface GarminImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onImport?: (workouts: Partial<Workout>[]) => void;
 }
 
 export function GarminImportDialog({
   open,
   onOpenChange,
+  onImport,
 }: GarminImportDialogProps) {
   const userId = useSupabaseUserId();
   const { data: sportTypes = [] } = useSportTypes();
@@ -224,6 +226,15 @@ export function GarminImportDialog({
 
     if (validWorkouts.length === 0) {
       toast.error('No valid workouts to import');
+      return;
+    }
+
+    if (onImport) {
+      onImport(validWorkouts);
+      toast.success(
+        `Successfully imported ${validWorkouts.length} Garmin activities`,
+      );
+      onOpenChange(false);
       return;
     }
 

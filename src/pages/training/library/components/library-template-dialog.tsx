@@ -4,16 +4,7 @@ import {
   SportTypeRecord,
   UserSportSettings,
 } from '@/types/training';
-import { getContrastColor } from '@/services/training/calendar.utils';
-import {
-  getEffortColor,
-  getEffortLabel,
-} from '@/services/training/effort-colors';
-import {
-  calculatePace,
-  isMetersDistance,
-  isPaceRelevant,
-} from '@/services/training/pace-utils';
+import { getEffortColor } from '@/services/training/effort-colors';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -25,15 +16,11 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { EffortIntensityGrid } from '../../_shared/components/effort-intensity-grid';
+import { SportSelector } from '../../_shared/components/sport-selector';
+import { WorkoutMetricsFields } from '../../_shared/components/workout-metrics-fields';
 
 interface LibraryTemplateDialogProps {
   template: Partial<LibraryWorkout>;
@@ -58,251 +45,119 @@ export function LibraryTemplateDialog({
     return sportTypes.find((s) => s.id === template.sportTypeId);
   }, [template.sportTypeId, sportTypes]);
 
-  const userSettings = useMemo(() => {
-    return userSettingsMap.get(template.sportTypeId || '');
-  }, [template.sportTypeId, userSettingsMap]);
+  const userSettings = userSettingsMap.get(template.sportTypeId || '');
 
-  const calculatedPace = useMemo(() => {
-    const dur = template.plannedDurationMinutes || 0;
-    const distKm = template.plannedDistanceKilometers || 0;
-    // Convert km to meters if needed
-    const dist = isMetersDistance(
-      selectedSport?.distanceUnit,
-      selectedSport?.name,
-    )
-      ? distKm * 1000
-      : distKm;
-    return calculatePace(
-      selectedSport?.paceUnit,
-      dur,
-      dist,
-      selectedSport?.name,
-    );
-  }, [
-    template.plannedDurationMinutes,
-    template.plannedDistanceKilometers,
+  const headerColor = getEffortColor(
     selectedSport,
-  ]);
+    template.effortLevel || 1,
+    userSettings,
+  );
 
   return (
     <Dialog open={true} onOpenChange={onCancel}>
-      <DialogContent className="max-w-full sm:max-w-[500px] w-full h-[100dvh] sm:h-auto sm:max-h-[95vh] flex flex-col p-0 overflow-hidden bg-background top-0 left-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] border-0 sm:border rounded-none sm:rounded-xl">
+      <DialogContent className="max-w-full sm:max-w-2xl w-full h-[100dvh] sm:h-auto sm:max-h-[95vh] flex flex-col p-0 overflow-hidden bg-background top-0 left-0 translate-x-0 translate-y-0 sm:top-[50%] sm:left-[50%] sm:translate-x-[-50%] sm:translate-y-[-50%] border-0 sm:border rounded-none sm:rounded-xl">
+        {/* Color bar */}
+        <div
+          className="h-2 shrink-0"
+          style={{ backgroundColor: headerColor }}
+        />
+
         <div className="flex flex-col grow overflow-hidden">
-          <DialogHeader className="shrink-0 px-5 pt-5 pb-0 mb-0">
-            <DialogTitle className="text-xl font-black lowercase tracking-tighter">
+          <DialogHeader className="shrink-0 px-6 pt-5 pb-0 mb-0">
+            <DialogTitle className="text-2xl font-black tracking-tight lowercase">
               {template.id ? 'edit template' : 'new template'}
             </DialogTitle>
           </DialogHeader>
 
-          <DialogBody className="space-y-4 px-5 pb-2 pt-0 overflow-y-auto scrollable-y grow">
-            {/* Title */}
-            <div className="space-y-1.5">
-              <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
-                template title
-              </Label>
-              <Input
-                value={template.title || ''}
-                onChange={(e) =>
-                  setTemplate({ ...template, title: e.target.value })
-                }
-                placeholder="e.g., long intervals, easy recovery"
-                className="text-sm font-bold"
-              />
-            </div>
+          <DialogBody className="grow overflow-y-auto scrollable-y px-6 pb-4 pt-0">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 pt-4">
+              {/* Left column */}
+              <div className="space-y-6">
+                {/* Sport selector */}
+                <div className="bg-muted/50 space-y-4 rounded-2xl border p-5">
+                  <SportSelector
+                    sportTypes={sportTypes}
+                    selectedSportId={template.sportTypeId || ''}
+                    onSelect={(id) =>
+                      setTemplate({ ...template, sportTypeId: id })
+                    }
+                    label="discipline"
+                  />
 
-            <div className="grid grid-cols-2 gap-4">
-              {/* Sport Select */}
-              <div className="space-y-1.5">
-                <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
-                  discipline
-                </Label>
-                <Select
-                  value={template.sportTypeId}
-                  onValueChange={(val) =>
-                    setTemplate({ ...template, sportTypeId: val })
-                  }
-                >
-                  <SelectTrigger className="text-xs font-bold">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {sportTypes.map((st) => (
-                      <SelectItem key={st.id} value={st.id}>
-                        {st.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Key Workout Toggle */}
-              <div className="flex flex-col justify-center space-y-1.5 pl-2">
-                <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
-                  priority workout
-                </Label>
-                <div className="flex items-center gap-3 pt-1">
-                  <Switch
-                    checked={template.isKeyWorkout}
-                    onCheckedChange={(checked) =>
-                      setTemplate({ ...template, isKeyWorkout: checked })
+                  <EffortIntensityGrid
+                    selectedSport={selectedSport}
+                    userSettings={userSettings}
+                    currentLevel={template.effortLevel || 1}
+                    onSelect={(level) =>
+                      setTemplate({ ...template, effortLevel: level })
                     }
                   />
-                  <span className="text-[10px] font-bold uppercase opacity-60">
-                    key session
-                  </span>
                 </div>
-              </div>
-            </div>
 
-            {/* Effort Level */}
-            <div className="space-y-2">
-              <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
-                effort intensity
-              </Label>
-              <div className="grid grid-cols-4 gap-2">
-                {[1, 2, 3, 4].map((level) => {
-                  const color = getEffortColor(
-                    selectedSport,
-                    level,
-                    userSettings,
-                  );
-                  const label = getEffortLabel(
-                    selectedSport,
-                    level,
-                    userSettings,
-                  );
-                  const isSelected = template.effortLevel === level;
-                  return (
-                    <button
-                      key={level}
-                      type="button"
-                      onClick={() =>
-                        setTemplate({ ...template, effortLevel: level })
+                <div className="flex flex-col space-y-1.5">
+                  {/* Key Workout Toggle */}
+                  <div className="flex items-center justify-between rounded-xl border p-3">
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                      key workout
+                    </span>
+                    <Switch
+                      checked={template.isKeyWorkout}
+                      onCheckedChange={(checked) =>
+                        setTemplate({ ...template, isKeyWorkout: checked })
                       }
-                      className={`flex flex-col items-center gap-0.5 rounded-xl p-2 transition-all hover:scale-105 active:scale-95 ${
-                        isSelected
-                          ? 'ring-2 ring-primary ring-offset-2'
-                          : 'opacity-60 grayscale-[40%] hover:grayscale-0'
-                      }`}
-                      style={{ backgroundColor: color }}
-                    >
-                      <span
-                        className={`text-lg font-black ${getContrastColor(color)}`}
-                      >
-                        {level}
-                      </span>
-                      <span
-                        className={`text-[8px] font-black uppercase tracking-tighter ${getContrastColor(color)}`}
-                      >
-                        {label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              {/* Distance */}
-              {isPaceRelevant(
-                !!selectedSport?.paceRelevant,
-                selectedSport?.paceUnit,
-              ) ? (
-                <div className="space-y-1.5">
-                  <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
-                    distance ({selectedSport?.distanceUnit || 'km'})
-                  </Label>
-                  <Input
-                    type="number"
-                    step={
-                      isMetersDistance(
-                        selectedSport?.distanceUnit,
-                        selectedSport?.name,
-                      )
-                        ? '1'
-                        : '0.1'
-                    }
-                    value={(() => {
-                      const val = template.plannedDistanceKilometers || 0;
-                      return isMetersDistance(
-                        selectedSport?.distanceUnit,
-                        selectedSport?.name,
-                      )
-                        ? Math.round(val * 1000)
-                        : val;
-                    })()}
-                    onChange={(e) => {
-                      const val = Number(e.target.value);
-                      const converted = isMetersDistance(
-                        selectedSport?.distanceUnit,
-                        selectedSport?.name,
-                      )
-                        ? val / 1000
-                        : val;
-                      setTemplate({
-                        ...template,
-                        plannedDistanceKilometers: converted,
-                      });
-                    }}
-                  />
-                </div>
-              ) : (
-                <div /> // Spacer if distance not relevant
-              )}
-
-              {/* Duration */}
-              <div className="space-y-1.5">
-                <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
-                  duration (min)
-                </Label>
-                <Input
-                  type="number"
-                  value={template.plannedDurationMinutes}
-                  onChange={(e) =>
-                    setTemplate({
-                      ...template,
-                      plannedDurationMinutes: Number(e.target.value),
-                    })
-                  }
-                />
-              </div>
-
-              {/* Calculated Pace */}
-              {calculatedPace && (
-                <div className="space-y-1.5">
-                  <Label className="text-primary ml-1 text-[10px] font-black uppercase tracking-widest">
-                    pace
-                  </Label>
-                  <div className="bg-primary/5 flex h-10 items-center justify-center rounded-lg border border-primary/20 text-primary text-sm font-black px-1 text-center leading-none">
-                    {calculatedPace}
+                    />
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Description */}
-            <div className="space-y-1.5">
-              <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
-                details
-              </Label>
-              <Textarea
-                value={template.description || ''}
-                onChange={(e) =>
-                  setTemplate({ ...template, description: e.target.value })
-                }
-                placeholder="describe the main set or focus of this workout..."
-                className="min-h-[60px] resize-none text-sm leading-relaxed"
-              />
+              {/* Right column */}
+              <div className="space-y-6">
+                <WorkoutMetricsFields
+                  selectedSport={selectedSport}
+                  plannedDistanceKilometers={
+                    template.plannedDistanceKilometers || 0
+                  }
+                  plannedDurationMinutes={template.plannedDurationMinutes || 0}
+                  onDistanceChange={(val) =>
+                    setTemplate({ ...template, plannedDistanceKilometers: val })
+                  }
+                  onDurationChange={(val) =>
+                    setTemplate({ ...template, plannedDurationMinutes: val })
+                  }
+                />
+
+                <div className="space-y-3">
+                  <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
+                    details
+                  </Label>
+                  <Input
+                    type="text"
+                    placeholder="plan title..."
+                    value={template.title || ''}
+                    onChange={(e) =>
+                      setTemplate({ ...template, title: e.target.value })
+                    }
+                  />
+                  <Textarea
+                    value={template.description || ''}
+                    onChange={(e) =>
+                      setTemplate({ ...template, description: e.target.value })
+                    }
+                    placeholder="describe the main set or focus of this workout..."
+                    rows={5}
+                  />
+                </div>
+              </div>
             </div>
           </DialogBody>
 
-          <DialogFooter className="shrink-0 px-5 pb-5 pt-2 gap-3">
+          <DialogFooter className="shrink-0 p-6 pt-0 gap-3">
             <Button
               variant="outline"
               onClick={onCancel}
               className="w-full sm:w-auto"
             >
-              discard
+              cancel
             </Button>
             <Button
               onClick={() => onSave(template)}

@@ -3,7 +3,7 @@ import { mockApexChart } from '@/test/setup';
 import { render } from '@/test/test-utils';
 import { parseISO } from 'date-fns';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { VolumeChart } from '../volume-chart';
+import { VolumeChart } from '../../../training/_shared/components/volume-chart';
 
 describe('VolumeChart Logic', () => {
   const mockWorkouts = [
@@ -58,7 +58,7 @@ describe('VolumeChart Logic', () => {
     const futureValues = seriesData[1].data;
 
     const combinedValues = pastValues.map(
-      (p: number | null, i: number) => (p || 0) + (futureValues[i] || 0),
+      (p: number | null, i: number) => Math.max(p || 0, futureValues[i] || 0),
     );
 
     // Total should be (60 + 120) / 60 = 3 hours
@@ -76,7 +76,7 @@ describe('VolumeChart Logic', () => {
         events={[]}
         sportTypes={mockSportTypes as any}
         metric="distance"
-        sport="Run"
+        sportId="run-id"
         viewType="month"
         pivotDate={parseISO('2026-05-01')}
       />,
@@ -88,7 +88,7 @@ describe('VolumeChart Logic', () => {
     const pastValues = lastCallProps.options.series[0].data;
     const futureValues = lastCallProps.options.series[1].data;
     const combinedValues = pastValues.map(
-      (p: number | null, i: number) => (p || 0) + (futureValues[i] || 0),
+      (p: number | null, i: number) => Math.max(p || 0, futureValues[i] || 0),
     );
 
     // Only Run (10km) should be present, not Bike (40km)

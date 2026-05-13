@@ -1,15 +1,7 @@
 import { useMemo, useState } from 'react';
 import { SportTypeRecord, UserSportSettings, Workout } from '@/types/training';
 import { formatDateToLocalISO } from '@/services/training/calendar.utils';
-import {
-  getEffortColor,
-  getEffortLabel,
-} from '@/services/training/effort-colors';
-import {
-  calculatePace,
-  isMetersDistance,
-  isPaceRelevant,
-} from '@/services/training/pace-utils';
+import { getEffortColor } from '@/services/training/effort-colors';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -24,6 +16,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { EffortIntensityGrid } from '../../_shared/components/effort-intensity-grid';
+import { SportSelector } from '../../_shared/components/sport-selector';
+import { WorkoutMetricsFields } from '../../_shared/components/workout-metrics-fields';
 
 interface WorkoutDialogProps {
   workout: Partial<Workout>;
@@ -33,8 +28,10 @@ interface WorkoutDialogProps {
   onSave: (w: Partial<Workout>) => void;
   onSaveBulk?: (ws: Partial<Workout>[]) => void;
   onDelete?: (id: string, mode: 'single' | 'future') => void;
+  onDeletePlan?: (planId: string) => void;
   onSwitchToNote?: () => void;
   onCancel: () => void;
+  hideDate?: boolean;
 }
 
 export function WorkoutDialog({
@@ -45,8 +42,10 @@ export function WorkoutDialog({
   onSave,
   onSaveBulk,
   onDelete,
+  onDeletePlan,
   onSwitchToNote,
   onCancel,
+  hideDate,
 }: WorkoutDialogProps) {
   const isExisting = existingWorkouts.some((w) => w.id === initialWorkout.id);
 
@@ -68,6 +67,7 @@ export function WorkoutDialog({
 
   const [isRecurring, setIsRecurring] = useState(!!initialWorkout.recurrenceId);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingPlan, setIsDeletingPlan] = useState(false);
   const [isDuplicated, setIsDuplicated] = useState(false);
   const [showExtendSeries, setShowExtendSeries] = useState(false);
   const [extendWeeks, setExtendWeeks] = useState(4);
@@ -99,28 +99,6 @@ export function WorkoutDialog({
       currentIndex: seriesWorkouts.findIndex((w) => w.id === workout.id) + 1,
     };
   }, [workout.recurrenceId, workout.id, existingWorkouts, isDuplicated]);
-
-  const calculatedPace = useMemo(() => {
-    const dur = workout.plannedDurationMinutes || 0;
-    const distKm = workout.plannedDistanceKilometers || 0;
-    // Convert km to meters if needed
-    const dist = isMetersDistance(
-      selectedSport?.distanceUnit,
-      selectedSport?.name,
-    )
-      ? distKm * 1000
-      : distKm;
-    return calculatePace(
-      selectedSport?.paceUnit,
-      dur,
-      dist,
-      selectedSport?.name,
-    );
-  }, [
-    workout.plannedDurationMinutes,
-    workout.plannedDistanceKilometers,
-    selectedSport,
-  ]);
 
   const headerColor = getEffortColor(
     selectedSport,
@@ -236,23 +214,25 @@ export function WorkoutDialog({
               {/* Left column */}
               <div className="space-y-6">
                 {/* Date (at the top) */}
-                <div>
-                  <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                    schedule date
-                  </Label>
-                  <Input
-                    type="date"
-                    value={workout.date}
-                    className={
-                      isDuplicated
-                        ? 'border-primary ring-primary/20 ring-2'
-                        : ''
-                    }
-                    onChange={(e) =>
-                      setWorkout({ ...workout, date: e.target.value })
-                    }
-                  />
-                </div>
+                {!hideDate && (
+                  <div>
+                    <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
+                      schedule date
+                    </Label>
+                    <Input
+                      type="date"
+                      value={workout.date}
+                      className={
+                        isDuplicated
+                          ? 'border-primary ring-primary/20 ring-2'
+                          : ''
+                      }
+                      onChange={(e) =>
+                        setWorkout({ ...workout, date: e.target.value })
+                      }
+                    />
+                  </div>
+                )}
 
                 {/* Recurring Series Info */}
                 {seriesInfo && (
@@ -324,89 +304,24 @@ export function WorkoutDialog({
 
                 {/* Sport selector */}
                 <div className="bg-muted/50 space-y-4 rounded-2xl border p-5">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">
-                      sport type
-                    </Label>
-                    {sportTypes.length === 0 && (
-                      <span className="text-[9px] text-red-500 font-bold lowercase">
-                        no sports found
-                      </span>
-                    )}
-                  </div>
+                  <SportSelector
+                    sportTypes={sportTypes}
+                    selectedSportId={workout.sportTypeId || ''}
+                    onSelect={(id) =>
+                      setWorkout({ ...workout, sportTypeId: id })
+                    }
+                    onSwitchToNote={onSwitchToNote}
+                    label="sport type"
+                  />
 
-                  <div className="flex flex-wrap gap-2">
-                    {sportTypes.length > 0 ? (
-                      <>
-                        {sportTypes.map((st) => (
-                          <Button
-                            key={st.id}
-                            type="button"
-                            variant={
-                              workout.sportTypeId === st.id
-                                ? 'primary'
-                                : 'outline'
-                            }
-                            size="sm"
-                            onClick={() =>
-                              setWorkout({ ...workout, sportTypeId: st.id })
-                            }
-                            className="text-[9px] font-black lowercase"
-                          >
-                            {st.name}
-                          </Button>
-                        ))}
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onSwitchToNote?.()}
-                          className="text-[9px] font-black lowercase border-info/50 text-info hover:bg-info/5"
-                        >
-                          note
-                        </Button>
-                      </>
-                    ) : (
-                      <div className="text-[10px] py-2 text-muted-foreground italic">
-                        Please define sport types in settings first.
-                      </div>
-                    )}
-                  </div>
-
-                  <Label className="text-muted-foreground mt-4 block text-[10px] font-black uppercase tracking-widest">
-                    effort level
-                  </Label>
-
-                  <div className="grid grid-cols-4 gap-2">
-                    {[1, 2, 3, 4].map((level) => (
-                      <button
-                        key={level}
-                        type="button"
-                        onClick={() =>
-                          setWorkout({ ...workout, effortLevel: level })
-                        }
-                        className={`flex flex-col items-center gap-1 rounded-xl border p-2 transition-all ${
-                          workout.effortLevel === level
-                            ? 'ring-primary/20 border-primary shadow-sm ring-2'
-                            : 'hover:shadow-sm opacity-80 hover:opacity-100'
-                        }`}
-                      >
-                        <div
-                          className="h-2 w-full rounded-full"
-                          style={{
-                            backgroundColor: getEffortColor(
-                              selectedSport,
-                              level,
-                              userSettings,
-                            ),
-                          }}
-                        />
-                        <span className="text-[8px] font-black lowercase tracking-tighter">
-                          {getEffortLabel(selectedSport, level, userSettings)}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                  <EffortIntensityGrid
+                    selectedSport={selectedSport}
+                    userSettings={userSettings}
+                    currentLevel={workout.effortLevel || 1}
+                    onSelect={(level) =>
+                      setWorkout({ ...workout, effortLevel: level })
+                    }
+                  />
                 </div>
 
                 {/* Recurrence */}
@@ -450,80 +365,19 @@ export function WorkoutDialog({
 
               {/* Right column */}
               <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-3">
-                  {isPaceRelevant(
-                    !!selectedSport?.paceRelevant,
-                    selectedSport?.paceUnit,
-                  ) ? (
-                    <div>
-                      <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest leading-none">
-                        dist ({selectedSport?.distanceUnit || 'km'})
-                      </Label>
-                      <Input
-                        type="number"
-                        step={
-                          isMetersDistance(
-                            selectedSport?.distanceUnit,
-                            selectedSport?.name,
-                          )
-                            ? '1'
-                            : '0.1'
-                        }
-                        value={(() => {
-                          const val = workout.plannedDistanceKilometers || 0;
-                          return isMetersDistance(
-                            selectedSport?.distanceUnit,
-                            selectedSport?.name,
-                          )
-                            ? Math.round(val * 1000)
-                            : val;
-                        })()}
-                        onChange={(e) => {
-                          const val = Number(e.target.value);
-                          const converted = isMetersDistance(
-                            selectedSport?.distanceUnit,
-                            selectedSport?.name,
-                          )
-                            ? val / 1000
-                            : val;
-                          setWorkout({
-                            ...workout,
-                            plannedDistanceKilometers: converted,
-                          });
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div />
-                  )}
-
-                  <div>
-                    <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                      dur (m)
-                    </Label>
-                    <Input
-                      type="number"
-                      value={workout.plannedDurationMinutes}
-                      onChange={(e) =>
-                        setWorkout({
-                          ...workout,
-                          plannedDurationMinutes: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
-
-                  {calculatedPace && (
-                    <div className="space-y-2">
-                      <Label className="text-primary mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                        pace
-                      </Label>
-                      <div className="bg-primary/5 flex h-10 items-center justify-center rounded-lg border border-primary/20 text-primary text-[11px] font-black px-1 text-center leading-none">
-                        {calculatedPace}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                <WorkoutMetricsFields
+                  selectedSport={selectedSport}
+                  plannedDistanceKilometers={
+                    workout.plannedDistanceKilometers || 0
+                  }
+                  plannedDurationMinutes={workout.plannedDurationMinutes || 0}
+                  onDistanceChange={(val) =>
+                    setWorkout({ ...workout, plannedDistanceKilometers: val })
+                  }
+                  onDurationChange={(val) =>
+                    setWorkout({ ...workout, plannedDurationMinutes: val })
+                  }
+                />
 
                 <div className="space-y-3">
                   <Label className="text-muted-foreground ml-1 text-[10px] font-black uppercase tracking-widest">
@@ -581,6 +435,37 @@ export function WorkoutDialog({
                 duplicate
               </Button>
             )}
+
+            {isExisting &&
+              !isDuplicated &&
+              workout.appliedPlanId &&
+              onDeletePlan && (
+                <div className="relative w-full sm:w-auto">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsDeletingPlan(!isDeletingPlan)}
+                    className="w-full sm:w-auto border-amber-200 text-amber-700 hover:bg-amber-50"
+                  >
+                    {isDeletingPlan ? 'no' : 'unapply plan'}
+                  </Button>
+                  {isDeletingPlan && (
+                    <div className="bg-card absolute bottom-full left-1/2 z-[210] mb-3 w-56 -translate-x-1/2 space-y-2 rounded-2xl border border-amber-200 p-4 shadow-2xl">
+                      <p className="text-[10px] font-bold text-center leading-tight">
+                        This will delete ALL workouts from this generated plan.
+                        Continue?
+                      </p>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => onDeletePlan(workout.appliedPlanId!)}
+                      >
+                        confirm delete plan
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
 
             {isExisting && !isDuplicated && onDelete && (
               <div className="relative w-full sm:w-auto">

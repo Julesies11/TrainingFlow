@@ -153,4 +153,127 @@ describe('applySmartSync with Real File Data', () => {
     );
     expect(rideRow?.syncStatus).toBe('NEW');
   });
+
+  it('BEST-FIT: Correctly pairs the closest match when multiple activities exist on the same day', async () => {
+    // 1. One existing placeholder on 2026-05-10 for 45 mins
+    const mockExisting: Workout[] = [
+      {
+        id: 'placeholder-run-45',
+        date: '2026-05-10',
+        sportTypeId: runSportId,
+        title: 'Target 45min Run',
+        description: '',
+        plannedDurationMinutes: 45,
+        plannedDistanceKilometers: 8,
+        effortLevel: 2,
+        isKeyWorkout: false,
+        intervals: [],
+      },
+    ];
+
+    // 2. Real Garmin data provided by user (45 min run and 17 min run)
+    const userCSV = `Activity Type,Date,Favorite,Title,Distance,Calories,Time,Avg HR,Max HR,Aerobic TE,Avg Run Cadence,Max Run Cadence,Avg Pace,Best Pace,Total Ascent,Total Descent,Avg Stride Length,Avg Vertical Ratio,Avg Vertical Oscillation,Avg Ground Contact Time,Avg GCT Balance,Avg GAP,Normalized Power® (NP®),Training Stress Score®,Avg Power,Max Power,Total Strokes,Avg. Swolf,Avg Stroke Rate,Steps,Total Reps,Total Sets,Body Battery Drain,Min Temp,Decompression,Best Lap Time,Number of Laps,Max Temp,Avg Resp,Min Resp,Max Resp,Moving Time,Elapsed Time,Min Elevation,Max Elevation
+Running,2026-05-10 10:35:22,FALSE,Perth Running,8.16,584,00:45:03,129,143,2.7,163,244,5:31,3:36,--,--,1.12,8.3,9.1,266,--,--,345,0.0,343,507,--,--,--,7496,--,--,-11,--,No,00:45:03,1,--,--,--,--,00:44:49,00:55:39,--,--
+Running,2026-05-10 10:11:03,FALSE,Perth Running,2.99,201,00:16:43,118,134,1.8,163,177,5:35,4:49,--,--,1.10,8.5,9.2,270,--,18:09,325,0.0,319,463,--,--,--,2762,--,--,-4,--,No,00:16:43,1,--,--,--,--,00:16:43,00:18:43,--,--`;
+
+    const incoming = await parseGarminCSV(
+      userCSV,
+      mockMappings,
+      mockSportTypes,
+      'u1',
+    );
+
+    // 3. Apply Sync
+    const synced = applySmartSync(incoming, mockExisting);
+
+    // 4. Verify results
+    const longRun = synced.find(
+      (r) => r.row.actual_datetime === '2026-05-10 10:35:22',
+    );
+    const shortRun = synced.find(
+      (r) => r.row.actual_datetime === '2026-05-10 10:11:03',
+    );
+
+    // The long run (45:03) should match the 45min placeholder
+    expect(longRun?.syncStatus).toBe('SYNC');
+    expect(longRun?.workout?.id).toBe('placeholder-run-45');
+
+    // The short run (16:43) should be NEW
+    expect(shortRun?.syncStatus).toBe('NEW');
+    expect(shortRun?.workout?.id).not.toBe('placeholder-run-45');
+  });
+
+  it('EDGE CASE: Handles empty inputs gracefully', () => {
+    const synced = applySmartSync([], []);
+    expect(synced).toEqual([]);
+  });
+
+  it('EDGE CASE: All incoming are NEW when no placeholders exist', () => {
+    const incoming: ProcessedImportRow[] = [
+      {
+        row: { date: '2026-05-10', sportName: 'Running' },
+        workout: {
+          date: '2026-05-10',
+          sportTypeId: runSportId,
+          title: 'Run 1',
+        },
+        errors: [],
+        isValid: true,
+      },
+    ];
+    const synced = applySmartSync(incoming, []);
+    expect(synced[0].syncStatus).toBe('NEW');
+    expect(synced[0].workout?.id).toBeUndefined();
+  });
+
+  it('SCORING: Correctly prioritizes duration over distance for SYNC', () => {
+    const mockExisting: Workout[] = [
+      {
+        id: 'dist-match-but-dur-off',
+        date: '2026-05-10',
+        sportTypeId: runSportId,
+        plannedDurationMinutes: 60,
+        plannedDistanceKilometers: 10,
+        title: 'Run A',
+        description: '',
+        effortLevel: 2,
+        isKeyWorkout: false,
+        intervals: [],
+      },
+      {
+        id: 'dur-match-but-dist-off',
+        date: '2026-05-10',
+        sportTypeId: runSportId,
+        plannedDurationMinutes: 30,
+        plannedDistanceKilometers: 20,
+        title: 'Run B',
+        description: '',
+        effortLevel: 2,
+        isKeyWorkout: false,
+        intervals: [],
+      },
+    ];
+
+    const incoming: ProcessedImportRow[] = [
+      {
+        row: { date: '2026-05-10' },
+        workout: {
+          date: '2026-05-10',
+          sportTypeId: runSportId,
+          plannedDurationMinutes: 30, // Matches Run B on duration
+          plannedDistanceKilometers: 5,
+        },
+        errors: [],
+        isValid: true,
+      },
+    ];
+
+    const synced = applySmartSync(incoming, mockExisting);
+    // Should match 'dur-match-but-dist-off' because duration diff (0) is prioritized
+    // over distance diff (Run A dist diff is 5, Run B dist diff is 15).
+    // Our score is (durDiff * 100) + distDiff.
+    // Pair A: (30 * 100) + 5 = 3005
+    // Pair B: (0 * 100) + 15 = 15
+    expect(synced[0].workout?.id).toBe('dur-match-but-dist-off');
+  });
 });

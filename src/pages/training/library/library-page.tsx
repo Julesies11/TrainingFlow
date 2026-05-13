@@ -252,8 +252,10 @@ export function LibraryPage() {
 
                             {/* Content */}
                             <div className="p-4">
-                              <div className="text-[9px] font-black uppercase opacity-70">
-                                {template.sportName || st.name || 'Unknown'}
+                              <div className="flex items-center justify-between">
+                                <div className="text-[9px] font-black uppercase opacity-70">
+                                  {template.sportName || st.name || 'Unknown'}
+                                </div>
                               </div>
                               <div className="mt-0.5 truncate text-sm font-bold">
                                 {template.title || 'Untitled'}

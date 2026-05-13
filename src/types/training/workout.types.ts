@@ -46,11 +46,17 @@ export interface Workout {
   order?: number;
   recurrenceId?: string;
   recurrenceRule?: RecurrenceRule;
+  appliedPlanId?: string;
+  planTemplateId?: string;
+  categoryId?: string;
+  weekNumber?: number;
+  dayOfWeek?: number;
 }
 
 export interface LibraryWorkout {
   id: string;
   sportTypeId: string;
+  categoryId?: string;
   sportName?: string;
   title: string;
   description?: string;

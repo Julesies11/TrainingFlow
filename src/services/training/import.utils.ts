@@ -6,24 +6,38 @@ import { SportTypeRecord, Workout } from '@/types/training';
  * Schema for a single workout row in the import data.
  * This is what the LLM is expected to produce.
  */
-export const ImportWorkoutSchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD'),
-  sportName: z.string().min(1, 'Sport name is required'),
-  title: z.string().min(1, 'Title is required'),
-  description: z.string().optional().default(''),
-  plannedDurationMinutes: z.coerce
-    .number()
-    .min(1, 'Duration must be at least 1 minute'),
-  plannedDistanceKilometers: z.coerce.number().min(0).optional().default(0),
-  effortLevel: z.coerce.number().min(1).max(4).optional().default(1),
-  isKeyWorkout: z.coerce.boolean().optional().default(false),
-});
+export const ImportWorkoutSchema = z
+  .object({
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be YYYY-MM-DD')
+      .optional(),
+    weekNumber: z.coerce.number().min(1).optional(),
+    dayOfWeek: z.coerce.number().min(1).max(7).optional(),
+    sportName: z.string().min(1, 'Sport name is required'),
+    title: z.string().min(1, 'Title is required'),
+    description: z.string().optional().default(''),
+    plannedDurationMinutes: z.coerce
+      .number()
+      .min(1, 'Duration must be at least 1 minute'),
+    plannedDistanceKilometers: z.coerce.number().min(0).optional().default(0),
+    effortLevel: z.coerce.number().min(1).max(4).optional().default(1),
+    isKeyWorkout: z.coerce.boolean().optional().default(false),
+  })
+  .refine(
+    (data) =>
+      data.date ||
+      (data.weekNumber !== undefined && data.dayOfWeek !== undefined),
+    {
+      message: "Either 'date' or both 'weekNumber' and 'dayOfWeek' are required",
+    },
+  );
 
 export type ImportWorkoutRow = z.infer<typeof ImportWorkoutSchema>;
 
 export interface ProcessedImportRow {
   row: Partial<ImportWorkoutRow & { actual_datetime?: string }>;
-  workout?: Partial<Workout>;
+  workout?: Partial<Workout & { weekNumber?: number; dayOfWeek?: number }>;
   syncStatus?: 'NEW' | 'SYNC' | 'RE-SYNC';
   errors: string[];
   isValid: boolean;
@@ -99,7 +113,7 @@ export async function parseImportData(
   return rawData.map((raw) => {
     const errors: string[] = [];
     let isValid = true;
-    let workout: Partial<Workout> | undefined;
+    let workout: Partial<Workout & { weekNumber?: number; dayOfWeek?: number }> | undefined;
 
     const result = ImportWorkoutSchema.safeParse(raw);
 
@@ -121,7 +135,9 @@ export async function parseImportData(
 
     if (isValid && result.success) {
       workout = {
-        date: result.data.date,
+        date: result.data.date || '',
+        weekNumber: result.data.weekNumber,
+        dayOfWeek: result.data.dayOfWeek,
         sportTypeId,
         title: result.data.title,
         description: result.data.description,

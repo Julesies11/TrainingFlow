@@ -27,11 +27,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 interface BulkDeleteDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onBulkDelete?: (
+    fromDate: string,
+    toDate: string,
+    sportTypeIds: string[],
+  ) => void;
 }
 
 export function BulkDeleteDialog({
   open,
   onOpenChange,
+  onBulkDelete,
 }: BulkDeleteDialogProps) {
   const { data: sportTypes = [] } = useSportTypes();
   const deleteWorkoutsBulk = useDeleteWorkoutsBulk();
@@ -52,10 +58,11 @@ export function BulkDeleteDialog({
       sixteenWeeksOut.setDate(sixteenWeeksOut.getDate() + 112);
       setToDate(sixteenWeeksOut.toISOString().split('T')[0]);
 
-      // Select all sports by default
+      // Select all sports by default - only if not already set or specifically opening
       setSelectedSportTypeIds(sportTypes.map((st) => st.id));
     }
-  }, [open, sportTypes]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleToggleSport = (id: string) => {
     setSelectedSportTypeIds((prev) =>
@@ -87,6 +94,13 @@ export function BulkDeleteDialog({
     );
 
     if (!confirmed) return;
+
+    if (onBulkDelete) {
+      onBulkDelete(fromDate, toDate, selectedSportTypeIds);
+      toast.success('Workouts deleted successfully');
+      onOpenChange(false);
+      return;
+    }
 
     deleteWorkoutsBulk.mutate(
       { fromDate, toDate, sportTypeIds: selectedSportTypeIds },

@@ -27,11 +27,13 @@ interface VolumeChartProps {
   goals?: TrainingGoal[];
   sportTypes?: SportTypeRecord[];
   metric: ProgressMetric;
-  sport: string | 'All';
+  sportId: string | 'All';
   viewType: ViewType;
   pivotDate: Date;
   showEvents?: boolean;
   showNotes?: boolean;
+  templateMode?: boolean;
+  totalWeeks?: number;
 }
 
 export const VolumeChart = memo(function VolumeChart({
@@ -41,11 +43,13 @@ export const VolumeChart = memo(function VolumeChart({
   goals = [],
   sportTypes = [],
   metric,
-  sport,
+  sportId,
   viewType,
   pivotDate,
   showEvents = true,
   showNotes = true,
+  templateMode = false,
+  totalWeeks,
 }: VolumeChartProps) {
   const isMobile = useIsMobile();
 
@@ -54,11 +58,14 @@ export const VolumeChart = memo(function VolumeChart({
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const unitCount =
+    let unitCount =
       viewType === 'week' ? (isMobile ? 12 : 24) : isMobile ? 8 : 16;
 
     const start = new Date(pivotDate);
-    if (viewType === 'week') {
+    if (templateMode && viewType === 'week') {
+      unitCount = totalWeeks || 4;
+      start.setTime(new Date(2024, 0, 1).getTime());
+    } else if (viewType === 'week') {
       start.setDate(start.getDate() - Math.floor(unitCount / 2) * 7);
       const day = start.getDay();
       const diff = start.getDate() - (day === 0 ? 6 : day - 1);
@@ -69,7 +76,6 @@ export const VolumeChart = memo(function VolumeChart({
     }
 
     // PHASE 3: Algorithmic Optimization
-    // Pre-group data into Maps by date string for O(1) lookups
     const workoutsByDate = new Map<string, Workout[]>();
     workouts.forEach((w) => {
       const dateStr = w.date;
@@ -92,8 +98,10 @@ export const VolumeChart = memo(function VolumeChart({
     });
 
     const sportMap = new Map(sportTypes.map((st) => [st.id, st]));
-    const sportRecordByName =
-      sport !== 'All' ? sportTypes.find((st) => st.name === sport) : undefined;
+    const selectedSportId = sportId !== 'All' ? sportId : undefined;
+    const selectedSportRecord = selectedSportId
+      ? sportMap.get(selectedSportId)
+      : undefined;
 
     const cursor = new Date(start);
     for (let i = 0; i < unitCount; i++) {
@@ -105,14 +113,26 @@ export const VolumeChart = memo(function VolumeChart({
         bucketEnd.setMonth(bucketEnd.getMonth() + 1);
       }
 
-      const label =
-        viewType === 'week'
-          ? `${bucketStart.getDate()} ${bucketStart.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()}`
-          : bucketStart
-              .toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
-              .toLowerCase();
+      let label = '';
+      if (templateMode) {
+        // In template mode, we show relative week/month count from a base
+        // The user asked for "Week numbers".
+        const baseDate = new Date(2024, 0, 1);
+        const diffTime = Math.abs(bucketStart.getTime() - baseDate.getTime());
+        const diffWeeks = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7)) + 1;
+        label = `Week ${diffWeeks}`;
+      } else {
+        label =
+          viewType === 'week'
+            ? `${bucketStart.getDate()} ${bucketStart.toLocaleDateString('en-US', { month: 'short' }).toLowerCase()}`
+            : bucketStart
+                .toLocaleDateString('en-US', {
+                  month: 'short',
+                  year: '2-digit',
+                })
+                .toLowerCase();
+      }
 
-      // Aggregate data for the bucket by iterating over dates within the bucket
       let val = 0;
       const bucketEvents: Event[] = [];
       const bucketNotes: Note[] = [];
@@ -123,15 +143,14 @@ export const VolumeChart = memo(function VolumeChart({
 
         // Accumulate workouts
         (workoutsByDate.get(dateStr) || []).forEach((w) => {
-          if (sport !== 'All' && w.sportName !== sport) return;
+          // FIX: Compare by ID if a specific sport is selected
+          if (selectedSportId && w.sportTypeId !== selectedSportId) return;
 
           if (metric === 'distance') {
             const distKm = w.plannedDistanceKilometers || 0;
             const sportRec = sportMap.get(w.sportTypeId);
             const dist =
-              sport !== 'All' &&
-              sportRec &&
-              isMetersDistance(sportRec.distanceUnit, sportRec.name)
+              sportRec && isMetersDistance(sportRec.distanceUnit, sportRec.name)
                 ? distKm * 1000
                 : distKm;
             val += dist;
@@ -144,13 +163,12 @@ export const VolumeChart = memo(function VolumeChart({
         (eventsByDate.get(dateStr) || []).forEach((e) => {
           bucketEvents.push(e);
           (e.segments || []).forEach((seg) => {
-            if (sport !== 'All' && seg.sportName !== sport) return;
+            if (selectedSportId && seg.sportTypeId !== selectedSportId) return;
 
             if (metric === 'distance') {
               const distKm = seg.plannedDistanceKilometers || 0;
               const sportRec = sportMap.get(seg.sportTypeId);
               const dist =
-                sport !== 'All' &&
                 sportRec &&
                 isMetersDistance(sportRec.distanceUnit, sportRec.name)
                   ? distKm * 1000
@@ -174,18 +192,19 @@ export const VolumeChart = memo(function VolumeChart({
 
       const activeGoal = findActiveGoal(
         goals,
-        sportRecordByName?.id,
+        selectedSportId,
         metric,
         bucketStart,
         bucketEnd,
       );
       const targetVal = getTargetValueForBucket(activeGoal, metric);
 
-      // Generate a descriptive label since TrainingGoal currently lacks a 'title/description' field
       let goalLabel = null;
       if (activeGoal) {
         const unit =
-          metric === 'distance' ? sportRecordByName?.distanceUnit || 'km' : 'h';
+          metric === 'distance'
+            ? selectedSportRecord?.distanceUnit || 'km'
+            : 'h';
         const displayVal =
           metric === 'duration'
             ? (activeGoal.targetValue / 60).toFixed(1)
@@ -227,31 +246,46 @@ export const VolumeChart = memo(function VolumeChart({
     goals,
     sportTypes,
     metric,
-    sport,
+    sportId,
     viewType,
     pivotDate,
     isMobile,
+    templateMode,
+    totalWeeks,
   ]);
 
   const chartOptions: ApexOptions = useMemo(
     () => ({
-      series: [
-        {
-          name: 'Past',
-          type: 'area',
-          data: chartData.map((d) => d.past),
-        },
-        {
-          name: 'Future',
-          type: 'area',
-          data: chartData.map((d) => d.future),
-        },
-        {
-          name: 'Target',
-          type: 'line',
-          data: chartData.map((d) => d.target),
-        },
-      ],
+      series: templateMode
+        ? [
+            {
+              name: 'Planned',
+              type: 'area',
+              data: chartData.map((d) => d.past || d.future || 0),
+            },
+            {
+              name: 'Target',
+              type: 'line',
+              data: chartData.map((d) => d.target),
+            },
+          ]
+        : [
+            {
+              name: 'Past',
+              type: 'area',
+              data: chartData.map((d) => d.past),
+            },
+            {
+              name: 'Future',
+              type: 'area',
+              data: chartData.map((d) => d.future),
+            },
+            {
+              name: 'Target',
+              type: 'line',
+              data: chartData.map((d) => d.target),
+            },
+          ],
       annotations: {
         xaxis: [
           ...(showEvents
@@ -361,19 +395,27 @@ export const VolumeChart = memo(function VolumeChart({
         show: false,
       },
       stroke: {
-        curve: ['smooth', 'smooth', 'stepline'],
-        width: [3, 3, 4],
-        colors: ['#3b82f6', '#8b5cf6', '#ef4444'],
-        dashArray: [0, 5, 0],
+        curve: templateMode
+          ? (['smooth', 'stepline'] as const)
+          : (['smooth', 'smooth', 'stepline'] as const),
+        width: templateMode ? [3, 4] : [3, 3, 4],
+        colors: templateMode
+          ? ['#3b82f6', '#ef4444']
+          : ['#3b82f6', '#8b5cf6', '#ef4444'],
+        dashArray: templateMode ? [0, 0] : [0, 5, 0],
       },
       fill: {
-        type: ['gradient', 'gradient', 'solid'],
+        type: templateMode
+          ? (['gradient', 'solid'] as const)
+          : (['gradient', 'gradient', 'solid'] as const),
         gradient: {
-          opacityFrom: [0.25, 0.1, 0],
+          opacityFrom: templateMode ? [0.25, 0] : [0.25, 0.1, 0],
           opacityTo: [0, 0, 0],
         },
       },
-      colors: ['#3b82f6', '#8b5cf6', '#ef4444'],
+      colors: templateMode
+        ? ['#3b82f6', '#ef4444']
+        : ['#3b82f6', '#8b5cf6', '#ef4444'],
       xaxis: {
         categories: chartData.map((d) => d.label),
         axisBorder: { show: false },
@@ -413,8 +455,8 @@ export const VolumeChart = memo(function VolumeChart({
           formatter: (value: number) => {
             if (metric === 'duration') return `${value}h`;
             let unit = 'km';
-            if (sport !== 'All') {
-              const sportRec = sportTypes.find((st) => st.name === sport);
+            if (sportId !== 'All') {
+              const sportRec = sportTypes.find((st) => st.id === sportId);
               if (
                 sportRec &&
                 isMetersDistance(sportRec.distanceUnit, sportRec.name)
@@ -443,8 +485,8 @@ export const VolumeChart = memo(function VolumeChart({
 
           const dataPoint = chartData[dataPointIndex];
           let unit = metric === 'duration' ? 'h' : 'km';
-          if (metric === 'distance' && sport !== 'All') {
-            const sportRec = sportTypes.find((st) => st.name === sport);
+          if (metric === 'distance' && sportId !== 'All') {
+            const sportRec = sportTypes.find((st) => st.id === sportId);
             if (
               sportRec &&
               isMetersDistance(sportRec.distanceUnit, sportRec.name)
@@ -459,7 +501,9 @@ export const VolumeChart = memo(function VolumeChart({
 
           // Format date range
           let dateRange = '';
-          if (viewType === 'week') {
+          if (templateMode) {
+            dateRange = dataPoint.label;
+          } else if (viewType === 'week') {
             const startDate = dataPoint.bucketStart;
             const endDate = new Date(dataPoint.bucketEnd);
             endDate.setDate(endDate.getDate() - 1); // Adjust to last day of week
@@ -550,7 +594,16 @@ export const VolumeChart = memo(function VolumeChart({
         },
       },
     }),
-    [chartData, metric, viewType, showEvents, showNotes, sport, sportTypes],
+    [
+      chartData,
+      metric,
+      viewType,
+      showEvents,
+      showNotes,
+      sportId,
+      sportTypes,
+      templateMode,
+    ],
   );
 
   return (

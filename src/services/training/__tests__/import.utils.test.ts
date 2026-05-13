@@ -77,6 +77,29 @@ describe('Import Utilities', () => {
       expect(results[0].workout?.plannedDurationMinutes).toBe(120);
     });
 
+    it('successfully parses valid CSV with weekNumber and dayOfWeek', async () => {
+      const csv =
+        'weekNumber,dayOfWeek,sportName,title,plannedDurationMinutes\n1,6,Bike,Long Ride,180';
+
+      const results = await parseImportData(csv, 'csv', mockSports);
+      expect(results).toHaveLength(1);
+      expect(results[0].isValid).toBe(true);
+      expect(results[0].workout?.weekNumber).toBe(1);
+      expect(results[0].workout?.dayOfWeek).toBe(6);
+      expect(results[0].workout?.sportTypeId).toBe('s2');
+    });
+
+    it('successfully parses Sunday with dayOfWeek 7', async () => {
+      const csv =
+        'weekNumber,dayOfWeek,sportName,title,plannedDurationMinutes\n2,7,Run,Sunday Run,60';
+
+      const results = await parseImportData(csv, 'csv', mockSports);
+      expect(results).toHaveLength(1);
+      expect(results[0].isValid).toBe(true);
+      expect(results[0].workout?.weekNumber).toBe(2);
+      expect(results[0].workout?.dayOfWeek).toBe(7);
+    });
+
     it('handles invalid sport names', async () => {
       const json = JSON.stringify([
         {

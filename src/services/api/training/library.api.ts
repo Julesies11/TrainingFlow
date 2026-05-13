@@ -6,6 +6,7 @@ function mapDbLibrary(l: any): LibraryWorkout {
   return {
     id: l.id,
     sportTypeId: l.sport_type_id || '',
+    categoryId: l.category_id,
     sportName: l.tf_sport_types?.name || '',
     title: l.title,
     description: l.description || '',
@@ -24,6 +25,7 @@ export const libraryApi = {
         `
         id, 
         sport_type_id, 
+        category_id,
         title, 
         description, 
         planned_duration_minutes, 
@@ -48,6 +50,7 @@ export const libraryApi = {
       .insert({
         user_id: userId,
         sport_type_id: workout.sportTypeId,
+        category_id: workout.categoryId,
         title: workout.title,
         description: workout.description,
         planned_duration_minutes: workout.plannedDurationMinutes,
@@ -59,6 +62,7 @@ export const libraryApi = {
         `
         id, 
         sport_type_id, 
+        category_id,
         title, 
         description, 
         planned_duration_minutes, 
@@ -82,6 +86,7 @@ export const libraryApi = {
       .from('tf_library_workouts')
       .update({
         sport_type_id: workout.sportTypeId,
+        category_id: workout.categoryId,
         title: workout.title,
         description: workout.description,
         planned_duration_minutes: workout.plannedDurationMinutes,
@@ -95,6 +100,7 @@ export const libraryApi = {
         `
         id, 
         sport_type_id, 
+        category_id,
         title, 
         description, 
         planned_duration_minutes, 

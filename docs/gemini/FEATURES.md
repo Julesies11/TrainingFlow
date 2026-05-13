@@ -36,8 +36,17 @@ TrainingFlow is designed as a management platform with the following core module
     - **Activity Import**: Seamlessly import training sessions from Garmin Connect via CSV files.
     - **Intelligent Mapping**: Two-tiered mapping system (system defaults + user overrides) to link Garmin activity types to internal sports.
     - **On-the-fly Configuration**: Automatically detects unmapped Garmin activities and prompts users to configure them during the import process.
-
-## 3. Participant Management
+- **Workout Library**: Save and reuse workout plans.
+...
+- **Training Plan Generator**:
+    - **Rule-Based Engine**: Autonomously generate complete, structured blocks of training (e.g., tapering, base building) mapped backwards from a target event or forwards from a start date.
+    - **Periodization Plans**: Uses multi-week plans with precise volume multipliers and daily duration percentages to scale workouts to the athlete's current capacity.
+    - **Smart Categorization**: Dynamically slots in preferred workouts from the user's library by matching categories (e.g., Tempo, Long Run, Speedwork) and target durations.
+    - **Advanced Plan Builder**:
+        - **Multi-Activity Support**: Create complex periodization blocks involving any number of sport types.
+        - **Rich Analytics**: Visual progression charts with relative week numbers and cross-template volume standardization for easy comparison.
+        - **Advanced Toolset**: Access to Bulk Delete, AI-Program Import, and Garmin Activity Import directly within the builder to rapidly seed and refine plans.
+        - **Total Load Metrics**: Instant visibility into total plan volume, median commitment, and session frequency.
 - *Status:* Planned/In-Progress.
 - Tracking participant data and individual requirements.
 

@@ -39,8 +39,8 @@ describe('ErrorBoundary', () => {
       </ErrorBoundary>,
     );
 
-    expect(screen.getByText(/oops/i)).toBeDefined();
-    expect(screen.getByText(/something went wrong/i)).toBeDefined();
+    expect(screen.getByText(/500 error/i)).toBeDefined();
+    expect(screen.getByText(/internal server error/i)).toBeDefined();
 
     expect(errorLogsApi.capture).toHaveBeenCalledWith(
       expect.objectContaining({

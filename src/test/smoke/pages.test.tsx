@@ -2,11 +2,14 @@ import { EventPrioritiesPage } from '@/pages/account/event-priorities';
 import { EventTypesPage } from '@/pages/account/event-types';
 import { ProfilePage } from '@/pages/account/profile';
 import { SportTypesPage } from '@/pages/account/sport-types';
+import { TemplateBuilderDialog } from '@/pages/account/templates/components/template-builder-dialog';
+import { TemplatesPage } from '@/pages/account/templates/templates-page';
 import { EventPrioritiesAdminPage } from '@/pages/admin/event-priorities';
 import { EventTypesAdminPage } from '@/pages/admin/event-types';
 import { SportTypesAdminPage } from '@/pages/admin/sport-types';
 import { DashboardPage } from '@/pages/dashboard';
 import { CalendarView } from '@/pages/training/calendar';
+import { PlanGeneratorWizard } from '@/pages/training/calendar/components/plan-generator-wizard';
 import { EventsPage } from '@/pages/training/events';
 import { GoalsPage } from '@/pages/training/goals';
 import { LibraryPage } from '@/pages/training/library';
@@ -41,10 +44,14 @@ vi.mock('@/hooks/use-training-data', () => ({
   useCreateWorkoutsBulk: vi
     .fn()
     .mockReturnValue({ mutate: vi.fn(), isPending: false }),
+  useCreateNotesBulk: vi
+    .fn()
+    .mockReturnValue({ mutate: vi.fn(), isPending: false }),
   useDeleteWorkout: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useDeleteWorkoutsBulk: vi
     .fn()
     .mockReturnValue({ mutate: vi.fn(), isPending: false }),
+  useDeleteByPlan: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useUpdateEvent: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useDeleteEvent: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useGoals: vi.fn().mockReturnValue({ data: [], isLoading: false }),
@@ -68,6 +75,11 @@ vi.mock('@/hooks/use-training-data', () => ({
   useUpdateSportType: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useDeleteSportType: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useUpsertUserSportSettings: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useIsDeveloper: vi.fn().mockReturnValue(true),
+  usePlanTemplates: vi.fn().mockReturnValue({ data: [], isLoading: false }),
+  useCreatePlanTemplate: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useUpdatePlanTemplate: vi.fn().mockReturnValue({ mutate: vi.fn() }),
+  useDeletePlanTemplate: vi.fn().mockReturnValue({ mutate: vi.fn() }),
 }));
 
 describe('Smoke Test: Main Pages', () => {
@@ -157,6 +169,25 @@ describe('Smoke Test: Main Pages', () => {
     expect(screen.getByText(/training goals/i)).toBeDefined();
   });
 
+  it('renders TemplatesPage without crashing', async () => {
+    render(<TemplatesPage />);
+    await waitFor(() => {
+      expect(screen.queryByText(/loading templates/i)).toBeNull();
+    });
+    expect(screen.getByText(/training plans/i)).toBeDefined();
+  });
+
+  it('renders TemplateBuilderDialog without crashing', () => {
+    render(
+      <TemplateBuilderDialog
+        template={{ name: 'Test Template', totalWeeks: 4 }}
+        sportTypes={[]}
+        onClose={() => {}}
+      />,
+    );
+    expect(screen.getByText(/4 weeks/i)).toBeDefined();
+  });
+
   it('renders CalendarView page without crashing', async () => {
     render(<CalendarView />);
     await waitFor(
@@ -167,5 +198,10 @@ describe('Smoke Test: Main Pages', () => {
     );
     // Match any instance of 2026
     expect(screen.getAllByText(/2026/)).toBeDefined();
+  });
+
+  it('renders PlanGeneratorWizard without crashing', () => {
+    render(<PlanGeneratorWizard onClose={() => {}} />);
+    expect(screen.getByText(/training plan generator/i)).toBeDefined();
   });
 });

@@ -43,9 +43,16 @@ import { Textarea } from '@/components/ui/textarea';
 interface ImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onImport?: (workouts: Partial<Workout>[]) => void;
+  templateMode?: boolean;
 }
 
-export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
+export function ImportDialog({
+  open,
+  onOpenChange,
+  onImport,
+  templateMode = false,
+}: ImportDialogProps) {
   const { data: sportTypes = [] } = useSportTypes();
   const createWorkoutsBulk = useCreateWorkoutsBulk();
   const { copyToClipboard } = useCopyToClipboard();
@@ -115,6 +122,13 @@ export function ImportDialog({ open, onOpenChange }: ImportDialogProps) {
       return;
     }
 
+    if (onImport) {
+      onImport(validWorkouts);
+      toast.success(`Successfully imported ${validWorkouts.length} workouts`);
+      onOpenChange(false);
+      return;
+    }
+
     createWorkoutsBulk.mutate(validWorkouts, {
       onSuccess: () => {
         toast.success(`Successfully imported ${validWorkouts.length} workouts`);
@@ -147,7 +161,9 @@ When generating the program, the "sportName" column must exactly match one of my
 Provide it as a downloadable CSV file.
 
 Required Columns:
-1. "date" - The date of the workout in YYYY-MM-DD format.
+1. "date" OR ("weekNumber" AND "dayOfWeek")
+   - Use "date" in YYYY-MM-DD format for calendar imports.
+   - Use "weekNumber" (starting from 1) and "dayOfWeek" (1=Monday, 2=Tuesday, ..., 7=Sunday) for generic training plans.
 2. "sportName" - The name of the sport (must exactly match one of the sports listed above).
 3. "title" - A short, descriptive title for the workout.
 4. "description" - Details of the workout structure.
@@ -156,7 +172,11 @@ Required Columns:
 7. "effortLevel" - A numeric value representing intensity from 1 to 4 (1=Recovery, 2=Base, 3=Tempo, 4=VO2).
 8. "isKeyWorkout" - Either "true" or "false" to indicate if this is a high-priority session.
 
-Example row for ${sportTypes[0]?.name || 'Sport'}:
+Example row for ${sportTypes[0]?.name || 'Sport'} (Plan Template):
+weekNumber,dayOfWeek,sportName,title,description,plannedDurationMinutes,plannedDistanceKilometers,effortLevel,isKeyWorkout
+1,1,${sportTypes[0]?.name || 'Sport'},Steady Session,Description,60,10,2,false
+
+Example row for ${sportTypes[0]?.name || 'Sport'} (Calendar):
 date,sportName,title,description,plannedDurationMinutes,plannedDistanceKilometers,effortLevel,isKeyWorkout
 ${new Date().toISOString().split('T')[0]},${sportTypes[0]?.name || 'Sport'},Steady Session,Description,60,10,2,false
 
@@ -169,26 +189,50 @@ Before you start, ask me any questions you need to ensure you have full context`
   };
 
   const handleDownloadTemplate = () => {
-    const headers = [
-      'date',
-      'sportName',
-      'title',
-      'description',
-      'plannedDurationMinutes',
-      'plannedDistanceKilometers',
-      'effortLevel',
-      'isKeyWorkout',
-    ];
-    const sampleRow = [
-      new Date().toISOString().split('T')[0],
-      sportTypes[0]?.name || 'Sport',
-      'Sample Workout',
-      'Description of the session',
-      '60',
-      '10',
-      '2',
-      'false',
-    ];
+    const headers = templateMode
+      ? [
+          'weekNumber',
+          'dayOfWeek',
+          'sportName',
+          'title',
+          'description',
+          'plannedDurationMinutes',
+          'plannedDistanceKilometers',
+          'effortLevel',
+          'isKeyWorkout',
+        ]
+      : [
+          'date',
+          'sportName',
+          'title',
+          'description',
+          'plannedDurationMinutes',
+          'plannedDistanceKilometers',
+          'effortLevel',
+          'isKeyWorkout',
+        ];
+    const sampleRow = templateMode
+      ? [
+          '1',
+          '1',
+          sportTypes[0]?.name || 'Sport',
+          'Sample Workout',
+          'Description of the session',
+          '60',
+          '10',
+          '2',
+          'false',
+        ]
+      : [
+          new Date().toISOString().split('T')[0],
+          sportTypes[0]?.name || 'Sport',
+          'Sample Workout',
+          'Description of the session',
+          '60',
+          '10',
+          '2',
+          'false',
+        ];
     const csvContent = [headers.join(','), sampleRow.join(',')].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -398,9 +442,20 @@ Before you start, ask me any questions you need to ensure you have full context`
                     <Table>
                       <TableHeader className="bg-muted/50">
                         <TableRow>
-                          <TableHead className="w-[120px] text-[10px] font-black uppercase">
-                            date
-                          </TableHead>
+                          {templateMode ? (
+                            <>
+                              <TableHead className="w-[80px] text-[10px] font-black uppercase">
+                                week no
+                              </TableHead>
+                              <TableHead className="w-[100px] text-[10px] font-black uppercase">
+                                day
+                              </TableHead>
+                            </>
+                          ) : (
+                            <TableHead className="w-[120px] text-[10px] font-black uppercase">
+                              date
+                            </TableHead>
+                          )}
                           <TableHead className="w-[100px] text-[10px] font-black uppercase">
                             sport
                           </TableHead>
@@ -423,9 +478,30 @@ Before you start, ask me any questions you need to ensure you have full context`
                                   : ''
                               }
                             >
-                              <TableCell className="text-xs font-medium py-3">
-                                {row.row.date || '---'}
-                              </TableCell>
+                              {templateMode ? (
+                                <>
+                                  <TableCell className="text-xs font-medium py-3">
+                                    {row.row.weekNumber || '---'}
+                                  </TableCell>
+                                  <TableCell className="text-xs font-medium py-3">
+                                    {row.row.dayOfWeek
+                                      ? [
+                                          'mon',
+                                          'tue',
+                                          'wed',
+                                          'thu',
+                                          'fri',
+                                          'sat',
+                                          'sun',
+                                        ][row.row.dayOfWeek - 1]
+                                      : '---'}
+                                  </TableCell>
+                                </>
+                              ) : (
+                                <TableCell className="text-xs font-medium py-3">
+                                  {row.row.date || '---'}
+                                </TableCell>
+                              )}
                               <TableCell className="text-xs py-3">
                                 <span
                                   className={

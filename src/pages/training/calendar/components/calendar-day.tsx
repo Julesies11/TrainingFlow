@@ -48,6 +48,8 @@ interface CalendarDayProps {
   isDraggingId: string | null;
   dragOverInfo: { date: string; index?: number } | null;
   todayRef?: React.RefObject<HTMLDivElement | null>;
+  hideDates?: boolean;
+  weekLabel?: string;
 }
 
 export const CalendarDay = React.memo(
@@ -75,6 +77,8 @@ export const CalendarDay = React.memo(
     isDraggingId,
     dragOverInfo,
     todayRef,
+    hideDates,
+    weekLabel,
   }: CalendarDayProps) => {
     const dateStr = formatDateToLocalISO(date);
     const isFirstOfMonth = date.getDate() === 1;
@@ -95,17 +99,27 @@ export const CalendarDay = React.memo(
           ${dragOverInfo?.date === dateStr && isDraggingId ? 'ring-2 ring-inset ring-primary bg-primary/10 dark:bg-primary/20' : ''}`}
       >
         <div className="mb-1 flex shrink-0 items-start justify-between">
-          <span
-            className={`flex h-5 items-center justify-center rounded-full px-1.5 text-[9px] font-black transition-all lg:h-6 lg:text-xs
-              ${isToday ? 'bg-primary text-primary-foreground shadow-lg' : isSelected ? 'text-primary font-black' : 'text-muted-foreground'}
-              ${!isSameMonth ? 'opacity-30' : ''}`}
-          >
-            {isDayStartOfWeek
-              ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}`
-              : isFirstOfMonth
-                ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} 1`
-                : date.getDate()}
-          </span>
+          {!hideDates ? (
+            <span
+              className={`flex h-5 items-center justify-center rounded-full px-1.5 text-[9px] font-black transition-all lg:h-6 lg:text-xs
+                ${isToday ? 'bg-primary text-primary-foreground shadow-lg' : isSelected ? 'text-primary font-black' : 'text-muted-foreground'}
+                ${!isSameMonth ? 'opacity-30' : ''}`}
+            >
+              {isDayStartOfWeek
+                ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} ${date.getDate()}`
+                : isFirstOfMonth
+                  ? `${MONTH_NAMES[date.getMonth()].slice(0, 3)} 1`
+                  : date.getDate()}
+            </span>
+          ) : (
+            <div />
+          )}
+
+          {weekLabel && (
+            <span className="text-primary text-[9px] font-black uppercase tracking-tighter lg:text-[10px]">
+              {weekLabel}
+            </span>
+          )}
         </div>
 
         <div

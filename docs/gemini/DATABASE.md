@@ -32,3 +32,4 @@ Authentication is managed via Supabase Auth (`auth.users`).
   - `tf_sport_types`: Publicly readable by all authenticated users; writable only by creators.
   - `tf_event_types`, `tf_event_priorities`: Standard users can view "System" entries (`is_system = true`) or their own custom entries. Admins (as defined by `role = 'admin'` in `tf_profiles`) can manage all entries.
 - **Foreign Keys**: All user-specific tables must include a foreign key back to `auth.users` (usually `user_id` or `id`) with `on delete CASCADE`.
+- **Day of Week Mapping**: Notes and template workouts use a 1-indexed `day_of_week` column (**1=Monday, 7=Sunday**), strictly enforced by database `CHECK` constraints to ensure consistency with ISO standards and athlete expectations.

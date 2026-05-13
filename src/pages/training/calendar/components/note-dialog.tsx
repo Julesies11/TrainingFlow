@@ -20,6 +20,7 @@ interface NoteDialogProps {
   onSave: (n: Partial<Note>) => void;
   onDelete?: (id: string) => void;
   onCancel: () => void;
+  hideDate?: boolean;
 }
 
 export function NoteDialog({
@@ -27,6 +28,7 @@ export function NoteDialog({
   onSave,
   onDelete,
   onCancel,
+  hideDate,
 }: NoteDialogProps) {
   const isExisting = !!initialNote.id;
 
@@ -61,16 +63,18 @@ export function NoteDialog({
 
           <DialogBody className="grow overflow-y-auto scrollable-y px-6 pb-4 pt-4">
             <div className="space-y-6">
-              <div>
-                <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
-                  date
-                </Label>
-                <Input
-                  type="date"
-                  value={note.date}
-                  onChange={(e) => setNote({ ...note, date: e.target.value })}
-                />
-              </div>
+              {!hideDate && (
+                <div>
+                  <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">
+                    date
+                  </Label>
+                  <Input
+                    type="date"
+                    value={note.date}
+                    onChange={(e) => setNote({ ...note, date: e.target.value })}
+                  />
+                </div>
+              )}
 
               <div>
                 <Label className="text-muted-foreground mb-2 ml-1 text-[10px] font-black uppercase tracking-widest">

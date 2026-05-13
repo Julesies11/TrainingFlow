@@ -32,41 +32,54 @@ function mapDbWorkout(w: any): Workout {
     order: w.workout_order ? Number(w.workout_order) : 0,
     recurrenceId: w.recurrence_id,
     recurrenceRule: w.recurrence_rule,
+    appliedPlanId: w.applied_plan_id,
+    planTemplateId: w.plan_template_id,
+    categoryId: w.category_id,
   };
 }
 
 function toDbPayload(w: Partial<Workout>, userId: string) {
-  const round = (val: number | undefined | null) =>
-    val !== undefined && val !== null ? Math.round(val) : null;
+  const round = (val: number | undefined | null) => {
+    if (val === undefined || val === null || isNaN(val)) return null;
+    return Math.round(val);
+  };
+
+  const num = (val: number | undefined | null) => {
+    if (val === undefined || val === null || isNaN(val)) return null;
+    return val;
+  };
 
   return {
     user_id: userId,
     date: w.date,
     sport_type_id: w.sportTypeId,
-    title: w.title,
+    title: w.title || 'Untitled Workout',
     description: w.description || '',
     planned_duration_minutes: round(w.plannedDurationMinutes) || 0,
-    planned_distance_km: w.plannedDistanceKilometers || 0,
+    planned_distance_km: num(w.plannedDistanceKilometers) || 0,
     effort_level: round(w.effortLevel) || 1,
     is_key_workout: w.isKeyWorkout || false,
     actual_duration_minutes: round(w.actualDurationMinutes),
-    actual_distance_km: w.actualDistanceKilometers ?? null,
+    actual_distance_km: num(w.actualDistanceKilometers),
     actual_tss: round(w.actualTSS),
     avg_hr: round(w.avgHR),
     max_hr: round(w.maxHR),
     avg_power: round(w.avgPower),
     max_power: round(w.maxPower),
     normalized_power: round(w.normalizedPower),
-    total_ascent: w.totalAscent ?? null,
-    total_descent: w.totalDescent ?? null,
+    total_ascent: num(w.totalAscent),
+    total_descent: num(w.totalDescent),
     avg_cadence: round(w.avgCadence),
     calories: round(w.calories),
-    training_effect: w.trainingEffect ?? null,
+    training_effect: num(w.trainingEffect),
     actual_datetime: w.actual_datetime ?? null,
     intervals: w.intervals || [],
-    workout_order: w.order || Date.now(),
+    workout_order: round(w.order) || Date.now(),
     recurrence_id: w.recurrenceId ?? null,
     recurrence_rule: w.recurrenceRule ?? null,
+    applied_plan_id: w.appliedPlanId ?? null,
+    plan_template_id: w.planTemplateId ?? null,
+    category_id: w.categoryId ?? null,
   };
 }
 
@@ -140,10 +153,17 @@ export const workoutsApi = {
     workouts: Partial<Workout>[],
     userId: string,
   ): Promise<Workout[]> {
-    const payload = workouts.map((w) => ({
-      ...toDbPayload(w, userId),
-      id: w.id || crypto.randomUUID(), // Ensure every row has a UUID for bulk upsert
-    }));
+    const baseTime = Date.now();
+    const payload = workouts.map((w, idx) => {
+      const dbData = toDbPayload(w, userId);
+      return {
+        ...dbData,
+        id: w.id || crypto.randomUUID(),
+        // Ensure unique order even in bulk creation
+        workout_order: dbData.workout_order || baseTime + idx,
+      };
+    });
+
     const { data, error } = await supabase
       .from('tf_workouts')
       .upsert(payload, { onConflict: 'id' })
@@ -204,6 +224,16 @@ export const workoutsApi = {
       .gte('date', filters.fromDate)
       .lte('date', filters.toDate)
       .in('sport_type_id', filters.sportTypeIds);
+
+    if (error) throw error;
+  },
+
+  async deleteByPlan(planId: string, userId: string): Promise<void> {
+    const { error } = await supabase
+      .from('tf_workouts')
+      .delete()
+      .eq('user_id', userId)
+      .eq('applied_plan_id', planId);
 
     if (error) throw error;
   },

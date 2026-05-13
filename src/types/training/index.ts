@@ -4,3 +4,4 @@ export * from './events.types';
 export * from './profile.types';
 export * from './goals.types';
 export * from './notes.types';
+export * from './generator.types';

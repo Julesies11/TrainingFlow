@@ -16,6 +16,7 @@ import {
   eventPrioritiesApi,
   eventsApi,
   eventTypesApi,
+  generatorApi,
   goalsApi,
   libraryApi,
   notesApi,
@@ -25,6 +26,8 @@ import {
   workoutsApi,
 } from '@/services/api/training';
 import { useSupabaseUserId } from './use-supabase-user';
+
+export { useIsDeveloper } from './use-is-developer';
 
 // ─── Query Keys ──────────────────────────────────────────────
 const KEYS = {
@@ -41,6 +44,9 @@ const KEYS = {
   userSportSettings: (uid: string) => ['userSportSettings', uid] as const,
   eventTypes: ['eventTypes'] as const,
   eventPriorities: ['eventPriorities'] as const,
+  workoutCategories: ['workoutCategories'] as const,
+  planTemplates: (sportTypeId?: string) =>
+    ['planTemplates', sportTypeId].filter(Boolean) as const,
 };
 
 // ─── Profile ─────────────────────────────────────────────────
@@ -325,7 +331,18 @@ export function useDeleteWorkoutsBulk() {
       sportTypeIds: string[];
     }) => workoutsApi.deleteBulk(filters, userId!),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: KEYS.workouts(userId!) });
+      qc.invalidateQueries({ queryKey: ['workouts', userId] });
+    },
+  });
+}
+
+export function useDeleteByPlan() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (planId: string) => workoutsApi.deleteByPlan(planId, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['workouts', userId] });
     },
   });
 }
@@ -497,6 +514,18 @@ export function useCreateNote() {
   });
 }
 
+export function useCreateNotesBulk() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (notes: CreateNoteInput[]) =>
+      notesApi.createBulk(notes, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.notes(userId!) });
+    },
+  });
+}
+
 export function useUpdateNote() {
   const userId = useSupabaseUserId();
   const qc = useQueryClient();
@@ -526,6 +555,67 @@ export function useDeleteNote() {
     mutationFn: (id: string) => notesApi.remove(id, userId!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.notes(userId!) });
+    },
+  });
+}
+
+// ─── Generator ──────────────────────────────────────────────
+export function useWorkoutCategories() {
+  const userId = useSupabaseUserId();
+  return useQuery({
+    queryKey: KEYS.workoutCategories,
+    queryFn: () => generatorApi.getCategories(),
+    enabled: !!userId,
+    staleTime: 60 * 60 * 1000, // Categories are relatively static
+  });
+}
+
+export function usePlanTemplates() {
+  const userId = useSupabaseUserId();
+  return useQuery({
+    queryKey: KEYS.planTemplates(),
+    queryFn: () => generatorApi.getTemplates(),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreatePlanTemplate() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (template: Partial<PlanTemplate>) =>
+      generatorApi.createTemplate(template, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.planTemplates() });
+    },
+  });
+}
+
+export function useUpdatePlanTemplate() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (template: PlanTemplate) =>
+      generatorApi.updateTemplate(template, userId!),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: KEYS.planTemplates() });
+      qc.setQueryData(
+        KEYS.planTemplates(),
+        (old: PlanTemplate[] | undefined) =>
+          old?.map((t) => (t.id === data.id ? data : t)),
+      );
+    },
+  });
+}
+
+export function useDeletePlanTemplate() {
+  const userId = useSupabaseUserId();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => generatorApi.deleteTemplate(id, userId!),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.planTemplates() });
     },
   });
 }

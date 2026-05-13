@@ -1,4 +1,5 @@
 export { workoutsApi } from './workouts.api';
+export { generatorApi } from './generator.api';
 export { libraryApi } from './library.api';
 export { eventsApi } from './events.api';
 export { profileApi } from './profile.api';

@@ -1,6 +1,7 @@
 import { ReactNode, useState } from 'react';
 import { RiErrorWarningFill } from '@remixicon/react';
 import {
+  MutationCache,
   QueryCache,
   QueryClient,
   QueryClientProvider,
@@ -39,6 +40,24 @@ const QueryProvider = ({ children }: { children: ReactNode }) => {
                 position: 'top-center',
               },
             );
+          },
+        }),
+        mutationCache: new MutationCache({
+          onError: (error) => {
+            const message =
+              error.message || 'Something went wrong. Please try again.';
+
+            // Log mutation failures to database
+            errorLogsApi.capture({
+              message: `TanStack Mutation Error: ${message}`,
+              stack: error instanceof Error ? error.stack : undefined,
+              component_name: 'MutationProvider',
+              severity: 'error',
+            });
+
+            // We don't show a global toast for mutations because most components
+            // (like our Garmin Import Dialog) handle their own mutation toast
+            // feedback specifically.
           },
         }),
       }),

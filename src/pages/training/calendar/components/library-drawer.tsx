@@ -182,7 +182,15 @@ export function LibraryDrawer({
                       return (
                         <div
                           key={template.id}
-                          className="group relative overflow-hidden rounded-xl border shadow-sm transition-all hover:shadow-md"
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData(
+                              'libraryWorkout',
+                              JSON.stringify(template),
+                            );
+                            e.dataTransfer.effectAllowed = 'copy';
+                          }}
+                          className="group relative overflow-hidden rounded-xl border shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing"
                         >
                           <button
                             onClick={() => onSelectTemplate(template)}

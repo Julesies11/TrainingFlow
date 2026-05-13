@@ -20,7 +20,11 @@ vi.mock('@/hooks/use-training-data', () => ({
   useCreateNote: vi.fn(),
   useUpdateNote: vi.fn(),
   useDeleteNote: vi.fn(),
+  useDeleteByPlan: vi.fn().mockReturnValue({ mutate: vi.fn() }),
   useCreateWorkoutsBulk: vi
+    .fn()
+    .mockReturnValue({ mutate: vi.fn(), isPending: false }),
+  useCreateNotesBulk: vi
     .fn()
     .mockReturnValue({ mutate: vi.fn(), isPending: false }),
   useDeleteWorkout: vi.fn(),

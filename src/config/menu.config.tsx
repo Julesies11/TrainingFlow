@@ -1,6 +1,7 @@
 import {
   BookOpen,
   CalendarCheck,
+  Layers,
   LayoutGrid,
   Target,
   Trophy,
@@ -24,6 +25,11 @@ export const MENU_SIDEBAR: MenuConfig = [
     path: '/training/library',
   },
   {
+    title: 'Training Plans',
+    icon: Layers,
+    path: '/account/templates',
+  },
+  {
     title: 'Goals',
     icon: Target,
     path: '/training/goals',
@@ -40,8 +46,9 @@ export const MENU_SIDEBAR_COMPACT: MenuConfig = MENU_SIDEBAR;
 export const MENU_MEGA: MenuConfig = [
   { title: 'Dashboard', path: '/dashboard' },
   { title: 'Calendar', path: '/training/calendar' },
-  { title: 'Goals', path: '/training/goals' },
   { title: 'Library', path: '/training/library' },
+  { title: 'Training Plans', path: '/account/templates' },
+  { title: 'Goals', path: '/training/goals' },
   { title: 'Events', path: '/training/events' },
 ];
 export const MENU_MEGA_MOBILE: MenuConfig = MENU_MEGA;
