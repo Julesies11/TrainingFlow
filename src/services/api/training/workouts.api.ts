@@ -214,18 +214,58 @@ export const workoutsApi = {
   },
 
   async deleteBulk(
-    filters: { fromDate: string; toDate: string; sportTypeIds: string[] },
+    filters: {
+      fromDate: string;
+      toDate: string;
+      sportTypeIds: string[];
+      daysOfWeek?: number[];
+    },
     userId: string,
   ): Promise<void> {
-    const { error } = await supabase
+    // 1. Fetch workouts within the date range and sport types
+    const query = supabase
       .from('tf_workouts')
-      .delete()
+      .select('id, date')
       .eq('user_id', userId)
       .gte('date', filters.fromDate)
       .lte('date', filters.toDate)
       .in('sport_type_id', filters.sportTypeIds);
 
-    if (error) throw error;
+    const { data: workouts, error: fetchError } = await query;
+
+    if (fetchError) throw fetchError;
+    if (!workouts || workouts.length === 0) return;
+
+    // 2. Filter by day of week if provided
+    let idsToDelete = workouts.map((w) => w.id);
+
+    if (filters.daysOfWeek && filters.daysOfWeek.length < 7) {
+      const selectedDays = new Set(filters.daysOfWeek);
+      idsToDelete = workouts
+        .filter((w) => {
+          // date is YYYY-MM-DD. Get ISO day of week (1=Mon, 7=Sun)
+          const date = new Date(w.date);
+          // getDay() is 0=Sun, 1=Mon... 6=Sat
+          let dow = date.getDay();
+          if (dow === 0) dow = 7; // Convert to 1-7 (Mon-Sun)
+          return selectedDays.has(dow);
+        })
+        .map((w) => w.id);
+    }
+
+    if (idsToDelete.length === 0) return;
+
+    // 3. Delete matching workouts in chunks to avoid potential limits
+    const chunkSize = 200;
+    for (let i = 0; i < idsToDelete.length; i += chunkSize) {
+      const chunk = idsToDelete.slice(i, i + chunkSize);
+      const { error: deleteError } = await supabase
+        .from('tf_workouts')
+        .delete()
+        .in('id', chunk);
+
+      if (deleteError) throw deleteError;
+    }
   },
 
   async deleteByPlan(planId: string, userId: string): Promise<void> {

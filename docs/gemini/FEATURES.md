@@ -45,7 +45,15 @@ TrainingFlow is designed as a management platform with the following core module
     - **Advanced Plan Builder**:
         - **Multi-Activity Support**: Create complex periodization blocks involving any number of sport types.
         - **Rich Analytics**: Visual progression charts with relative week numbers and cross-template volume standardization for easy comparison.
-        - **Advanced Toolset**: Access to Bulk Delete, AI-Program Import, and Garmin Activity Import directly within the builder to rapidly seed and refine plans.
+        - **Advanced Toolset**: 
+            - **Enhanced Bulk Delete**: Rapidly seed and refine plans with precise deletion criteria including:
+                - **Date Range**: Filter by start and end dates.
+                - **Sport Type**: Select one or many activities.
+                - **Days of Week**: Filter by specific days (e.g., delete only "Monday" and "Wednesday" sessions).
+                - **Mobile-First UI**: Optimized for mobile devices with large tap targets and a compact day-selection toggle group.
+                - **Smart Defaults**: Automatically selects all sports and all days of the week upon opening for a "delete all" baseline.
+            - **AI-Program Import**: Import structured training programs.
+            - **Garmin Activity Import**: Directly seed plans from historical Garmin data.
         - **Total Load Metrics**: Instant visibility into total plan volume, median commitment, and session frequency.
 - *Status:* Planned/In-Progress.
 - Tracking participant data and individual requirements.

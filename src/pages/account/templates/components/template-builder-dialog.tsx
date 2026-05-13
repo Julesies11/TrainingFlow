@@ -76,6 +76,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -269,23 +276,23 @@ export function TemplateBuilderDialog({
   };
 
   const handleBulkDeleteFromTemplate = (
-    fromDate: string,
-    toDate: string,
+    fromWeek: string,
+    toWeek: string,
     sportTypeIds: string[],
+    daysOfWeek: number[],
   ) => {
+    const fW = parseInt(fromWeek);
+    const tW = parseInt(toWeek);
+
     setFormData((prev) => ({
       ...prev,
       workouts: (prev.workouts || []).filter((tw) => {
-        const weekStart = addWeeks(DUMMY_BASE_DATE, tw.weekNumber - 1);
-        const daysToAdd = tw.dayOfWeek - 1;
-        const projectedDate = addDays(weekStart, daysToAdd);
-        const dateStr = formatDateToLocalISO(projectedDate);
-
-        const isInRange = dateStr >= fromDate && dateStr <= toDate;
+        const isInWeekRange = tw.weekNumber >= fW && tw.weekNumber <= tW;
         const isSelectedSport = sportTypeIds.includes(tw.sportTypeId);
+        const isSelectedDay = daysOfWeek.includes(tw.dayOfWeek);
 
-        // Keep if NOT in range OR NOT a selected sport
-        return !(isInRange && isSelectedSport);
+        // Keep if NOT (in week range AND selected sport AND selected day)
+        return !(isInWeekRange && isSelectedSport && isSelectedDay);
       }),
     }));
   };
@@ -763,42 +770,40 @@ export function TemplateBuilderDialog({
               isDraggingId={isDraggingId}
               dragOverInfo={dragOverInfo}
               hideDates={true}
-            />
+          />
 
-            {/* Inline Analytics Pane */}
-            {showChart && (
-              <div className="bg-background border-t shadow-2xl h-[440px] shrink-0 p-6 flex flex-col gap-4 animate-in slide-in-from-bottom duration-300 overflow-hidden rounded-2xl border">
-                <div className="flex items-center justify-between shrink-0">
-                  <h3 className="text-xs font-black uppercase tracking-widest flex items-center gap-2">
-                    <BarChart3 className="h-4 w-4 text-primary" />
-                    Training Plan Analytics
-                  </h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowChart(false)}
-                    className="h-8 w-8 p-0"
-                  >
-                    <Plus className="h-4 w-4 rotate-45" />
-                  </Button>
-                </div>
+          <Sheet open={showChart} onOpenChange={setShowChart}>
+            <SheetContent
+              side="right"
+              className="sm:max-w-xl md:max-w-2xl lg:max-w-3xl xl:max-w-4xl p-0 overflow-hidden flex flex-col"
+            >
+              <SheetHeader className="px-6 py-5 border-b shrink-0 bg-muted/5">
+                <SheetTitle className="text-xl font-black lowercase tracking-tighter flex items-center gap-2.5">
+                  <BarChart3 className="h-5 w-5 text-primary" />
+                  Training Plan Analytics
+                </SheetTitle>
+                <SheetDescription className="sr-only">
+                  Visualize volume and performance progression for this training
+                  plan.
+                </SheetDescription>
+              </SheetHeader>
 
-                <div className="flex-1 min-h-0 overflow-y-auto pr-1">
-                  <VolumeChartWidget
-                    workouts={projectedWorkouts}
-                    events={[]}
-                    notes={projectedNotes}
-                    goals={[]}
-                    sportTypes={sportTypes}
-                    initialPivotDate={addWeeks(DUMMY_BASE_DATE, 6)}
-                    title="Plan Load Progression"
-                    templateMode={true}
-                    totalWeeks={formData.totalWeeks}
-                  />
-                </div>
+              <div className="flex-1 min-h-0 overflow-y-auto p-6 bg-muted/5">
+                <VolumeChartWidget
+                  workouts={projectedWorkouts}
+                  events={[]}
+                  notes={projectedNotes}
+                  goals={[]}
+                  sportTypes={sportTypes}
+                  initialPivotDate={addWeeks(DUMMY_BASE_DATE, 6)}
+                  title="Plan Load Progression"
+                  templateMode={true}
+                  totalWeeks={formData.totalWeeks}
+                />
               </div>
-            )}
-          </div>
+            </SheetContent>
+          </Sheet>
+        </div>
 
           {/* Library Drawer - Integrated exactly like calendar */}
           <LibraryDrawer
@@ -892,6 +897,8 @@ export function TemplateBuilderDialog({
           open={showBulkDeleteDialog}
           onOpenChange={setShowBulkDeleteDialog}
           onBulkDelete={handleBulkDeleteFromTemplate}
+          isTemplateMode={true}
+          totalWeeks={formData.totalWeeks}
         />
 
         <AlertDialog

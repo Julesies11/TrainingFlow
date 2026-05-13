@@ -29,7 +29,8 @@ export const ImportWorkoutSchema = z
       data.date ||
       (data.weekNumber !== undefined && data.dayOfWeek !== undefined),
     {
-      message: "Either 'date' or both 'weekNumber' and 'dayOfWeek' are required",
+      message:
+        "Either 'date' or both 'weekNumber' and 'dayOfWeek' are required",
     },
   );
 
@@ -113,7 +114,9 @@ export async function parseImportData(
   return rawData.map((raw) => {
     const errors: string[] = [];
     let isValid = true;
-    let workout: Partial<Workout & { weekNumber?: number; dayOfWeek?: number }> | undefined;
+    let workout:
+      | Partial<Workout & { weekNumber?: number; dayOfWeek?: number }>
+      | undefined;
 
     const result = ImportWorkoutSchema.safeParse(raw);
 

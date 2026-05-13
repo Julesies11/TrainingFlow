@@ -25,9 +25,7 @@ describe('VolumeChart Template Mode', () => {
     },
   ];
 
-  const mockSportTypes = [
-    { id: 'run-id', name: 'Run', distanceUnit: 'km' },
-  ];
+  const mockSportTypes = [{ id: 'run-id', name: 'Run', distanceUnit: 'km' }];
 
   it('renders exact number of weeks in template mode', () => {
     const totalWeeks = 6;
@@ -45,9 +43,11 @@ describe('VolumeChart Template Mode', () => {
       />,
     );
 
-    const lastCallProps = vi.mocked(mockApexChart).mock.calls.slice(-1)[0][0] as any;
+    const lastCallProps = vi
+      .mocked(mockApexChart)
+      .mock.calls.slice(-1)[0][0] as any;
     const categories = lastCallProps.options.xaxis.categories;
-    
+
     // Should have exactly totalWeeks categories
     expect(categories).toHaveLength(totalWeeks);
     expect(categories[0]).toBe('Week 1');
@@ -69,12 +69,14 @@ describe('VolumeChart Template Mode', () => {
       />,
     );
 
-    const lastCallProps = vi.mocked(mockApexChart).mock.calls.slice(-1)[0][0] as any;
+    const lastCallProps = vi
+      .mocked(mockApexChart)
+      .mock.calls.slice(-1)[0][0] as any;
     const series = lastCallProps.options.series;
-    
+
     // In templateMode, series[0] is the 'Planned' series containing all data
     const combinedData = series[0].data;
-    
+
     expect(combinedData[0]).toBe(1); // Week 1
     expect(combinedData[1]).toBe(0); // Week 2
     expect(combinedData[2]).toBe(0); // Week 3

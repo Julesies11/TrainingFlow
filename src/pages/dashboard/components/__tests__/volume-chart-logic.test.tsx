@@ -57,8 +57,8 @@ describe('VolumeChart Logic', () => {
     const pastValues = seriesData[0].data;
     const futureValues = seriesData[1].data;
 
-    const combinedValues = pastValues.map(
-      (p: number | null, i: number) => Math.max(p || 0, futureValues[i] || 0),
+    const combinedValues = pastValues.map((p: number | null, i: number) =>
+      Math.max(p || 0, futureValues[i] || 0),
     );
 
     // Total should be (60 + 120) / 60 = 3 hours
@@ -87,8 +87,8 @@ describe('VolumeChart Logic', () => {
       .mock.calls.slice(-1)[0][0] as any;
     const pastValues = lastCallProps.options.series[0].data;
     const futureValues = lastCallProps.options.series[1].data;
-    const combinedValues = pastValues.map(
-      (p: number | null, i: number) => Math.max(p || 0, futureValues[i] || 0),
+    const combinedValues = pastValues.map((p: number | null, i: number) =>
+      Math.max(p || 0, futureValues[i] || 0),
     );
 
     // Only Run (10km) should be present, not Bike (40km)

@@ -329,6 +329,7 @@ export function useDeleteWorkoutsBulk() {
       fromDate: string;
       toDate: string;
       sportTypeIds: string[];
+      daysOfWeek?: number[];
     }) => workoutsApi.deleteBulk(filters, userId!),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['workouts', userId] });
@@ -600,10 +601,8 @@ export function useUpdatePlanTemplate() {
       generatorApi.updateTemplate(template, userId!),
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: KEYS.planTemplates() });
-      qc.setQueryData(
-        KEYS.planTemplates(),
-        (old: PlanTemplate[] | undefined) =>
-          old?.map((t) => (t.id === data.id ? data : t)),
+      qc.setQueryData(KEYS.planTemplates(), (old: PlanTemplate[] | undefined) =>
+        old?.map((t) => (t.id === data.id ? data : t)),
       );
     },
   });

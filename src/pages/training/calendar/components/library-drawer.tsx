@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, Search, Trash2, X } from 'lucide-react';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import {
   LibraryWorkout,
   SportTypeRecord,
@@ -16,6 +16,12 @@ import {
 import { isPaceRelevant } from '@/services/training/pace-utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
 
 interface LibraryDrawerProps {
   open: boolean;
@@ -81,38 +87,21 @@ export function LibraryDrawer({
   };
 
   return (
-    <>
-      {/* Overlay */}
-      {open && (
-        <div
-          className="fixed inset-0 z-[95] bg-black/40 transition-opacity"
-          onClick={onClose}
-        />
-      )}
-
-      <div
-        className={`bg-card fixed inset-y-0 right-0 z-[100] flex w-full flex-col border-l shadow-2xl transition-transform duration-300 sm:w-[450px] ${
-          open ? 'translate-x-0' : 'translate-x-full'
-        }`}
+    <Sheet open={open} onOpenChange={(val) => !val && onClose()}>
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col p-0 sm:max-w-[450px]"
       >
-        <div className="flex shrink-0 items-center justify-between border-b px-6 py-4">
+        <SheetHeader className="shrink-0 border-b px-6 py-5 bg-muted/5">
           <div className="flex flex-col">
-            <h3 className="text-xl font-black lowercase tracking-tighter">
+            <SheetTitle className="text-xl font-black lowercase tracking-tighter">
               workout library
-            </h3>
-            <p className="text-primary text-[10px] font-black uppercase tracking-widest">
+            </SheetTitle>
+            <p className="text-primary text-[10px] font-black uppercase tracking-widest mt-0.5">
               target: {selectedDate}
             </p>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+        </SheetHeader>
 
         <div className="flex flex-col gap-4 p-6 pb-2">
           <div className="relative">
@@ -121,7 +110,7 @@ export function LibraryDrawer({
               placeholder="search templates..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 text-sm"
+              className="pl-9 text-sm rounded-xl border-muted-foreground/10 bg-muted/20 focus:bg-background transition-all"
             />
           </div>
 
@@ -130,7 +119,7 @@ export function LibraryDrawer({
               variant={sportFilter === 'all' ? 'primary' : 'outline'}
               size="sm"
               onClick={() => setSportFilter('all')}
-              className="h-7 text-[10px] font-black uppercase"
+              className="h-7 text-[10px] font-black uppercase rounded-lg"
             >
               all
             </Button>
@@ -140,7 +129,7 @@ export function LibraryDrawer({
                 variant={sportFilter === st.id ? 'primary' : 'outline'}
                 size="sm"
                 onClick={() => setSportFilter(st.id)}
-                className="h-7 text-[10px] font-black uppercase"
+                className="h-7 text-[10px] font-black uppercase rounded-lg"
               >
                 {st.name}
               </Button>
@@ -164,7 +153,7 @@ export function LibraryDrawer({
             <div className="space-y-8">
               {groupedLibrary.map(([sportName, templates]) => (
                 <div key={sportName} className="space-y-3">
-                  <h4 className="text-muted-foreground flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
+                  <h4 className="text-muted-foreground flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-1">
                     <span className="bg-muted h-px flex-1" />
                     {sportName}
                     <span className="bg-muted h-px flex-1" />
@@ -190,11 +179,11 @@ export function LibraryDrawer({
                             );
                             e.dataTransfer.effectAllowed = 'copy';
                           }}
-                          className="group relative overflow-hidden rounded-xl border shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing"
+                          className="group relative overflow-hidden rounded-2xl border border-transparent shadow-sm transition-all hover:shadow-md cursor-grab active:cursor-grabbing hover:border-muted-foreground/10"
                         >
                           <button
                             onClick={() => onSelectTemplate(template)}
-                            className={`flex w-full flex-col p-3 text-left transition-colors ${contrast}`}
+                            className={`flex w-full flex-col p-4 text-left transition-colors ${contrast}`}
                             style={{ backgroundColor: bg }}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -224,15 +213,15 @@ export function LibraryDrawer({
                             </div>
                           </button>
 
-                          <div className="absolute right-2 top-1/2 flex -translate-y-1/2 gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <div className="absolute right-3 top-1/2 flex -translate-y-1/2 gap-2 opacity-0 transition-opacity group-hover:opacity-100">
                             <Button
                               variant="secondary"
                               size="sm"
                               onClick={(e) => handleAddTemplate(e, template)}
-                              className="h-8 w-8 rounded-full p-0 shadow-lg"
+                              className="h-9 w-9 rounded-xl p-0 shadow-lg border-0"
                               title={`Add to ${selectedDate}`}
                             >
-                              <Plus className="h-4 w-4" />
+                              <Plus className="h-5 w-5" />
                             </Button>
 
                             <Button
@@ -248,9 +237,9 @@ export function LibraryDrawer({
                                   onDeleteLibrary(template.id);
                                 }
                               }}
-                              className="h-8 w-8 rounded-full p-0 shadow-lg"
+                              className="h-9 w-9 rounded-xl p-0 shadow-lg border-0"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-5 w-5" />
                             </Button>
                           </div>
                         </div>
@@ -262,7 +251,7 @@ export function LibraryDrawer({
             </div>
           )}
         </div>
-      </div>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 }
