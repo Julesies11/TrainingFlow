@@ -105,26 +105,62 @@ const queryClient = new QueryClient({
   },
 });
 
-export function AllTheProviders({ children }: { children: ReactNode }) {
-  return (
+interface ProviderOptions {
+  initialEntries?: string[];
+  includeRouter?: boolean;
+}
+
+export function AllTheProviders({
+  children,
+  initialEntries = ['/'],
+  includeRouter = true,
+}: {
+  children: ReactNode;
+  initialEntries?: string[];
+  includeRouter?: boolean;
+}) {
+  const content = (
     <SettingsProvider>
       <ThemeProvider>
         <I18nProvider>
           <QueryClientProvider client={queryClient}>
-            <AuthProvider>
-              <MemoryRouter>{children}</MemoryRouter>
-            </AuthProvider>
+            <AuthProvider>{children}</AuthProvider>
           </QueryClientProvider>
         </I18nProvider>
       </ThemeProvider>
     </SettingsProvider>
   );
+
+  if (includeRouter) {
+    return (
+      <MemoryRouter initialEntries={initialEntries}>{content}</MemoryRouter>
+    );
+  }
+
+  return content;
 }
 
 const customRender = (
   ui: React.ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>,
-) => render(ui, { wrapper: AllTheProviders, ...options });
+  options?: Omit<RenderOptions, 'wrapper'> & ProviderOptions,
+) => {
+  const {
+    initialEntries,
+    includeRouter = true,
+    ...renderOptions
+  } = options || {};
+  return render(ui, {
+    wrapper: ({ children }) => (
+      <AllTheProviders
+        initialEntries={initialEntries}
+        includeRouter={includeRouter}
+      >
+        {children}
+      </AllTheProviders>
+    ),
+    ...renderOptions,
+  });
+};
 
 export * from '@testing-library/react';
 export { customRender as render };

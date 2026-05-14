@@ -40,10 +40,11 @@ export function AppRoutingSetup() {
       <Route element={<RequireAuth />}>
         <Route element={<Demo1Layout />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="/training/calendar" element={<CalendarView />} />
-          <Route path="/training/library" element={<LibraryPage />} />
-          <Route path="/training/events" element={<EventsPage />} />
-          <Route path="/training/goals" element={<GoalsPage />} />
+          <Route path="/calendar" element={<CalendarView />} />
+          <Route path="/calendar/:year/:month" element={<CalendarView />} />
+          <Route path="/workout-library" element={<LibraryPage />} />
+          <Route path="/events" element={<EventsPage />} />
+          <Route path="/goals" element={<GoalsPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/account/profile" element={<ProfilePage />} />
           <Route
@@ -60,7 +61,8 @@ export function AppRoutingSetup() {
           />
           <Route path="/account/event-types" element={<EventTypesPage />} />
           <Route path="/account/sport-types" element={<SportTypesPage />} />
-          <Route path="/account/templates" element={<TemplatesPage />} />
+          <Route path="/training-plans" element={<TemplatesPage />} />
+          <Route path="/training-plans/:id" element={<TemplatesPage />} />
           <Route path="/admin/sport-types" element={<SportTypesAdminPage />} />
           <Route path="/admin/event-types" element={<EventTypesAdminPage />} />
           <Route

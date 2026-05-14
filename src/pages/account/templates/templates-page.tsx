@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { PlanTemplate, SportTypeRecord } from '@/types/training';
 import {
   useDeletePlanTemplate,
@@ -193,10 +194,29 @@ export function TemplatesPage() {
     usePlanTemplates();
   const { data: sportTypes = [] } = useSportTypes();
   const deleteTemplate = useDeletePlanTemplate();
+  const navigate = useNavigate();
+  const { id } = useParams();
 
   const [templateToEdit, setTemplateToEdit] =
     useState<Partial<PlanTemplate> | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Sync state with URL parameter
+  useEffect(() => {
+    if (id === 'new') {
+      setTemplateToEdit({ name: '', totalWeeks: 4, workouts: [], notes: [] });
+    } else if (id && templates.length > 0) {
+      const found = templates.find((t) => t.id === id);
+      if (found) {
+        setTemplateToEdit(found);
+      } else {
+        // If not found, clear param
+        navigate('/training-plans', { replace: true });
+      }
+    } else if (!id) {
+      setTemplateToEdit(null);
+    }
+  }, [id, templates, navigate]);
 
   const globalMaxVolume = useMemo(() => {
     let max = 0;
@@ -247,13 +267,7 @@ export function TemplatesPage() {
             </p>
           </div>
           <Button
-            onClick={() =>
-              setTemplateToEdit({
-                name: '',
-                totalWeeks: 4,
-                weeks: [],
-              })
-            }
+            onClick={() => navigate('/training-plans/new')}
             className="gap-1.5"
           >
             <Plus className="h-4 w-4" />
@@ -267,13 +281,7 @@ export function TemplatesPage() {
               <p className="text-sm font-medium">no templates found</p>
               <Button
                 variant="link"
-                onClick={() =>
-                  setTemplateToEdit({
-                    name: '',
-                    totalWeeks: 4,
-                    weeks: [],
-                  })
-                }
+                onClick={() => navigate('/training-plans/new')}
               >
                 create your first template
               </Button>
@@ -302,7 +310,7 @@ export function TemplatesPage() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
-                      onClick={() => setTemplateToEdit(template)}
+                      onClick={() => navigate(`/training-plans/${template.id}`)}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>

@@ -34,7 +34,7 @@ describe('LibraryDrawer', () => {
 
   it('opens LibraryTemplateDialog when "Add new template" button is clicked', async () => {
     render(<LibraryDrawer {...defaultProps} />);
-    
+
     // Dialog shouldn't be visible initially
     expect(screen.queryByText(/new template/i)).not.toBeInTheDocument();
 

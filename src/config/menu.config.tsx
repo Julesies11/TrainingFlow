@@ -17,27 +17,27 @@ export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Calendar',
     icon: CalendarCheck,
-    path: '/training/calendar',
+    path: '/calendar',
   },
   {
     title: 'Workout Library',
     icon: BookOpen,
-    path: '/training/library',
+    path: '/workout-library',
   },
   {
     title: 'Training Plans',
     icon: Layers,
-    path: '/account/templates',
+    path: '/training-plans',
   },
   {
     title: 'Goals',
     icon: Target,
-    path: '/training/goals',
+    path: '/goals',
   },
   {
     title: 'Events',
     icon: Trophy,
-    path: '/training/events',
+    path: '/events',
   },
 ];
 
@@ -45,10 +45,10 @@ export const MENU_SIDEBAR_CUSTOM: MenuConfig = MENU_SIDEBAR;
 export const MENU_SIDEBAR_COMPACT: MenuConfig = MENU_SIDEBAR;
 export const MENU_MEGA: MenuConfig = [
   { title: 'Dashboard', path: '/dashboard' },
-  { title: 'Calendar', path: '/training/calendar' },
-  { title: 'Library', path: '/training/library' },
-  { title: 'Training Plans', path: '/account/templates' },
-  { title: 'Goals', path: '/training/goals' },
-  { title: 'Events', path: '/training/events' },
+  { title: 'Calendar', path: '/calendar' },
+  { title: 'Library', path: '/workout-library' },
+  { title: 'Training Plans', path: '/training-plans' },
+  { title: 'Goals', path: '/goals' },
+  { title: 'Events', path: '/events' },
 ];
 export const MENU_MEGA_MOBILE: MenuConfig = MENU_MEGA;

@@ -35,7 +35,7 @@ export function AppRouting() {
 
   useEffect(() => {
     // Skip automatic scroll to top for the training calendar as it handles its own scrolling
-    if (!CSS.escape(window.location.hash) && path !== '/training/calendar') {
+    if (!CSS.escape(window.location.hash) && !path.startsWith('/calendar')) {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }, [previousLocation, path]);

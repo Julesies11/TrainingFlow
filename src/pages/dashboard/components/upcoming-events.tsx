@@ -53,7 +53,7 @@ export const UpcomingEvents = memo(function UpcomingEvents({
               upcoming events
             </h3>
           </div>
-          <Link to="/training/events">
+          <Link to="/events">
             <span className="text-primary text-xs font-semibold hover:underline lowercase">
               view all →
             </span>

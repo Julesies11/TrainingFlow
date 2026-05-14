@@ -3,19 +3,15 @@ import { MENU_SIDEBAR } from '../menu.config';
 
 describe('Menu Configuration', () => {
   it('has renamed "Training Goals" to "Goals"', () => {
-    const goalsItem = MENU_SIDEBAR.find(
-      (item) => item.path === '/training/goals',
-    );
+    const goalsItem = MENU_SIDEBAR.find((item) => item.path === '/goals');
     expect(goalsItem?.title).toBe('Goals');
   });
 
   it('has moved "Goals" below "Workout Library"', () => {
     const libraryIndex = MENU_SIDEBAR.findIndex(
-      (item) => item.path === '/training/library',
+      (item) => item.path === '/workout-library',
     );
-    const goalsIndex = MENU_SIDEBAR.findIndex(
-      (item) => item.path === '/training/goals',
-    );
+    const goalsIndex = MENU_SIDEBAR.findIndex((item) => item.path === '/goals');
 
     expect(libraryIndex).toBeGreaterThan(-1);
     expect(goalsIndex).toBeGreaterThan(-1);

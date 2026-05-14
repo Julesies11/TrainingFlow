@@ -36,6 +36,10 @@ TrainingFlow is designed as a management platform with the following core module
     - **Activity Import**: Seamlessly import training sessions from Garmin Connect via CSV files.
     - **Intelligent Mapping**: Two-tiered mapping system (system defaults + user overrides) to link Garmin activity types to internal sports.
     - **On-the-fly Configuration**: Automatically detects unmapped Garmin activities and prompts users to configure them during the import process.
+- **Deep Linking & Simplified URLs**:
+    - **Clean Route Structure**: Navigation paths have been simplified for better readability and accessibility (e.g., `/calendar`, `/workout-library`, `/events`).
+    - **Bookmarkable Training Plans**: Opening or creating a training plan template now updates the URL to `/training-plans/:id` or `/training-plans/new`, allowing direct linking and bookmarking.
+    - **Calendar Deep Linking**: The calendar's month and year state is synced with the URL (e.g., `/calendar/2026/05`), enabling users to bookmark specific training months and navigate through history using browser back/forward buttons.
 - **Workout Library**: Save and reuse workout plans.
 ...
 - **Training Plan Generator**:

@@ -11,9 +11,9 @@ export function BottomNav() {
 
   const navItems = [
     { name: 'Home', path: '/dashboard', icon: Home },
-    { name: 'Plan', path: '/training/calendar', icon: Calendar },
-    { name: 'Library', path: '/training/library', icon: BookOpen },
-    { name: 'Events', path: '/training/events', icon: Trophy },
+    { name: 'Plan', path: '/calendar', icon: Calendar },
+    { name: 'Library', path: '/workout-library', icon: BookOpen },
+    { name: 'Events', path: '/events', icon: Trophy },
   ];
 
   return (

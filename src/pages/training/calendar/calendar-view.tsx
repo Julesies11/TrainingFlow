@@ -9,6 +9,7 @@ import {
   Trash2,
   Watch,
 } from 'lucide-react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Event, LibraryWorkout, Note, Workout } from '@/types/training';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';
 import {
@@ -66,6 +67,9 @@ import { PlanGeneratorWizard } from './components/plan-generator-wizard';
 import { WorkoutDialog } from './components/workout-dialog';
 
 export function CalendarView() {
+  const { year, month } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
   const userId = useSupabaseUserId();
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
   const { data: notes = [] } = useNotes();
@@ -104,12 +108,33 @@ export function CalendarView() {
     formatDateToLocalISO(new Date()),
   );
 
-  const [displayMonth, setDisplayMonth] = useState<number>(
-    new Date().getMonth(),
-  );
-  const [displayYear, setDisplayYear] = useState<number>(
-    new Date().getFullYear(),
-  );
+  const [displayMonth, setDisplayMonth] = useState<number>(() => {
+    if (month) return parseInt(month, 10) - 1;
+    return new Date().getMonth();
+  });
+
+  const [displayYear, setDisplayYear] = useState<number>(() => {
+    if (year) return parseInt(year, 10);
+    return new Date().getFullYear();
+  });
+
+  // Sync state with URL
+  useEffect(() => {
+    const targetPath = `/calendar/${displayYear}/${displayMonth + 1}`;
+    if (location.pathname !== targetPath) {
+      navigate(targetPath, { replace: true });
+    }
+  }, [displayMonth, displayYear, navigate, location.pathname]);
+
+  // Handle back/forward navigation
+  useEffect(() => {
+    if (year && month) {
+      const y = parseInt(year, 10);
+      const m = parseInt(month, 10) - 1;
+      if (y !== displayYear) setDisplayYear(y);
+      if (m !== displayMonth) setDisplayMonth(m);
+    }
+  }, [year, month, displayYear, displayMonth]);
 
   const todayRef = useRef<HTMLDivElement>(null);
   const hasInitialScrolled = useRef(false);

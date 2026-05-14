@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@/test/test-utils';
-import { Workout } from '@/types/training';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { Workout } from '@/types/training';
 import { WorkoutDialog } from '../workout-dialog';
 
 describe('WorkoutDialog', () => {
@@ -9,7 +9,7 @@ describe('WorkoutDialog', () => {
   const mockSportTypes = [
     { id: '1', name: 'Run' },
     { id: '2', name: 'Bike' },
-  ] as any;
+  ] as unknown;
 
   beforeEach(() => {
     vi.clearAllMocks();

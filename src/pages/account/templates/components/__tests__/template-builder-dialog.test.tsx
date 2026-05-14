@@ -109,7 +109,9 @@ describe('TemplateBuilderDialog', () => {
 
     await waitFor(
       () => {
-        expect(screen.getByText(/Bulk Delete Template Sessions/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/Bulk Delete Template Sessions/i),
+        ).toBeInTheDocument();
       },
       { timeout: 2000 },
     );
