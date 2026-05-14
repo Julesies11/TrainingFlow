@@ -3,6 +3,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Download,
   FileUp,
   Plus,
   Sparkles,
@@ -57,6 +58,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { EventDialog } from '../_shared/components/event-dialog';
+import { ExportDialog } from '../_shared/components/export-dialog';
 import { BulkDeleteDialog } from './components/bulk-delete-dialog';
 import { CalendarGrid } from './components/calendar-grid';
 import { GarminImportDialog } from './components/garmin-import-dialog';
@@ -148,6 +150,7 @@ export function CalendarView() {
     useState<Event | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [showGarminImportDialog, setShowGarminImportDialog] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [showPlanGenerator, setShowPlanGenerator] = useState(false);
@@ -390,6 +393,16 @@ export function CalendarView() {
     setWorkoutToEdit(null);
   };
 
+  const handleExport = () => {
+    setShowExportDialog(true);
+  };
+
+  const defaultExportRange = useMemo(() => {
+    const from = formatDateToLocalISO(new Date(displayYear, displayMonth, 1));
+    const to = formatDateToLocalISO(new Date(displayYear, displayMonth + 1, 0));
+    return { from, to };
+  }, [displayMonth, displayYear]);
+
   const isLoading =
     !userId || loadingWorkouts || loadingSports || loadingSettings;
 
@@ -521,6 +534,20 @@ export function CalendarView() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>Import AI Program</TooltipContent>
+              </Tooltip>
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleExport}
+                    className="h-9 w-9"
+                  >
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Export Workouts (CSV)</TooltipContent>
               </Tooltip>
 
               <Tooltip>
@@ -697,6 +724,13 @@ export function CalendarView() {
         <ImportDialog
           open={showImportDialog}
           onOpenChange={setShowImportDialog}
+        />
+        <ExportDialog
+          open={showExportDialog}
+          onOpenChange={setShowExportDialog}
+          sportTypes={sportTypes}
+          defaultFromDate={defaultExportRange.from}
+          defaultToDate={defaultExportRange.to}
         />
         {/* Plan Generator Wizard */}
         {showPlanGenerator && (

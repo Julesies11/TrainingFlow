@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { ExportDialog } from '@/pages/training/_shared/components/export-dialog';
 import { VolumeChartWidget } from '@/pages/training/_shared/components/volume-chart-widget';
 import { BulkDeleteDialog } from '@/pages/training/calendar/components/bulk-delete-dialog';
 import { CalendarGrid } from '@/pages/training/calendar/components/calendar-grid';
@@ -18,6 +19,7 @@ import {
   BookOpen,
   ChevronLeft,
   ChevronRight,
+  Download,
   FileUp,
   Loader2,
   MoreVertical,
@@ -164,6 +166,7 @@ export function TemplateBuilderDialog({
   const [noteToEdit, setNoteToEdit] = useState<Partial<Note> | null>(null);
   const [showLibrary, setShowLibrary] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [isDraggingId, setIsDraggingId] = useState<string | null>(null);
   const [dragOverInfo, setDragOverInfo] = useState<{
@@ -714,6 +717,13 @@ export function TemplateBuilderDialog({
                     <span className="font-bold lowercase">import ai</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
+                    onClick={() => setShowExportDialog(true)}
+                    className="gap-2"
+                  >
+                    <Download className="h-4 w-4" />
+                    <span className="font-bold lowercase">export csv</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
                     onClick={() => setShowBulkDeleteDialog(true)}
                     className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
                   >
@@ -893,6 +903,13 @@ export function TemplateBuilderDialog({
           onOpenChange={setShowImportDialog}
           onImport={handleImportToTemplate}
           templateMode={true}
+        />
+
+        <ExportDialog
+          open={showExportDialog}
+          onOpenChange={setShowExportDialog}
+          sportTypes={sportTypes}
+          template={formData}
         />
 
         <BulkDeleteDialog

@@ -1,7 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  addDays,
+  differenceInCalendarDays,
+  min,
+  parseISO,
+  startOfWeek,
+} from 'date-fns';
+import {
   AlertCircle,
   AlertTriangle,
+  Calendar as CalendarIcon,
   CheckCircle2,
   ClipboardList,
   Copy,
@@ -16,6 +24,7 @@ import {
   useCreateWorkoutsBulk,
   useSportTypes,
 } from '@/hooks/use-training-data';
+import { formatDateToLocalISO } from '@/services/training/calendar.utils';
 import {
   parseImportData,
   ProcessedImportRow,
@@ -64,6 +73,11 @@ export function ImportDialog({
   const [isProcessing, setIsProcessing] = useState(false);
   const [showPreview, setShowStats] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
+
+  // Smart import state
+  const [anchorDate, setAnchorDate] = useState(
+    formatDateToLocalISO(new Date()),
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -121,23 +135,77 @@ export function ImportDialog({
   };
 
   const handleImport = () => {
-    const validWorkouts = processedRows
+    let validWorkouts = processedRows
       .filter((r) => r.isValid && r.workout)
-      .map((r) => r.workout!);
+      .map((r) => ({ ...r.workout! }));
 
     if (validWorkouts.length === 0) {
       toast.error('No valid workouts to import');
       return;
     }
 
+    // --- Smart Bi-directional Logic ---
+    if (!templateMode) {
+      // CALENDAR IMPORT: Check if we need to anchor relative coordinates
+      const needsAnchoring = validWorkouts.some((w) => !w.date && w.weekNumber);
+      if (needsAnchoring) {
+        const startOfAnchorWeek = startOfWeek(parseISO(anchorDate), {
+          weekStartsOn: 1,
+        });
+        validWorkouts = validWorkouts.map((w) => {
+          if (!w.date && w.weekNumber && w.dayOfWeek) {
+            const offsetDays = (w.weekNumber - 1) * 7 + (w.dayOfWeek - 1);
+            return {
+              ...w,
+              date: formatDateToLocalISO(
+                addDays(startOfAnchorWeek, offsetDays),
+              ),
+            };
+          }
+          return w;
+        });
+      }
+    } else {
+      // TEMPLATE IMPORT: Check if we need to calculate relative coordinates from absolute dates
+      const needsRelative = validWorkouts.some((w) => w.date && !w.weekNumber);
+      if (needsRelative) {
+        const dates = validWorkouts
+          .filter((w) => w.date)
+          .map((w) => parseISO(w.date!));
+
+        if (dates.length > 0) {
+          const earliestDate = min(dates);
+          const startOfPlanWeek = startOfWeek(earliestDate, {
+            weekStartsOn: 1,
+          });
+
+          validWorkouts = validWorkouts.map((w) => {
+            if (w.date && !w.weekNumber) {
+              const workoutDate = parseISO(w.date);
+              const diffDays = differenceInCalendarDays(
+                workoutDate,
+                startOfPlanWeek,
+              );
+              return {
+                ...w,
+                weekNumber: Math.floor(diffDays / 7) + 1,
+                dayOfWeek: (diffDays % 7) + 1,
+              };
+            }
+            return w;
+          });
+        }
+      }
+    }
+
     if (onImport) {
-      onImport(validWorkouts);
+      onImport(validWorkouts as unknown);
       toast.success(`Successfully imported ${validWorkouts.length} workouts`);
       onOpenChange(false);
       return;
     }
 
-    createWorkoutsBulk.mutate(validWorkouts, {
+    createWorkoutsBulk.mutate(validWorkouts as unknown, {
       onSuccess: () => {
         toast.success(`Successfully imported ${validWorkouts.length} workouts`);
         onOpenChange(false);
@@ -423,6 +491,46 @@ export function ImportDialog({
                     )}
                   </div>
                 )}
+
+                {!templateMode &&
+                  processedRows.some(
+                    (r) =>
+                      r.isValid && !r.workout?.date && r.workout?.weekNumber,
+                  ) && (
+                    <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <CalendarIcon className="h-4 w-4 text-primary" />
+                        <h4 className="text-sm font-black lowercase text-primary">
+                          anchor to calendar
+                        </h4>
+                      </div>
+                      <p className="text-xs font-medium text-primary/80">
+                        We detected a training plan (relative weeks/days) rather
+                        than absolute dates. Select the start date to anchor
+                        this plan to your calendar.
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="max-w-[200px] w-full">
+                          <Label
+                            htmlFor="anchorDate"
+                            className="text-[10px] font-black uppercase text-primary/60 mb-1 block"
+                          >
+                            plan start date
+                          </Label>
+                          <Input
+                            id="anchorDate"
+                            type="date"
+                            value={anchorDate}
+                            onChange={(e) => setAnchorDate(e.target.value)}
+                            className="bg-background border-primary/20 h-9 text-xs"
+                          />
+                        </div>
+                        <div className="text-[10px] font-medium text-primary/60 mt-4 italic">
+                          * Plan will start from the Monday of this week.
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                 <div className="border rounded-xl overflow-x-auto">
                   <div className="min-w-[600px] md:min-w-0">

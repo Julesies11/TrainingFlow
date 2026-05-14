@@ -40,6 +40,13 @@ TrainingFlow is designed as a management platform with the following core module
     - **Clean Route Structure**: Navigation paths have been simplified for better readability and accessibility (e.g., `/calendar`, `/workout-library`, `/events`).
     - **Bookmarkable Training Plans**: Opening or creating a training plan template now updates the URL to `/training-plans/:id` or `/training-plans/new`, allowing direct linking and bookmarking.
     - **Calendar Deep Linking**: The calendar's month and year state is synced with the URL (e.g., `/calendar/2026/05`), enabling users to bookmark specific training months and navigate through history using browser back/forward buttons.
+- **Workout Export & Smart Import**:
+    - **Bi-directional Portability**: Workouts can be exported from the Calendar or Training Plans and seamlessly imported into either context.
+    - **Smart Coordinate Mapping**:
+        - **Calendar ➔ Template**: Absolute dates are automatically converted to relative week/day coordinates based on the earliest session.
+        - **Template ➔ Calendar**: Users are prompted for a "Start Date" to anchor relative training plans to absolute calendar dates.
+    - **Flexible Filters**: Export specific training blocks by selecting date ranges and activity types (sports).
+    - **Unified Format**: Exports use a CSV format compatible with the "Import AI" function, facilitating easy sharing between athletes.
 - **Workout Library**: Save and reuse workout plans.
 ...
 - **Training Plan Generator**:
