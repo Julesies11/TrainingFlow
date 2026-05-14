@@ -161,7 +161,13 @@ export const VolumeChartWidget = memo(function VolumeChartWidget({
             {/* Visibility Toggles */}
             <div className="flex items-center gap-2 ml-auto">
               <div className="flex items-center gap-3 bg-muted/50 rounded-lg border px-3 py-1.5 shadow-inner">
-                <div className="flex items-center gap-2 pr-3 border-r border-muted-foreground/20">
+                <div
+                  className={`flex items-center gap-2 ${
+                    !templateMode
+                      ? 'pr-3 border-r border-muted-foreground/20'
+                      : ''
+                  }`}
+                >
                   <Label
                     htmlFor="notes-toggle"
                     className="text-[10px] font-black uppercase tracking-widest text-gray-600 cursor-pointer"
@@ -178,22 +184,24 @@ export const VolumeChartWidget = memo(function VolumeChartWidget({
                   </SwitchWrapper>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <Label
-                    htmlFor="events-toggle"
-                    className="text-[10px] font-black uppercase tracking-widest text-primary cursor-pointer"
-                  >
-                    events
-                  </Label>
-                  <SwitchWrapper>
-                    <Switch
-                      id="events-toggle"
-                      checked={showEvents}
-                      onCheckedChange={setShowEvents}
-                      size="sm"
-                    />
-                  </SwitchWrapper>
-                </div>
+                {!templateMode && (
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="events-toggle"
+                      className="text-[10px] font-black uppercase tracking-widest text-primary cursor-pointer"
+                    >
+                      events
+                    </Label>
+                    <SwitchWrapper>
+                      <Switch
+                        id="events-toggle"
+                        checked={showEvents}
+                        onCheckedChange={setShowEvents}
+                        size="sm"
+                      />
+                    </SwitchWrapper>
+                  </div>
+                )}
               </div>
             </div>
           </div>
