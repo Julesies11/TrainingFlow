@@ -15,7 +15,7 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 
 ## Performance & Scalability
 - **Range-Based Fetching**: To prevent data overfetching, workouts, events, and notes are queried using date range filters (`fromDate`, `toDate`) in the API and TanStack Query hooks. This ensures the client only processes data relevant to the current view (e.g., Dashboard window).
-- **Lazy Loading**: Heavy components like the `VolumeChart` (which uses ApexCharts) are lazy-loaded via `React.lazy` and `Suspense` to minimize the initial bundle size and improve page load speed.
+- **Lazy Loading**: Heavy components like the `VolumeChart` (which uses ApexCharts) are lazy-loaded via `React.lazy` and Suspense to minimize the initial bundle size and improve page load speed.
 - **Efficient Aggregation**: Training charts use $O(N+M)$ Map-based aggregation instead of nested filtering. Data is pre-grouped by date once, allowing for constant-time lookups during bucket generation.
 - **Component Memoization**: Pure presentational components and high-level dashboard widgets are wrapped in `React.memo` to eliminate unnecessary re-renders during state updates.
 
@@ -23,6 +23,11 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 - All external data flows through **Supabase**.
 - Services are located in `src/services/` and should be used within TanStack Query hooks.
 - **Zod** is used for runtime validation and type inference.
+- **TanStack Query**: Used for all server-side data fetching and caching. Implements $O(N+M)$ Map-based aggregation for performance.
+
+## 🚀 Navigation & State Management
+- **Single Source of Truth (URL)**: For pages requiring deep-linking (like the Calendar and Training Plan detail), the URL is the primary source of truth. Component state for month/year or plan IDs is derived directly from `useParams()` and `useLocation()`. This prevents "state-flicker" bugs where local state and URL parameters compete for control during navigation.
+- **Controlled Navigation**: User actions (button clicks, dropdown selections) should update the URL via React Router's `navigate()` function, allowing the routing system to drive the component re-render.
 
 ## UI Patterns
 - **Lookup Master Pattern**: Standard values (Event Types, Priorities) are database-backed. Standard users can personalize their experience by managing private custom entries via master dialogs, while administrators can manage global "System" defaults via a dedicated admin interface.

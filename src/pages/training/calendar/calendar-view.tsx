@@ -110,33 +110,19 @@ export function CalendarView() {
     formatDateToLocalISO(new Date()),
   );
 
-  const [displayMonth, setDisplayMonth] = useState<number>(() => {
-    if (month) return parseInt(month, 10) - 1;
-    return new Date().getMonth();
-  });
+  // Derive month/year from URL parameters (1-indexed month in URL)
+  const now = new Date();
+  const displayMonth = month ? parseInt(month, 10) - 1 : now.getMonth();
+  const displayYear = year ? parseInt(year, 10) : now.getFullYear();
 
-  const [displayYear, setDisplayYear] = useState<number>(() => {
-    if (year) return parseInt(year, 10);
-    return new Date().getFullYear();
-  });
-
-  // Sync state with URL
+  // Redirect to current month if no parameters provided
   useEffect(() => {
-    const targetPath = `/calendar/${displayYear}/${displayMonth + 1}`;
-    if (location.pathname !== targetPath) {
-      navigate(targetPath, { replace: true });
+    if (!year || !month) {
+      navigate(`/calendar/${now.getFullYear()}/${now.getMonth() + 1}`, {
+        replace: true,
+      });
     }
-  }, [displayMonth, displayYear, navigate, location.pathname]);
-
-  // Handle back/forward navigation
-  useEffect(() => {
-    if (year && month) {
-      const y = parseInt(year, 10);
-      const m = parseInt(month, 10) - 1;
-      if (y !== displayYear) setDisplayYear(y);
-      if (m !== displayMonth) setDisplayMonth(m);
-    }
-  }, [year, month, displayYear, displayMonth]);
+  }, [year, month, navigate]);
 
   const todayRef = useRef<HTMLDivElement>(null);
   const hasInitialScrolled = useRef(false);
@@ -201,32 +187,38 @@ export function CalendarView() {
     return generateWeeksFrom(startMonday, weekCount);
   }, [displayMonth, displayYear, generateWeeksFrom]);
 
-  // Navigation helpers - simple state updates, no scroll
+  // Navigation helpers - update URL, which in turn updates the view
   const stepMonth = useCallback(
     (dir: 'up' | 'down') => {
+      let nextMonth = displayMonth;
+      let nextYear = displayYear;
+
       if (dir === 'up') {
         if (displayMonth === 0) {
-          setDisplayYear((y) => y - 1);
-          setDisplayMonth(11);
+          nextYear -= 1;
+          nextMonth = 11;
         } else {
-          setDisplayMonth((m) => m - 1);
+          nextMonth -= 1;
         }
       } else {
         if (displayMonth === 11) {
-          setDisplayYear((y) => y + 1);
-          setDisplayMonth(0);
+          nextYear += 1;
+          nextMonth = 0;
         } else {
-          setDisplayMonth((m) => m + 1);
+          nextMonth += 1;
         }
       }
+
+      navigate(`/calendar/${nextYear}/${nextMonth + 1}`, { replace: true });
     },
-    [displayMonth],
+    [displayMonth, displayYear, navigate],
   );
 
   const goToToday = useCallback(() => {
     const today = new Date();
-    setDisplayMonth(today.getMonth());
-    setDisplayYear(today.getFullYear());
+    navigate(`/calendar/${today.getFullYear()}/${today.getMonth() + 1}`, {
+      replace: true,
+    });
     setSelectedDate(formatDateToLocalISO(today));
 
     // Scroll to today after state updates
@@ -236,7 +228,7 @@ export function CalendarView() {
         block: 'center',
       });
     }, 100);
-  }, []);
+  }, [navigate]);
 
   // Drag & drop handlers
 
@@ -438,7 +430,11 @@ export function CalendarView() {
             <div className="flex items-center gap-1 lg:gap-2">
               <Select
                 value={displayMonth.toString()}
-                onValueChange={(val) => setDisplayMonth(parseInt(val, 10))}
+                onValueChange={(val) =>
+                  navigate(`/calendar/${displayYear}/${parseInt(val, 10) + 1}`, {
+                    replace: true,
+                  })
+                }
               >
                 <SelectTrigger className="h-auto w-[110px] border-none bg-transparent p-0 shadow-none hover:bg-muted/50 focus:ring-0 lg:w-[170px] text-lg font-black lowercase tracking-tighter lg:text-3xl text-left justify-start gap-1">
                   <SelectValue />
@@ -457,7 +453,11 @@ export function CalendarView() {
               </Select>
               <Select
                 value={displayYear.toString()}
-                onValueChange={(val) => setDisplayYear(parseInt(val, 10))}
+                onValueChange={(val) =>
+                  navigate(`/calendar/${val}/${displayMonth + 1}`, {
+                    replace: true,
+                  })
+                }
               >
                 <SelectTrigger className="h-auto w-[70px] border-none bg-transparent p-0 shadow-none hover:bg-muted/50 focus:ring-0 lg:w-[100px] text-lg font-black lowercase tracking-tighter text-muted-foreground lg:text-3xl text-left justify-start gap-1">
                   <SelectValue />
