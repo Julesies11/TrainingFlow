@@ -45,7 +45,20 @@ This report documents the series of enhancements, UI fixes, and critical data bu
 - **Refactoring:** Consolidated the JSON and CSV processing paths in `parseImportData` to ensure consistent validation.
 - **Database Update:** Created `supabase/migrations/2026051301_fix_template_key_workouts.sql` to permanently remove the `is_key_workout` flag from non-key template sessions (Mondays, Fridays, and Gym/Strength).
 
+## 7. Plan Generator Wizard ReferenceError
+**Objective:** Fix a critical crash when switching to "Forward" mode in the Plan Generator Wizard.
+- **Root Cause:** `CalendarPlus` icon was used in the component but not imported from `lucide-react`.
+- **Fix:** Added the missing `CalendarPlus` import to `src/pages/training/calendar/components/plan-generator-wizard.tsx`.
+- **Validation:** Added a new unit test `src/pages/training/calendar/components/__tests__/plan-generator-wizard.test.tsx` that specifically verifies the component renders correctly in forward mode.
+
+## 8. Workout Dialog Coordinate Sync (Template Mode)
+**Objective:** Fix a bug where week/day inputs were hidden for new workouts in template mode, and ensure they stay in sync with the derived date.
+- **Fix:** Updated the conditional rendering in `WorkoutDialog.tsx` to always show week/day inputs when `isTemplateMode` is true, even if the absolute date is hidden.
+- **Logic Sync:** Verified that `handleSaveWorkout` in `TemplateBuilderDialog` always recalculates coordinates from the date, preventing "collapsed" sessions when adding library items.
+- **Accessibility:** Added `aria-label` attributes to Select triggers and floating buttons to improve testability and screen reader support.
+
 ## Testing & Validation
-- ✅ ESLint run and TypeScript definitions validated.
-- ✅ Unit tests updated and all 9 test suites pass successfully.
+- ✅ ESLint passed with 0 errors (warnings related to Metronic Fast Refresh preserved).
+- ✅ Unit tests added for Plan Generator and Template Builder coordinate logic.
+- ✅ All unit tests and smoke tests passed (Playwright excluded).
 - ✅ Application built successfully (`npm run build`).

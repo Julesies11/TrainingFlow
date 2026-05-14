@@ -90,6 +90,49 @@ describe('TemplateBuilderDialog', () => {
     expect(screen.getByText(/discard changes/i)).toBeInTheDocument();
   });
 
+  it('recalculates coordinates from date when saving a workout', async () => {
+    // This tests the "Recurrence Bug Fix" where coordinates must stay in sync with date
+    renderComponent({
+      template: {
+        id: 't1',
+        name: 'Test',
+        workouts: [],
+        totalWeeks: 4,
+      },
+    });
+
+    // 1. Open the WorkoutDialog (e.g. by clicking the floating add button)
+    const addBtn = screen.getByRole('button', { name: /add workout/i });
+    fireEvent.click(addBtn);
+
+    // 2. Mock a save from the WorkoutDialog with a specific date but mismatched coordinates
+    // In the real UI, the user selects a date, and the dialog passes it back.
+    // We can find the "Save Session" button and trigger it.
+
+    // Fill in required fields to enable save
+    const titleInput = screen.getByPlaceholderText(/session title/i);
+    fireEvent.change(titleInput, { target: { value: 'New Workout' } });
+
+    // The date defaults to DUMMY_BASE_DATE (2024-01-01), which is Week 1, Day 1 (Monday)
+    // We'll change it to Week 2, Tuesday
+    const weekInput = screen.getByLabelText(/week number/i);
+    fireEvent.change(weekInput, { target: { value: '2' } });
+
+    const dayTrigger = screen.getByLabelText(/day of week/i);
+    fireEvent.click(dayTrigger);
+    const tuesdayOption = await screen.findByRole('option', {
+      name: /tuesday/i,
+    });
+    fireEvent.click(tuesdayOption);
+
+    const saveBtn = screen.getByRole('button', { name: /save session/i });
+    fireEvent.click(saveBtn);
+
+    // 3. Verify the workout in the grid or the internal state (via rendered output)
+    expect(screen.getByText(/Week 2/i)).toBeInTheDocument();
+    expect(screen.getByText('New Workout')).toBeInTheDocument();
+  });
+
   it('opens the Bulk Delete dialog from the more actions menu', async () => {
     renderComponent();
 

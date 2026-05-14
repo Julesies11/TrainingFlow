@@ -1,16 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   BookOpen,
+  CalendarPlus,
   ChevronLeft,
   ChevronRight,
   Download,
   FileUp,
   Plus,
-  Sparkles,
   Trash2,
   Watch,
 } from 'lucide-react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Event, LibraryWorkout, Note, Workout } from '@/types/training';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';
 import {
@@ -71,7 +71,7 @@ import { WorkoutDialog } from './components/workout-dialog';
 export function CalendarView() {
   const { year, month } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
+
   const userId = useSupabaseUserId();
   const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
   const { data: notes = [] } = useNotes();
@@ -111,7 +111,7 @@ export function CalendarView() {
   );
 
   // Derive month/year from URL parameters (1-indexed month in URL)
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const displayMonth = month ? parseInt(month, 10) - 1 : now.getMonth();
   const displayYear = year ? parseInt(year, 10) : now.getFullYear();
 
@@ -122,7 +122,7 @@ export function CalendarView() {
         replace: true,
       });
     }
-  }, [year, month, navigate]);
+  }, [year, month, navigate, now]);
 
   const todayRef = useRef<HTMLDivElement>(null);
   const hasInitialScrolled = useRef(false);
@@ -431,9 +431,12 @@ export function CalendarView() {
               <Select
                 value={displayMonth.toString()}
                 onValueChange={(val) =>
-                  navigate(`/calendar/${displayYear}/${parseInt(val, 10) + 1}`, {
-                    replace: true,
-                  })
+                  navigate(
+                    `/calendar/${displayYear}/${parseInt(val, 10) + 1}`,
+                    {
+                      replace: true,
+                    },
+                  )
                 }
               >
                 <SelectTrigger className="h-auto w-[110px] border-none bg-transparent p-0 shadow-none hover:bg-muted/50 focus:ring-0 lg:w-[170px] text-lg font-black lowercase tracking-tighter lg:text-3xl text-left justify-start gap-1">
@@ -572,9 +575,9 @@ export function CalendarView() {
                 onClick={() => setShowPlanGenerator(true)}
                 className="gap-1.5 border-primary/20 text-primary hover:bg-primary/5"
               >
-                <Sparkles className="h-4 w-4" />
+                <CalendarPlus className="h-4 w-4" />
                 <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline">
-                  Generate
+                  Apply Plan
                 </span>
               </Button>
 

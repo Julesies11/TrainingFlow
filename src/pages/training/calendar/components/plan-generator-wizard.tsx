@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { format, parseISO } from 'date-fns';
-import { Calendar, Loader2, Sparkles, Wand2 } from 'lucide-react';
+import { Calendar, CalendarPlus, Loader2, Sparkles, Wand2 } from 'lucide-react';
 import {
   useCreateNotesBulk,
   useCreateWorkoutsBulk,
@@ -123,7 +123,10 @@ export function PlanGeneratorWizard({ onClose }: PlanGeneratorWizardProps) {
                   value={selectedTemplateId}
                   onValueChange={setSelectedTemplateId}
                 >
-                  <SelectTrigger className="font-bold">
+                  <SelectTrigger
+                    className="font-bold"
+                    aria-label="choose a static training plan"
+                  >
                     <SelectValue placeholder="choose a static training plan..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -170,7 +173,7 @@ export function PlanGeneratorWizard({ onClose }: PlanGeneratorWizardProps) {
                         : 'border-border hover:bg-muted/50'
                     }`}
                   >
-                    <Wand2
+                    <CalendarPlus
                       className={`h-5 w-5 ${mode === 'forward' ? 'text-primary' : 'text-muted-foreground'}`}
                     />
                     <div className="flex flex-col gap-0.5">
@@ -196,7 +199,10 @@ export function PlanGeneratorWizard({ onClose }: PlanGeneratorWizardProps) {
                       value={selectedEventId}
                       onValueChange={setSelectedEventId}
                     >
-                      <SelectTrigger className="font-bold">
+                      <SelectTrigger
+                        className="font-bold"
+                        aria-label="choose an event"
+                      >
                         <SelectValue placeholder="choose an event..." />
                       </SelectTrigger>
                       <SelectContent>

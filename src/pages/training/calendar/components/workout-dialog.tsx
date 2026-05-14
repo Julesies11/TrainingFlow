@@ -261,7 +261,7 @@ export function WorkoutDialog({
               {/* Left column */}
               <div className="space-y-6">
                 {/* Date / Week selection (at the top) */}
-                {isTemplateMode && (isDuplicated || !hideDate) ? (
+                {isTemplateMode ? (
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label

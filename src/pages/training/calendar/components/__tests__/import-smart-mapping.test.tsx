@@ -1,7 +1,7 @@
 import { render, screen } from '@/test/test-utils';
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ImportDialog } from '../import-dialog';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as trainingHooks from '@/hooks/use-training-data';
+import { ImportDialog } from '../import-dialog';
 
 // Mock hooks
 vi.mock('@/hooks/use-training-data', () => ({
@@ -17,11 +17,13 @@ describe('ImportDialog Smart Mapping Smoke Test', () => {
     vi.mocked(trainingHooks.useSportTypes).mockReturnValue({
       data: mockSportTypes,
       isLoading: false,
-    } as any);
+    } as unknown);
   });
 
   it('renders without crashing', () => {
     render(<ImportDialog open={true} onOpenChange={() => {}} />);
-    expect(screen.getByRole('heading', { name: /import training plan/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /import training plan/i }),
+    ).toBeInTheDocument();
   });
 });

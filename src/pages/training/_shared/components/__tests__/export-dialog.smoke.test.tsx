@@ -1,9 +1,10 @@
 import { render, screen } from '@/test/test-utils';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
+import { PlanTemplate, SportTypeRecord } from '@/types/training';
 import { ExportDialog } from '../export-dialog';
 
 describe('ExportDialog Smoke Test', () => {
-  const mockSportTypes = [
+  const mockSportTypes: Partial<SportTypeRecord>[] = [
     { id: 'run', name: 'Run' },
     { id: 'bike', name: 'Bike' },
   ];
@@ -13,8 +14,8 @@ describe('ExportDialog Smoke Test', () => {
       <ExportDialog
         open={true}
         onOpenChange={() => {}}
-        sportTypes={mockSportTypes as any}
-      />
+        sportTypes={mockSportTypes as SportTypeRecord[]}
+      />,
     );
 
     expect(screen.getByText(/export workouts/i)).toBeInTheDocument();
@@ -25,18 +26,25 @@ describe('ExportDialog Smoke Test', () => {
   });
 
   it('renders correctly for template mode', () => {
-    const mockTemplate = { name: 'Test Plan', workouts: [] };
+    const mockTemplate: Partial<PlanTemplate> = {
+      name: 'Test Plan',
+      workouts: [],
+    };
     render(
       <ExportDialog
         open={true}
         onOpenChange={() => {}}
-        sportTypes={mockSportTypes as any}
-        template={mockTemplate}
-      />
+        sportTypes={mockSportTypes as SportTypeRecord[]}
+        template={mockTemplate as PlanTemplate}
+      />,
     );
 
-    expect(screen.getByRole('heading', { name: /export workouts/i })).toBeInTheDocument();
-    expect(screen.getByText(/export workouts from "test plan"/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: /export workouts/i }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/export workouts from "test plan"/i),
+    ).toBeInTheDocument();
     expect(screen.queryByText(/from date/i)).not.toBeInTheDocument();
   });
 });

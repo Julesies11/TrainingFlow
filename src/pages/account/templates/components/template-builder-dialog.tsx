@@ -853,6 +853,7 @@ export function TemplateBuilderDialog({
             setWorkoutToEdit({ date: selectedDate, order: Date.now() })
           }
           className="fixed bottom-8 right-8 z-[90] h-14 w-14 shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 transition-shadow"
+          aria-label="Add workout"
         >
           <Plus className="h-6 w-6" />
         </Button>

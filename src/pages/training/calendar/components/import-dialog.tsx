@@ -1,12 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  addDays,
-  differenceInCalendarDays,
-  min,
-  parseISO,
-  startOfWeek,
-} from 'date-fns';
-import {
   AlertCircle,
   AlertTriangle,
   Calendar as CalendarIcon,
@@ -25,6 +18,10 @@ import {
   useSportTypes,
 } from '@/hooks/use-training-data';
 import { formatDateToLocalISO } from '@/services/training/calendar.utils';
+import {
+  anchorPlanToDate,
+  convertDatesToCoordinates,
+} from '@/services/training/import-export.utils';
 import {
   parseImportData,
   ProcessedImportRow,
@@ -146,56 +143,9 @@ export function ImportDialog({
 
     // --- Smart Bi-directional Logic ---
     if (!templateMode) {
-      // CALENDAR IMPORT: Check if we need to anchor relative coordinates
-      const needsAnchoring = validWorkouts.some((w) => !w.date && w.weekNumber);
-      if (needsAnchoring) {
-        const startOfAnchorWeek = startOfWeek(parseISO(anchorDate), {
-          weekStartsOn: 1,
-        });
-        validWorkouts = validWorkouts.map((w) => {
-          if (!w.date && w.weekNumber && w.dayOfWeek) {
-            const offsetDays = (w.weekNumber - 1) * 7 + (w.dayOfWeek - 1);
-            return {
-              ...w,
-              date: formatDateToLocalISO(
-                addDays(startOfAnchorWeek, offsetDays),
-              ),
-            };
-          }
-          return w;
-        });
-      }
+      validWorkouts = anchorPlanToDate(validWorkouts, anchorDate);
     } else {
-      // TEMPLATE IMPORT: Check if we need to calculate relative coordinates from absolute dates
-      const needsRelative = validWorkouts.some((w) => w.date && !w.weekNumber);
-      if (needsRelative) {
-        const dates = validWorkouts
-          .filter((w) => w.date)
-          .map((w) => parseISO(w.date!));
-
-        if (dates.length > 0) {
-          const earliestDate = min(dates);
-          const startOfPlanWeek = startOfWeek(earliestDate, {
-            weekStartsOn: 1,
-          });
-
-          validWorkouts = validWorkouts.map((w) => {
-            if (w.date && !w.weekNumber) {
-              const workoutDate = parseISO(w.date);
-              const diffDays = differenceInCalendarDays(
-                workoutDate,
-                startOfPlanWeek,
-              );
-              return {
-                ...w,
-                weekNumber: Math.floor(diffDays / 7) + 1,
-                dayOfWeek: (diffDays % 7) + 1,
-              };
-            }
-            return w;
-          });
-        }
-      }
+      validWorkouts = convertDatesToCoordinates(validWorkouts);
     }
 
     if (onImport) {

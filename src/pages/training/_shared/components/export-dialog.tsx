@@ -15,10 +15,7 @@ import {
 } from 'lucide-react';
 import Papa from 'papaparse';
 import { toast } from 'sonner';
-import {
-  PlanTemplate,
-  SportTypeRecord,
-} from '@/types/training';
+import { PlanTemplate, SportTypeRecord } from '@/types/training';
 import { useSupabaseUserId } from '@/hooks/use-supabase-user';
 import { workoutsApi } from '@/services/api/training/workouts.api';
 import { Button } from '@/components/ui/button';
