@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/common/icons';
 import { getSigninSchema, SigninSchemaType } from '../forms/signin-schema';
+import { toAbsoluteUrl } from '@/lib/helpers';
 
 export function SignInPage() {
   const [searchParams] = useSearchParams();
@@ -156,6 +157,16 @@ export function SignInPage() {
         className="block w-full space-y-5"
       >
         <div className="text-center space-y-1 pb-3">
+          <img
+            src={toAbsoluteUrl('/media/app/default-logo.svg')}
+            className="h-[48px] mx-auto mb-4 dark:hidden"
+            alt="Logo"
+          />
+          <img
+            src={toAbsoluteUrl('/media/app/default-logo-dark.svg')}
+            className="h-[48px] mx-auto mb-4 hidden dark:block"
+            alt="Logo"
+          />
           <h1 className="text-2xl font-black lowercase tracking-tighter">
             sign in
           </h1>
@@ -164,15 +175,6 @@ export function SignInPage() {
           </p>
         </div>
 
-        <Alert appearance="light" size="sm" close={false}>
-          <AlertIcon>
-            <AlertCircle className="text-primary" />
-          </AlertIcon>
-          <AlertTitle className="text-accent-foreground">
-            Use <strong>demo@kt.com</strong> username and {` `}
-            <strong>demo123</strong> password for demo access.
-          </AlertTitle>
-        </Alert>
 
         <div className="flex flex-col gap-3.5">
           <Button

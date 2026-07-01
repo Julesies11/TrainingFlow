@@ -24,6 +24,7 @@ import {
   getNewPasswordSchema,
   NewPasswordSchemaType,
 } from '../forms/reset-password-schema';
+import { toAbsoluteUrl } from '@/lib/helpers';
 
 export function ChangePasswordPage() {
   const navigate = useNavigate();
@@ -128,6 +129,16 @@ export function ChangePasswordPage() {
     return (
       <div className="max-w-md mx-auto space-y-5">
         <div className="text-center space-y-2">
+          <img
+            src={toAbsoluteUrl('/media/app/default-logo.svg')}
+            className="h-[48px] mx-auto mb-4 dark:hidden"
+            alt="Logo"
+          />
+          <img
+            src={toAbsoluteUrl('/media/app/default-logo-dark.svg')}
+            className="h-[48px] mx-auto mb-4 hidden dark:block"
+            alt="Logo"
+          />
           <h1 className="text-2xl font-bold tracking-tight">Reset Password</h1>
           <p className="text-sm text-muted-foreground">
             You need a valid reset link to change your password
@@ -163,6 +174,16 @@ export function ChangePasswordPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <div className="text-center space-y-2">
+            <img
+              src={toAbsoluteUrl('/media/app/default-logo.svg')}
+              className="h-[48px] mx-auto mb-4 dark:hidden"
+              alt="Logo"
+            />
+            <img
+              src={toAbsoluteUrl('/media/app/default-logo-dark.svg')}
+              className="h-[48px] mx-auto mb-4 hidden dark:block"
+              alt="Logo"
+            />
             <h1 className="text-2xl font-bold tracking-tight">
               Set New Password
             </h1>

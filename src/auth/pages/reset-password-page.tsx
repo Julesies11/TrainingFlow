@@ -19,6 +19,7 @@ import {
   getResetRequestSchema,
   ResetRequestSchemaType,
 } from '../forms/reset-password-schema';
+import { toAbsoluteUrl } from '@/lib/helpers';
 
 export function ResetPasswordPage() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -75,6 +76,16 @@ export function ResetPasswordPage() {
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <div className="text-center space-y-2">
+            <img
+              src={toAbsoluteUrl('/media/app/default-logo.svg')}
+              className="h-[48px] mx-auto mb-4 dark:hidden"
+              alt="Logo"
+            />
+            <img
+              src={toAbsoluteUrl('/media/app/default-logo-dark.svg')}
+              className="h-[48px] mx-auto mb-4 hidden dark:block"
+              alt="Logo"
+            />
             <h1 className="text-2xl font-black lowercase tracking-tighter">
               reset password
             </h1>

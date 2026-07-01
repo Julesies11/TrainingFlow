@@ -25,6 +25,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/common/icons';
 import { getSignupSchema, SignupSchemaType } from '../forms/signup-schema';
+import { toAbsoluteUrl } from '@/lib/helpers';
 
 export function SignUpPage() {
   const [searchParams] = useSearchParams();
@@ -125,6 +126,16 @@ export function SignUpPage() {
         className="block w-full space-y-5"
       >
         <div className="text-center space-y-1 pb-3">
+          <img
+            src={toAbsoluteUrl('/media/app/default-logo.svg')}
+            className="h-[48px] mx-auto mb-4 dark:hidden"
+            alt="Logo"
+          />
+          <img
+            src={toAbsoluteUrl('/media/app/default-logo-dark.svg')}
+            className="h-[48px] mx-auto mb-4 hidden dark:block"
+            alt="Logo"
+          />
           <h1 className="text-2xl font-black lowercase tracking-tighter">
             sign up
           </h1>
