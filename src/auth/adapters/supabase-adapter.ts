@@ -97,7 +97,8 @@ export const SupabaseAdapter = {
       | 'facebook'
       | 'twitter'
       | 'discord'
-      | 'slack',
+      | 'slack'
+      | 'azure',
     options?: { redirectTo?: string },
   ): Promise<void> {
     try {
@@ -169,11 +170,23 @@ export const SupabaseAdapter = {
   async requestPasswordReset(email: string): Promise<void> {
     try {
       const redirectUrl = `${window.location.origin}/auth/reset-password`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl,
-      });
+      const { data, error } = await supabase.functions.invoke(
+        'tf-send-password-reset',
+        {
+          body: {
+            email,
+            redirectTo: redirectUrl,
+          },
+        },
+      );
 
-      if (error) throw new Error(error.message);
+      if (error || (data && data.error)) {
+        throw new Error(
+          error?.message ||
+            data?.error ||
+            'Failed to send password reset email',
+        );
+      }
     } catch (err) {
       console.error('Unexpected error in password reset:', err);
       throw err;

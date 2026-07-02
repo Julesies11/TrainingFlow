@@ -149,14 +149,16 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
 
         {/* Logout */}
         <div className="p-2 mt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full"
-            onClick={logout}
-          >
-            Logout
-          </Button>
+          <DropdownMenuItem asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full cursor-pointer justify-center"
+              onClick={logout}
+            >
+              Logout
+            </Button>
+          </DropdownMenuItem>
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

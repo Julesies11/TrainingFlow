@@ -245,8 +245,8 @@ export const workoutsApi = {
         .filter((w) => {
           // date is YYYY-MM-DD. Get ISO day of week (1=Mon, 7=Sun)
           const date = new Date(w.date);
-          // getDay() is 0=Sun, 1=Mon... 6=Sat
-          let dow = date.getDay();
+          // getUTCDay() is 0=Sun, 1=Mon... 6=Sat
+          let dow = date.getUTCDay();
           if (dow === 0) dow = 7; // Convert to 1-7 (Mon-Sun)
           return selectedDays.has(dow);
         })

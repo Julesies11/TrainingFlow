@@ -149,7 +149,13 @@ export function AuthProvider({ children }: PropsWithChildren) {
   };
 
   const logout = () => {
-    SupabaseAdapter.logout();
+    // Clear React states immediately for instant UI response/redirection
+    setAuth(undefined);
+    setCurrentUser(undefined);
+    // Securely terminate the session in the background
+    SupabaseAdapter.logout().catch((err) => {
+      console.error('AuthProvider: Logout error:', err);
+    });
   };
 
   return (

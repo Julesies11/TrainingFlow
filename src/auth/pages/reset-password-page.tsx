@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Check, LoaderCircleIcon, MoveLeft } from 'lucide-react';
+import { ArrowLeft, LoaderCircleIcon, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
-import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
+import { toAbsoluteUrl } from '@/lib/helpers';
+import { SupabaseAdapter } from '@/auth/adapters/supabase-adapter';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -19,7 +19,6 @@ import {
   getResetRequestSchema,
   ResetRequestSchemaType,
 } from '../forms/reset-password-schema';
-import { toAbsoluteUrl } from '@/lib/helpers';
 
 export function ResetPasswordPage() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -40,17 +39,8 @@ export function ResetPasswordPage() {
 
       console.log('Submitting password reset for:', values.email);
 
-      // Request password reset using Supabase directly
-      const { error } = await supabase.auth.resetPasswordForEmail(
-        values.email,
-        {
-          redirectTo: `${window.location.origin}/auth/reset-password`,
-        },
-      );
-
-      if (error) {
-        throw new Error(error.message);
-      }
+      // Request password reset via Edge Function (Resend)
+      await SupabaseAdapter.requestPasswordReset(values.email);
 
       // Set success message
       setSuccessMessage(
@@ -74,8 +64,23 @@ export function ResetPasswordPage() {
   return (
     <div className="max-w-md mx-auto">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-          <div className="text-center space-y-2">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            try {
+              await form.handleSubmit(onSubmit)(e);
+            } catch (err) {
+              console.error('Reset password form resolver error:', err);
+              setError(
+                err instanceof Error
+                  ? err.message
+                  : 'An unexpected validation error occurred. Please try again.',
+              );
+            }
+          }}
+          className="space-y-4"
+        >
+          <div className="text-center space-y-1 pb-3">
             <img
               src={toAbsoluteUrl('/media/app/default-logo.svg')}
               className="h-[48px] mx-auto mb-4 dark:hidden"
@@ -95,44 +100,50 @@ export function ResetPasswordPage() {
           </div>
 
           {error && (
-            <Alert variant="destructive">
-              <AlertIcon>
-                <AlertCircle className="h-4 w-4" />
-              </AlertIcon>
-              <AlertTitle>{error}</AlertTitle>
-            </Alert>
+            <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-sm border border-destructive/20 text-center animate-fade-in">
+              {error}
+            </div>
           )}
 
           {successMessage && (
-            <Alert>
-              <AlertIcon>
-                <Check className="h-4 w-4 text-green-500" />
-              </AlertIcon>
-              <AlertTitle>{successMessage}</AlertTitle>
-            </Alert>
+            <div className="mb-4 p-4 rounded-xl bg-green-500/10 text-green-600 text-sm border border-green-500/20 text-center animate-fade-in">
+              {successMessage}
+            </div>
           )}
 
-          <div className="space-y-5">
+          <div className="space-y-4">
             <FormField
               control={form.control}
               name="email"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="your.email@example.com"
-                      type="email"
-                      autoComplete="email"
-                      {...field}
-                    />
-                  </FormControl>
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-2sm font-semibold tracking-wide">
+                    Email
+                  </FormLabel>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-3 text-muted-foreground pointer-events-none">
+                      <Mail className="w-4.5 h-4.5" />
+                    </span>
+                    <FormControl>
+                      <Input
+                        placeholder="your.email@example.com"
+                        type="email"
+                        autoComplete="email"
+                        className="w-full pl-11 pr-4 py-2.5 rounded-xl border border-border bg-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                        {...field}
+                      />
+                    </FormControl>
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <Button type="submit" className="w-full" disabled={isProcessing}>
+            <Button
+              type="submit"
+              className="w-full py-2.5 mt-2 rounded-xl bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer animate-fade-in"
+              disabled={isProcessing}
+            >
               {isProcessing ? (
                 <span className="flex items-center gap-2">
                   <LoaderCircleIcon className="h-4 w-4 animate-spin" /> Sending
@@ -144,12 +155,12 @@ export function ResetPasswordPage() {
             </Button>
           </div>
 
-          <div className="text-center text-sm">
+          <div className="text-center pt-2">
             <Link
               to="/auth/signin"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-accent-foreground hover:underline hover:underline-offset-2"
+              className="inline-flex items-center gap-1.5 text-2sm font-semibold text-primary hover:underline cursor-pointer"
             >
-              <MoveLeft className="size-3.5 opacity-70" /> Back to Sign In
+              <ArrowLeft className="w-4 h-4" /> Back to Sign In
             </Link>
           </div>
         </form>

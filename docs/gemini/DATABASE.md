@@ -31,5 +31,10 @@ Authentication is managed via Supabase Auth (`auth.users`).
   - `tf_event_segments`: Restricted to users who own the parent event.
   - `tf_sport_types`: Publicly readable by all authenticated users; writable only by creators.
   - `tf_event_types`, `tf_event_priorities`: Standard users can view "System" entries (`is_system = true`) or their own custom entries. Admins (as defined by `role = 'admin'` in `tf_profiles`) can manage all entries.
+  - `tf_garmin_sport_mapping`: Standard users can only write maps with `is_system = false`. Admins can manage all mapping configurations.
+  - `tf_error_logs`: Insert policy requires `user_id = auth.uid()` (or `user_id IS NULL` for anonymous errors) to prevent log spoofing.
+- **Triggers & Database Validation**:
+  - `tf_check_profile_role_security`: A `BEFORE INSERT OR UPDATE` trigger function on `tf_profiles` that blocks client-side role modifications. It forces new inserts to `role = 'user'` unless the caller is already an admin/developer, and throws an exception on updates to `role` attempted by standard users.
 - **Foreign Keys**: All user-specific tables must include a foreign key back to `auth.users` (usually `user_id` or `id`) with `on delete CASCADE`.
 - **Day of Week Mapping**: Notes and template workouts use a 1-indexed `day_of_week` column (**1=Monday, 7=Sunday**), strictly enforced by database `CHECK` constraints to ensure consistency with ISO standards and athlete expectations.
+

@@ -279,18 +279,23 @@ export function useUpdateWorkout() {
   return useMutation({
     mutationFn: (workout: Workout) => workoutsApi.update(workout, userId!),
     onMutate: async (updated) => {
-      await qc.cancelQueries({ queryKey: KEYS.workouts(userId!) });
-      const prev = qc.getQueryData<Workout[]>(KEYS.workouts(userId!));
-      qc.setQueryData<Workout[]>(KEYS.workouts(userId!), (old) =>
+      const queryKeyFilter = { queryKey: ['workouts', userId] };
+      await qc.cancelQueries(queryKeyFilter);
+      const prevQueries = qc.getQueriesData<Workout[]>(queryKeyFilter);
+      qc.setQueriesData<Workout[]>(queryKeyFilter, (old) =>
         old?.map((w) => (w.id === updated.id ? updated : w)),
       );
-      return { prev };
+      return { prevQueries };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(KEYS.workouts(userId!), ctx.prev);
+      if (ctx?.prevQueries) {
+        ctx.prevQueries.forEach(([key, value]) => {
+          qc.setQueryData(key, value);
+        });
+      }
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: KEYS.workouts(userId!) });
+      qc.invalidateQueries({ queryKey: ['workouts', userId] });
     },
   });
 }
@@ -422,18 +427,23 @@ export function useUpdateEvent() {
   return useMutation({
     mutationFn: (event: Event) => eventsApi.update(event, userId!),
     onMutate: async (updated) => {
-      await qc.cancelQueries({ queryKey: KEYS.events(userId!) });
-      const prev = qc.getQueryData<Event[]>(KEYS.events(userId!));
-      qc.setQueryData<Event[]>(KEYS.events(userId!), (old) =>
+      const queryKeyFilter = { queryKey: ['events', userId] };
+      await qc.cancelQueries(queryKeyFilter);
+      const prevQueries = qc.getQueriesData<Event[]>(queryKeyFilter);
+      qc.setQueriesData<Event[]>(queryKeyFilter, (old) =>
         old?.map((e) => (e.id === updated.id ? updated : e)),
       );
-      return { prev };
+      return { prevQueries };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(KEYS.events(userId!), ctx.prev);
+      if (ctx?.prevQueries) {
+        ctx.prevQueries.forEach(([key, value]) => {
+          qc.setQueryData(key, value);
+        });
+      }
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: KEYS.events(userId!) });
+      qc.invalidateQueries({ queryKey: ['events', userId] });
     },
   });
 }
@@ -533,18 +543,23 @@ export function useUpdateNote() {
   return useMutation({
     mutationFn: (note: UpdateNoteInput) => notesApi.update(note, userId!),
     onMutate: async (updated) => {
-      await qc.cancelQueries({ queryKey: KEYS.notes(userId!) });
-      const prev = qc.getQueryData<Note[]>(KEYS.notes(userId!));
-      qc.setQueryData<Note[]>(KEYS.notes(userId!), (old) =>
+      const queryKeyFilter = { queryKey: ['notes', userId] };
+      await qc.cancelQueries(queryKeyFilter);
+      const prevQueries = qc.getQueriesData<Note[]>(queryKeyFilter);
+      qc.setQueriesData<Note[]>(queryKeyFilter, (old) =>
         old?.map((n) => (n.id === updated.id ? { ...n, ...updated } : n)),
       );
-      return { prev };
+      return { prevQueries };
     },
     onError: (_err, _vars, ctx) => {
-      if (ctx?.prev) qc.setQueryData(KEYS.notes(userId!), ctx.prev);
+      if (ctx?.prevQueries) {
+        ctx.prevQueries.forEach(([key, value]) => {
+          qc.setQueryData(key, value);
+        });
+      }
     },
     onSettled: () => {
-      qc.invalidateQueries({ queryKey: KEYS.notes(userId!) });
+      qc.invalidateQueries({ queryKey: ['notes', userId] });
     },
   });
 }

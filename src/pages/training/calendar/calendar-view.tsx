@@ -72,10 +72,24 @@ export function CalendarView() {
   const { year, month } = useParams();
   const navigate = useNavigate();
 
+  // Derive month/year from URL parameters (1-indexed month in URL)
+  const now = useMemo(() => new Date(), []);
+  const displayMonth = month ? parseInt(month, 10) - 1 : now.getMonth();
+  const displayYear = year ? parseInt(year, 10) : now.getFullYear();
+
+  // Define a stable 3-year date range centered on the display year
+  const dateRange = useMemo(() => {
+    return {
+      from: `${displayYear - 1}-01-01`,
+      to: `${displayYear + 1}-12-31`,
+    };
+  }, [displayYear]);
+
   const userId = useSupabaseUserId();
-  const { data: workouts = [], isLoading: loadingWorkouts } = useWorkouts();
-  const { data: notes = [] } = useNotes();
-  const { data: events = [] } = useEvents();
+  const { data: workouts = [], isLoading: loadingWorkouts } =
+    useWorkouts(dateRange);
+  const { data: notes = [] } = useNotes(dateRange);
+  const { data: events = [] } = useEvents(dateRange);
   const { data: goals = [] } = useGoals();
   const { data: library = [] } = useLibrary();
   const { data: sportTypes = [], isLoading: loadingSports } = useSportTypes();
@@ -109,11 +123,6 @@ export function CalendarView() {
   const [selectedDate, setSelectedDate] = useState<string>(
     formatDateToLocalISO(new Date()),
   );
-
-  // Derive month/year from URL parameters (1-indexed month in URL)
-  const now = useMemo(() => new Date(), []);
-  const displayMonth = month ? parseInt(month, 10) - 1 : now.getMonth();
-  const displayYear = year ? parseInt(year, 10) : now.getFullYear();
 
   // Redirect to current month if no parameters provided
   useEffect(() => {

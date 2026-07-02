@@ -18,12 +18,16 @@ vi.mock('@/lib/supabase', () => {
   return {
     supabase: {
       from: vi.fn(() => mockFrom),
+      functions: {
+        invoke: vi.fn(),
+      },
       auth: {
         updateUser: vi.fn().mockResolvedValue({ data: {}, error: null }),
         getUser: vi.fn().mockResolvedValue({
           data: { user: { id: 'test-user-id' } },
           error: null,
         }),
+        signInWithOAuth: vi.fn().mockResolvedValue({ error: null }),
       },
     },
   };
@@ -97,6 +101,61 @@ describe('SupabaseAdapter', () => {
           avatar_url: 'http://new-avatar.url',
         }),
       );
+    });
+  });
+
+  describe('signInWithOAuth', () => {
+    it('should call signInWithOAuth with the correct provider', async () => {
+      await SupabaseAdapter.signInWithOAuth('azure');
+
+      expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith(
+        expect.objectContaining({
+          provider: 'azure',
+        }),
+      );
+    });
+  });
+
+  describe('requestPasswordReset', () => {
+    it('should call the tf-send-password-reset Edge Function with email and redirect url', async () => {
+      (supabase.functions.invoke as any).mockResolvedValue({
+        data: { success: true },
+        error: null,
+      });
+
+      await SupabaseAdapter.requestPasswordReset('user@example.com');
+
+      expect(supabase.functions.invoke).toHaveBeenCalledWith(
+        'tf-send-password-reset',
+        expect.objectContaining({
+          body: expect.objectContaining({
+            email: 'user@example.com',
+            redirectTo: expect.stringContaining('/auth/reset-password'),
+          }),
+        }),
+      );
+    });
+
+    it('should throw an error if the Edge Function returns an error object', async () => {
+      (supabase.functions.invoke as any).mockResolvedValue({
+        data: { error: 'Function execution failed' },
+        error: null,
+      });
+
+      await expect(
+        SupabaseAdapter.requestPasswordReset('user@example.com'),
+      ).rejects.toThrow('Function execution failed');
+    });
+
+    it('should throw an error if the Edge Function call itself errors', async () => {
+      (supabase.functions.invoke as any).mockResolvedValue({
+        data: null,
+        error: new Error('Network error'),
+      });
+
+      await expect(
+        SupabaseAdapter.requestPasswordReset('user@example.com'),
+      ).rejects.toThrow('Network error');
     });
   });
 });

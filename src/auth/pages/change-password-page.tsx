@@ -1,19 +1,14 @@
 import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import {
-  AlertCircle,
-  Check,
-  Eye,
-  EyeOff,
-  LoaderCircleIcon,
-} from 'lucide-react';
+import { ArrowLeft, Eye, EyeOff, LoaderCircleIcon, Lock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { toAbsoluteUrl } from '@/lib/helpers';
 import { supabase } from '@/lib/supabase';
-import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
@@ -24,7 +19,6 @@ import {
   getNewPasswordSchema,
   NewPasswordSchemaType,
 } from '../forms/reset-password-schema';
-import { toAbsoluteUrl } from '@/lib/helpers';
 
 export function ChangePasswordPage() {
   const navigate = useNavigate();
@@ -127,8 +121,8 @@ export function ChangePasswordPage() {
 
   if (!token && !tokenValid) {
     return (
-      <div className="max-w-md mx-auto space-y-5">
-        <div className="text-center space-y-2">
+      <div className="max-w-md mx-auto space-y-4 animate-fade-in">
+        <div className="text-center space-y-1 pb-3">
           <img
             src={toAbsoluteUrl('/media/app/default-logo.svg')}
             className="h-[48px] mx-auto mb-4 dark:hidden"
@@ -145,9 +139,11 @@ export function ChangePasswordPage() {
           </p>
         </div>
 
-        <div className="bg-muted/50 p-4 rounded-lg border border-border">
-          <h3 className="font-medium mb-2">How to reset your password:</h3>
-          <ol className="list-decimal ms-4 text-sm space-y-1 text-muted-foreground">
+        <div className="bg-muted/50 p-4 rounded-xl border border-border">
+          <h3 className="font-semibold text-2sm mb-2">
+            How to reset your password:
+          </h3>
+          <ol className="list-decimal ms-4 text-xs space-y-1.5 text-muted-foreground">
             <li>Request a password reset link via email</li>
             <li>Check your email inbox and spam folder</li>
             <li>Click the reset link in the email you receive</li>
@@ -155,14 +151,19 @@ export function ChangePasswordPage() {
           </ol>
         </div>
 
-        <Button asChild className="w-full">
-          <Link to="/auth/request-reset">Request a Reset Link</Link>
+        <Button
+          asChild
+          className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20 hover:opacity-90 transition-all cursor-pointer"
+        >
+          <Link to="/auth/reset-password">Request a Reset Link</Link>
         </Button>
 
-        <div className="text-center text-sm">
-          <span className="text-muted-foreground">Remember your password?</span>{' '}
-          <Link to="/auth/signin" className="text-primary hover:underline">
-            Sign In
+        <div className="text-center pt-2">
+          <Link
+            to="/auth/signin"
+            className="inline-flex items-center gap-1.5 text-2sm font-semibold text-primary hover:underline cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Sign In
           </Link>
         </div>
       </div>
@@ -172,8 +173,23 @@ export function ChangePasswordPage() {
   return (
     <div className="max-w-md mx-auto">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <div className="text-center space-y-2">
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            try {
+              await form.handleSubmit(onSubmit)(e);
+            } catch (err) {
+              console.error('Change password form resolver error:', err);
+              setError(
+                err instanceof Error
+                  ? err.message
+                  : 'An unexpected validation error occurred. Please try again.',
+              );
+            }
+          }}
+          className="space-y-4"
+        >
+          <div className="text-center space-y-1 pb-3">
             <img
               src={toAbsoluteUrl('/media/app/default-logo.svg')}
               className="h-[48px] mx-auto mb-4 dark:hidden"
@@ -187,27 +203,21 @@ export function ChangePasswordPage() {
             <h1 className="text-2xl font-bold tracking-tight">
               Set New Password
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Create a strong password for your account
             </p>
           </div>
 
           {error && (
-            <Alert variant="destructive">
-              <AlertIcon>
-                <AlertCircle className="h-4 w-4" />
-              </AlertIcon>
-              <AlertTitle>{error}</AlertTitle>
-            </Alert>
+            <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-sm border border-destructive/20 text-center animate-fade-in">
+              {error}
+            </div>
           )}
 
           {successMessage && (
-            <Alert>
-              <AlertIcon>
-                <Check className="h-4 w-4 text-green-500" />
-              </AlertIcon>
-              <AlertTitle>{successMessage}</AlertTitle>
-            </Alert>
+            <div className="mb-4 p-4 rounded-xl bg-green-500/10 text-green-600 text-sm border border-green-500/20 text-center animate-fade-in">
+              {successMessage}
+            </div>
           )}
 
           <div className="space-y-4">
@@ -215,26 +225,34 @@ export function ChangePasswordPage() {
               control={form.control}
               name="password"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>New Password</FormLabel>
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-2sm font-semibold tracking-wide">
+                    New Password
+                  </FormLabel>
                   <div className="relative">
-                    <Input
-                      placeholder="Create a strong password"
-                      type={passwordVisible ? 'text' : 'password'}
-                      autoComplete="new-password"
-                      {...field}
-                    />
+                    <span className="absolute left-3.5 top-3 text-muted-foreground pointer-events-none">
+                      <Lock className="w-4.5 h-4.5" />
+                    </span>
+                    <FormControl>
+                      <Input
+                        placeholder="••••••••"
+                        type={passwordVisible ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        className="w-full pl-11 pr-11 py-2.5 rounded-xl border border-border bg-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                        {...field}
+                      />
+                    </FormControl>
                     <Button
                       type="button"
                       variant="ghost"
                       mode="icon"
                       onClick={() => setPasswordVisible(!passwordVisible)}
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent cursor-pointer"
                     >
                       {passwordVisible ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4 w-4 text-muted-foreground" />
                       )}
                     </Button>
                   </div>
@@ -247,15 +265,23 @@ export function ChangePasswordPage() {
               control={form.control}
               name="confirmPassword"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                <FormItem className="space-y-1.5">
+                  <FormLabel className="text-2sm font-semibold tracking-wide">
+                    Confirm Password
+                  </FormLabel>
                   <div className="relative">
-                    <Input
-                      placeholder="Verify your password"
-                      type={confirmPasswordVisible ? 'text' : 'password'}
-                      autoComplete="new-password"
-                      {...field}
-                    />
+                    <span className="absolute left-3.5 top-3 text-muted-foreground pointer-events-none">
+                      <Lock className="w-4.5 h-4.5" />
+                    </span>
+                    <FormControl>
+                      <Input
+                        placeholder="••••••••"
+                        type={confirmPasswordVisible ? 'text' : 'password'}
+                        autoComplete="new-password"
+                        className="w-full pl-11 pr-11 py-2.5 rounded-xl border border-border bg-input text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all"
+                        {...field}
+                      />
+                    </FormControl>
                     <Button
                       type="button"
                       variant="ghost"
@@ -263,12 +289,12 @@ export function ChangePasswordPage() {
                       onClick={() =>
                         setConfirmPasswordVisible(!confirmPasswordVisible)
                       }
-                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent cursor-pointer"
                     >
                       {confirmPasswordVisible ? (
-                        <EyeOff className="h-4 w-4" />
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
                       ) : (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-4 w-4 text-muted-foreground" />
                       )}
                     </Button>
                   </div>
@@ -278,19 +304,27 @@ export function ChangePasswordPage() {
             />
           </div>
 
-          <Button type="submit" className="w-full" disabled={isProcessing}>
+          <Button
+            type="submit"
+            className="w-full py-2.5 mt-2 rounded-xl bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer animate-fade-in"
+            disabled={isProcessing}
+          >
             {isProcessing ? (
               <span className="flex items-center gap-2">
-                <LoaderCircleIcon className="h-4 w-4" /> Updating Password...
+                <LoaderCircleIcon className="h-4 w-4 animate-spin" /> Updating
+                Password...
               </span>
             ) : (
               'Reset Password'
             )}
           </Button>
 
-          <div className="text-center text-sm">
-            <Link to="/auth/signin" className="text-primary hover:underline">
-              Back to Sign In
+          <div className="text-center pt-2">
+            <Link
+              to="/auth/signin"
+              className="inline-flex items-center gap-1.5 text-2sm font-semibold text-primary hover:underline cursor-pointer"
+            >
+              <ArrowLeft className="w-4 h-4" /> Back to Sign In
             </Link>
           </div>
         </form>

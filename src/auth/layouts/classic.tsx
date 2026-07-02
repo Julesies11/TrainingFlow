@@ -1,6 +1,5 @@
-import { Link, Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import { toAbsoluteUrl } from '@/lib/helpers';
-import { Card, CardContent } from '@/components/ui/card';
 
 export function ClassicLayout() {
   return (
@@ -15,19 +14,10 @@ export function ClassicLayout() {
           }
         `}
       </style>
-      <div className="flex flex-col items-center justify-center grow bg-center bg-no-repeat page-bg">
-        <div className="m-5">
-          <Link to="/">
-            <h1 className="text-3xl font-black lowercase tracking-tighter">
-              trainingflow
-            </h1>
-          </Link>
+      <div className="flex flex-col items-center justify-center grow bg-center bg-no-repeat page-bg min-h-screen py-12 px-4 animate-fade-in">
+        <div className="w-full max-w-[440px] glass border border-border/40 p-6 rounded-2xl shadow-xl">
+          <Outlet />
         </div>
-        <Card className="w-full max-w-[400px]">
-          <CardContent className="p-6">
-            <Outlet />
-          </CardContent>
-        </Card>
       </div>
     </>
   );
