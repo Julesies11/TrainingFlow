@@ -169,7 +169,7 @@ export const SupabaseAdapter = {
    */
   async requestPasswordReset(email: string): Promise<void> {
     try {
-      const redirectUrl = `${window.location.origin}/auth/reset-password`;
+      const redirectUrl = `${window.location.origin}/auth/change-password`;
       const { data, error } = await supabase.functions.invoke(
         'tf-send-password-reset',
         {

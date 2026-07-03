@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, Eye, EyeOff, LoaderCircleIcon, Lock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -29,6 +29,7 @@ export function ChangePasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [tokenValid, setTokenValid] = useState(false);
+  const verificationAttempted = useRef(false);
 
   // Check for different possible token parameter names used by Supabase
   // Supabase might use 'token', 'code', 'token_hash' or pass it as a URL hash
@@ -45,7 +46,41 @@ export function ChangePasswordPage() {
 
   // Process Supabase recovery token
   useEffect(() => {
-    // This automatically processes the token in the URL
+    const verifyRecoveryToken = async () => {
+      const tokenHash = searchParams.get('token_hash') || searchParams.get('token');
+      const type = searchParams.get('type') || 'recovery';
+
+      if (tokenHash && !verificationAttempted.current) {
+        verificationAttempted.current = true;
+        setIsProcessing(true);
+        setError(null);
+        try {
+          console.log('Verifying recovery token via verifyOtp:', tokenHash);
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'recovery',
+          });
+
+          if (error) {
+            console.error('verifyOtp error:', error);
+            setError(error.message);
+          } else {
+            console.log('verifyOtp success! Session established.');
+            setTokenValid(true);
+            setSuccessMessage('You can now set your new password');
+          }
+        } catch (err) {
+          console.error('verifyOtp unexpected error:', err);
+          setError('Failed to verify security token. Please request a new link.');
+        } finally {
+          setIsProcessing(false);
+        }
+      }
+    };
+
+    verifyRecoveryToken();
+
+    // This automatically processes the token in the URL hash fragment/redirected by Supabase
     const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         // Token is valid and has been processed by Supabase
@@ -58,7 +93,7 @@ export function ChangePasswordPage() {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [searchParams]);
 
   // Also check for hash fragment which might contain the token
   useEffect(() => {
@@ -307,12 +342,12 @@ export function ChangePasswordPage() {
           <Button
             type="submit"
             className="w-full py-2.5 mt-2 rounded-xl bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20 hover:opacity-90 disabled:opacity-50 transition-all cursor-pointer animate-fade-in"
-            disabled={isProcessing}
+            disabled={isProcessing || !tokenValid}
           >
             {isProcessing ? (
               <span className="flex items-center gap-2">
-                <LoaderCircleIcon className="h-4 w-4 animate-spin" /> Updating
-                Password...
+                <LoaderCircleIcon className="h-4 w-4 animate-spin" />{' '}
+                {!tokenValid ? 'Verifying Link...' : 'Updating Password...'}
               </span>
             ) : (
               'Reset Password'

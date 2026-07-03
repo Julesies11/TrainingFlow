@@ -130,7 +130,7 @@ describe('SupabaseAdapter', () => {
         expect.objectContaining({
           body: expect.objectContaining({
             email: 'user@example.com',
-            redirectTo: expect.stringContaining('/auth/reset-password'),
+            redirectTo: expect.stringContaining('/auth/change-password'),
           }),
         }),
       );

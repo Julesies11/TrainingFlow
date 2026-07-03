@@ -58,7 +58,7 @@ serve(async (req) => {
       type: "recovery",
       email,
       options: {
-        redirectTo: redirectTo || `${req.headers.get("origin") || ""}/reset-password`,
+        redirectTo: redirectTo || `${req.headers.get("origin") || ""}/change-password`,
       },
     });
 
@@ -70,12 +70,19 @@ serve(async (req) => {
       );
     }
 
-    const actionLink = linkData.properties.action_link;
+    const hashedToken = linkData.properties.hashed_token;
+    
+    // Construct domain-matching client verification link using the client origin
+    const clientOrigin = redirectTo 
+      ? new URL(redirectTo).origin 
+      : (req.headers.get("origin") || "https://trainingflow.app");
+    
+    const customActionLink = `${clientOrigin}/auth/change-password?token_hash=${hashedToken}&type=recovery`;
 
     // 3. Fallback for testing when Resend API Key is not set up yet
     if (!resendApiKey) {
       console.warn("TF_RESEND_API_KEY is not set. Action link logged to console:");
-      console.log(`[TESTING] Password reset link for ${email}: ${actionLink}`);
+      console.log(`[TESTING] Password reset link for ${email}: ${customActionLink}`);
       
       return new Response(
         JSON.stringify({ 
@@ -94,7 +101,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "TrainingFlow <noreply@trainingflow.app>", // Assumes verified domain in Resend
+        from: "TrainingFlow <support@trainingflow.app>", // Assumes verified domain in Resend
         to: [email],
         subject: "Reset your TrainingFlow Password",
         html: `
@@ -107,7 +114,7 @@ serve(async (req) => {
               We received a request to reset the password for your TrainingFlow account. Click the button below to choose a new password. This link will expire in 1 hour.
             </p>
             <div style="text-align: center; margin-bottom: 28px;">
-              <a href="${actionLink}" style="background-color: #22c55e; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 14px; display: inline-block; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.25);">
+              <a href="${customActionLink}" style="background-color: #22c55e; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 10px; font-weight: 600; font-size: 14px; display: inline-block; box-shadow: 0 4px 10px rgba(34, 197, 94, 0.25);">
                 Reset Password
               </a>
             </div>
