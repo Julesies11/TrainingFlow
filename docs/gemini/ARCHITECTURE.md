@@ -46,6 +46,11 @@ This project is a React 19 application built on the **Metronic 9** template, opt
     - `admin` / `developer`: Elevated permissions to manage system-wide lookups and settings.
 - **Row Level Security**: Enforced at the database level to isolate user data and protect global system entries.
 
+## Brand Identity & Colors
+- **TrainingFlow Brand Style**:
+  - **Text Logo**: `"Training"` is styled in black (`#111827`) and `"Flow"` is styled in the brand's signature green (`#22c55e`).
+  - **Transactional Colors**: The primary action/success color is the brand green (`#22c55e`), which is utilized for buttons, highlights, success state components, and confirmation links.
+
 ## Error Handling & Reliability
 - **Global Error Boundary**: A top-level `ErrorBoundary` in `src/App.tsx` catches rendering crashes across the application. 
 - **Graceful Recovery**: When a crash occurs, the boundary renders the standard Metronic `Error500` component. To ensure reliable recovery, the `Error500` page uses native `<a>` tags for navigation, forcing a full page reload to clear any corrupted application state.

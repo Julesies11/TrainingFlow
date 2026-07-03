@@ -213,7 +213,7 @@ serve(async (req) => {
         html: `
           <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 500px; margin: 40px auto; padding: 32px; border: 1px solid #e5e7eb; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
             <div style="margin-bottom: 24px; text-align: center;">
-              <span style="font-size: 24px; font-weight: 800; color: #22c55e;">TrainingFlow</span>
+              <span style="font-size: 24px; font-weight: 800; color: #111827;">Training<span style="color: #22c55e;">Flow</span></span>
             </div>
             <h2 style="font-size: 20px; font-weight: 700; color: #111827; margin-bottom: 12px; text-align: center;">Verify your email</h2>
             <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin-bottom: 24px; text-align: center;">
