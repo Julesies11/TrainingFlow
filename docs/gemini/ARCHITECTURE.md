@@ -38,6 +38,7 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 - **Advanced Training Plans**: The plan builder supports full drag-and-drop reordering, repeating session recurrence, and series extensions. Sub-dialogs are rendered at the component root level (outside the main `DialogContent`) to prevent Radix UI focus-trap loops and ensure stable runtime performance.
 - **Dialog Stability**: All bulk actions and import wizards utilize stable state initialization to prevent infinite rendering cycles, particularly when interacting with global sport type data.
 - **Lazy Profile Creation**: On first login, the `SupabaseAdapter` ensures a relational record exists in `tf_profiles` for the authenticated user, synchronizing essential metadata.
+- **Custom Transactional Email System**: To prevent branding collisions and bypass built-in SMTP constraints on shared multi-app Supabase instances, all transactional emails (signups, password resets, magic links) are routed through app-specific Edge Functions and Resend. Client-side routers (e.g. `/auth/verify-email`, `/auth/callback`, or `/login`) verify OTP hashes directly in-app using `supabase.auth.verifyOtp`, which prevents external redirects and keeps users inside the app domain.
 
 ## Security & RBAC
 - **Role-Based Access Control**: Managed via the `role` column in `tf_profiles`. 

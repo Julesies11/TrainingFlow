@@ -10,6 +10,7 @@ import { TwoFactorAuth } from './pages/extended/tfa';
 import { ResetPasswordPage } from './pages/reset-password-page';
 import { SignInPage } from './pages/signin-page';
 import { SignUpPage } from './pages/signup-page';
+import { VerifyEmailPage } from './pages/verify-email-page';
 
 // Define the auth routes
 export const authRoutes: RouteObject[] = [
@@ -41,6 +42,10 @@ export const authRoutes: RouteObject[] = [
       {
         path: 'check-email',
         element: <CheckEmail />,
+      },
+      {
+        path: 'verify-email',
+        element: <VerifyEmailPage />,
       },
       {
         path: 'reset-password/check-email',

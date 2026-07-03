@@ -47,8 +47,8 @@ export function ChangePasswordPage() {
   // Process Supabase recovery token
   useEffect(() => {
     const verifyRecoveryToken = async () => {
-      const tokenHash = searchParams.get('token_hash') || searchParams.get('token');
-      const type = searchParams.get('type') || 'recovery';
+      const tokenHash =
+        searchParams.get('token_hash') || searchParams.get('token');
 
       if (tokenHash && !verificationAttempted.current) {
         verificationAttempted.current = true;
@@ -71,7 +71,9 @@ export function ChangePasswordPage() {
           }
         } catch (err) {
           console.error('verifyOtp unexpected error:', err);
-          setError('Failed to verify security token. Please request a new link.');
+          setError(
+            'Failed to verify security token. Please request a new link.',
+          );
         } finally {
           setIsProcessing(false);
         }

@@ -2,6 +2,7 @@ import { ChangePasswordPage } from '@/auth/pages/change-password-page';
 import { ResetPasswordPage } from '@/auth/pages/reset-password-page';
 import { SignInPage } from '@/auth/pages/signin-page';
 import { SignUpPage } from '@/auth/pages/signup-page';
+import { VerifyEmailPage } from '@/auth/pages/verify-email-page';
 import { describe, expect, it } from 'vitest';
 import { act, render, screen } from '../test-utils';
 
@@ -76,8 +77,15 @@ describe('Smoke Test: Auth Pages', () => {
     });
     // Without a token, the page should show the "invalid token" instructions
     expect(screen.getByText(/Reset Password/i)).toBeDefined();
-    expect(
-      screen.getByText(/you need a valid reset link/i),
-    ).toBeDefined();
+    expect(screen.getByText(/you need a valid reset link/i)).toBeDefined();
+  });
+
+  it('renders VerifyEmail page with invalid token state', async () => {
+    await act(async () => {
+      render(<VerifyEmailPage />);
+    });
+    // Without a token, the page should show the error state about missing token
+    expect(screen.getByText(/Verification token is missing/i)).toBeDefined();
+    expect(screen.getByText(/Back to Sign In/i)).toBeDefined();
   });
 });

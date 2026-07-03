@@ -2,6 +2,9 @@ import { AuthModel, UserModel } from '@/auth/lib/models';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 
+// Registry to prevent duplicate concurrent profile creation requests for the same user
+const activeProfilePromises = new Map<string, Promise<void>>();
+
 /**
  * Supabase adapter that maintains the same interface as the existing auth flow
  * but uses Supabase under the hood.
@@ -13,52 +16,72 @@ export const SupabaseAdapter = {
    * Private-ish helper to ensure a record exists in tf_profiles.
    */
   async _ensureProfileExists(user: User): Promise<void> {
-    const metadata = user.user_metadata || {};
+    const userId = user.id;
 
-    // 1. Check if profile already exists to avoid overwriting user settings/data on every login
-    try {
-      const { data: existingProfile, error: checkError } = await supabase
-        .from('tf_profiles')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error(
-          'SupabaseAdapter: Error checking existing profile:',
-          checkError,
-        );
-      }
-
-      if (existingProfile) {
-        return;
-      }
-
-      // 2. Only create if it doesn't exist (e.g., first login)
-      const { error } = await supabase.from('tf_profiles').insert({
-        id: user.id,
-        workout_type_options: JSON.stringify({
-          Swim: ['Easy', 'Hard'],
-          Bike: ['Easy', 'Hard'],
-          Run: ['Easy', 'Tempo', 'Interval'],
-          Strength: ['Full Body', 'Upper', 'Lower'],
-        }),
-        effort_settings: {},
-        updated_at: new Date().toISOString(),
-        // Map common metadata fields if they exist from other apps
-        theme: metadata.theme || 'light',
-        avatar_url: metadata.pic || metadata.avatar_url || null,
-      });
-
-      if (error) {
-        console.error('SupabaseAdapter: Error creating profile:', error);
-      }
-    } catch (err) {
-      console.error(
-        'SupabaseAdapter: Unexpected error in _ensureProfileExists:',
-        err,
-      );
+    if (activeProfilePromises.has(userId)) {
+      return activeProfilePromises.get(userId)!;
     }
+
+    const promise = (async () => {
+      const metadata = user.user_metadata || {};
+
+      // 1. Check if profile already exists to avoid overwriting user settings/data on every login
+      try {
+        const { data: existingProfile, error: checkError } = await supabase
+          .from('tf_profiles')
+          .select('id')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (checkError) {
+          console.error(
+            'SupabaseAdapter: Error checking existing profile:',
+            checkError,
+          );
+        }
+
+        if (existingProfile) {
+          return;
+        }
+
+        // 2. Only create if it doesn't exist (e.g., first login)
+        const { error } = await supabase.from('tf_profiles').insert({
+          id: userId,
+          workout_type_options: JSON.stringify({
+            Swim: ['Easy', 'Hard'],
+            Bike: ['Easy', 'Hard'],
+            Run: ['Easy', 'Tempo', 'Interval'],
+            Strength: ['Full Body', 'Upper', 'Lower'],
+          }),
+          effort_settings: {},
+          updated_at: new Date().toISOString(),
+          // Map common metadata fields if they exist from other apps
+          theme: metadata.theme || 'light',
+          avatar_url: metadata.pic || metadata.avatar_url || null,
+        });
+
+        if (error) {
+          // If the profile was concurrently created by another request, ignore the conflict (Postgres code 23505)
+          if (error.code === '23505') {
+            console.log(
+              'SupabaseAdapter: Profile already exists (conflict handled).',
+            );
+          } else {
+            console.error('SupabaseAdapter: Error creating profile:', error);
+          }
+        }
+      } catch (err) {
+        console.error(
+          'SupabaseAdapter: Unexpected error in _ensureProfileExists:',
+          err,
+        );
+      } finally {
+        activeProfilePromises.delete(userId);
+      }
+    })();
+
+    activeProfilePromises.set(userId, promise);
+    return promise;
   },
 
   /**
@@ -133,34 +156,32 @@ export const SupabaseAdapter = {
       throw new Error('Passwords do not match');
     }
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
+    const redirectUrl = `${window.location.origin}/auth/verify-email`;
+    const { data, error } = await supabase.functions.invoke(
+      'tf-register-user',
+      {
+        body: {
+          email,
+          password,
+          firstName,
+          lastName,
           username: email.split('@')[0],
-          first_name: firstName || '',
-          last_name: lastName || '',
-          fullname:
-            firstName && lastName ? `${firstName} ${lastName}`.trim() : '',
-          created_at: new Date().toISOString(),
+          redirectTo: redirectUrl,
+          isResend: false,
         },
       },
-    });
+    );
 
-    if (error) throw new Error(error.message);
-
-    if (data.user) {
-      await this._ensureProfileExists(data.user);
+    if (error || (data && data.error)) {
+      throw new Error(
+        error?.message || data?.error || 'Failed to sign up user account',
+      );
     }
 
-    if (!data.session) {
-      return { access_token: '', refresh_token: '' };
-    }
-
+    // Return empty tokens since the user is not confirmed yet and needs to click the verification link
     return {
-      access_token: data.session.access_token,
-      refresh_token: data.session.refresh_token,
+      access_token: '',
+      refresh_token: '',
     };
   },
 
@@ -194,6 +215,33 @@ export const SupabaseAdapter = {
   },
 
   /**
+   * Send magic link email via Edge Function
+   */
+  async signInWithMagicLink(email: string): Promise<void> {
+    try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      const { data, error } = await supabase.functions.invoke(
+        'tf-send-magic-link',
+        {
+          body: {
+            email,
+            redirectTo: redirectUrl,
+          },
+        },
+      );
+
+      if (error || (data && data.error)) {
+        throw new Error(
+          error?.message || data?.error || 'Failed to send magic link email',
+        );
+      }
+    } catch (err) {
+      console.error('Unexpected error in magic link:', err);
+      throw err;
+    }
+  },
+
+  /**
    * Reset password with token
    */
   async resetPassword(
@@ -215,15 +263,23 @@ export const SupabaseAdapter = {
    * Request another verification email
    */
   async resendVerificationEmail(email: string): Promise<void> {
-    const { error } = await supabase.auth.resend({
-      type: 'signup',
-      email: email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/verify-email`,
+    const redirectUrl = `${window.location.origin}/auth/verify-email`;
+    const { data, error } = await supabase.functions.invoke(
+      'tf-register-user',
+      {
+        body: {
+          email,
+          redirectTo: redirectUrl,
+          isResend: true,
+        },
       },
-    });
+    );
 
-    if (error) throw new Error(error.message);
+    if (error || (data && data.error)) {
+      throw new Error(
+        error?.message || data?.error || 'Failed to resend verification email',
+      );
+    }
   },
 
   /**

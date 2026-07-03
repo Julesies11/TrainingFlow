@@ -1,10 +1,10 @@
 import { useState } from 'react';
+import { SupabaseAdapter } from '@/auth/adapters/supabase-adapter';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, LoaderCircleIcon, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { toAbsoluteUrl } from '@/lib/helpers';
-import { SupabaseAdapter } from '@/auth/adapters/supabase-adapter';
 import { Button } from '@/components/ui/button';
 import {
   Form,

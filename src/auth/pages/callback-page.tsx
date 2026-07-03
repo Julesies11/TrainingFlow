@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/auth/context/auth-context';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
@@ -12,6 +12,7 @@ export function CallbackPage() {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const { saveAuth, setUser: setCurrentUser } = useAuth();
+  const verificationAttempted = useRef(false);
 
   useEffect(() => {
     // Get error parameters
@@ -34,6 +35,28 @@ export function CallbackPage() {
     const handleCallback = async () => {
       try {
         console.log('Processing OAuth callback');
+
+        const tokenHash = searchParams.get('token_hash');
+        const type = searchParams.get('type');
+
+        if (
+          tokenHash &&
+          type === 'magiclink' &&
+          !verificationAttempted.current
+        ) {
+          verificationAttempted.current = true;
+          console.log('[Callback] Verifying magiclink token hash:', tokenHash);
+          const { error: verifyError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'magiclink',
+          });
+
+          if (verifyError) {
+            console.error('[Callback] verifyOtp error:', verifyError);
+            throw verifyError;
+          }
+          console.log('[Callback] verifyOtp success! Session established.');
+        }
 
         // Get the session from Supabase
         const { data, error } = await supabase.auth.getSession();

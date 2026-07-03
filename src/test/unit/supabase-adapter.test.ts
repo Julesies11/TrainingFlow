@@ -158,4 +158,89 @@ describe('SupabaseAdapter', () => {
       ).rejects.toThrow('Network error');
     });
   });
+
+  describe('register', () => {
+    it('should call tf-register-user Edge Function with correct arguments', async () => {
+      (supabase.functions.invoke as any).mockResolvedValue({
+        data: { success: true },
+        error: null,
+      });
+
+      const result = await SupabaseAdapter.register(
+        'test@example.com',
+        'password123',
+        'password123',
+        'John',
+        'Doe',
+      );
+
+      expect(supabase.functions.invoke).toHaveBeenCalledWith(
+        'tf-register-user',
+        expect.objectContaining({
+          body: expect.objectContaining({
+            email: 'test@example.com',
+            password: 'password123',
+            firstName: 'John',
+            lastName: 'Doe',
+            isResend: false,
+          }),
+        }),
+      );
+      expect(result).toEqual({ access_token: '', refresh_token: '' });
+    });
+
+    it('should throw an error if passwords do not match', async () => {
+      await expect(
+        SupabaseAdapter.register(
+          'test@example.com',
+          'password123',
+          'different',
+          'John',
+          'Doe',
+        ),
+      ).rejects.toThrow('Passwords do not match');
+    });
+  });
+
+  describe('resendVerificationEmail', () => {
+    it('should call tf-register-user Edge Function with isResend: true', async () => {
+      (supabase.functions.invoke as any).mockResolvedValue({
+        data: { success: true },
+        error: null,
+      });
+
+      await SupabaseAdapter.resendVerificationEmail('test@example.com');
+
+      expect(supabase.functions.invoke).toHaveBeenCalledWith(
+        'tf-register-user',
+        expect.objectContaining({
+          body: expect.objectContaining({
+            email: 'test@example.com',
+            isResend: true,
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('signInWithMagicLink', () => {
+    it('should call tf-send-magic-link Edge Function with email and redirect url', async () => {
+      (supabase.functions.invoke as any).mockResolvedValue({
+        data: { success: true },
+        error: null,
+      });
+
+      await SupabaseAdapter.signInWithMagicLink('test@example.com');
+
+      expect(supabase.functions.invoke).toHaveBeenCalledWith(
+        'tf-send-magic-link',
+        expect.objectContaining({
+          body: expect.objectContaining({
+            email: 'test@example.com',
+            redirectTo: expect.stringContaining('/auth/callback'),
+          }),
+        }),
+      );
+    });
+  });
 });
