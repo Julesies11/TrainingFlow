@@ -72,21 +72,28 @@ serve(async (req) => {
 
     const fullname = firstName && lastName ? `${firstName} ${lastName}`.trim() : "";
 
-    // 1. Check if user already exists
-    const { data: existingUserData, error: findError } = await supabaseAdmin.auth.admin.getUserByEmail(email);
+    // 1. Check if user already exists using listUsers (since getUserByEmail is not supported in supabase-js v2 auth.admin)
+    const { data: listData, error: findError } = await supabaseAdmin.auth.admin.listUsers({
+      page: 1,
+      perPage: 1000,
+    });
+
+    const existingUser = listData?.users?.find(
+      (u: any) => u.email?.toLowerCase() === email.toLowerCase()
+    );
     
     let user;
     
     if (isResend) {
       // Flow A: Resend verification email
-      if (findError || !existingUserData?.user) {
+      if (findError || !existingUser) {
         return new Response(
           JSON.stringify({ error: "No user account found with this email address." }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       
-      user = existingUserData.user;
+      user = existingUser;
       if (user.email_confirmed_at) {
         return new Response(
           JSON.stringify({ error: "This email address is already verified. Please sign in." }),
@@ -95,8 +102,8 @@ serve(async (req) => {
       }
     } else {
       // Flow B: User Registration
-      if (existingUserData?.user) {
-        user = existingUserData.user;
+      if (existingUser) {
+        user = existingUser;
         if (user.email_confirmed_at) {
           return new Response(
             JSON.stringify({ error: "Email address is already registered. Please sign in or reset your password." }),
