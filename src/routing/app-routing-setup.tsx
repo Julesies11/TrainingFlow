@@ -18,6 +18,7 @@ import { EventsPage } from '@/pages/training/events';
 import { GoalsPage } from '@/pages/training/goals';
 import { LibraryPage } from '@/pages/training/library';
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { LandingPage } from '@/pages/public/landing-page';
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -37,9 +38,9 @@ function PlaceholderPage({ title }: { title: string }) {
 export function AppRoutingSetup() {
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route element={<RequireAuth />}>
         <Route element={<Demo1Layout />}>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/calendar" element={<CalendarView />} />
           <Route path="/calendar/:year/:month" element={<CalendarView />} />
           <Route path="/workout-library" element={<LibraryPage />} />

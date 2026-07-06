@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { SupabaseAdapter } from '@/auth/adapters/supabase-adapter';
 import { useAuth } from '@/auth/context/auth-context';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Eye, EyeOff, LoaderCircleIcon, Lock, Mail } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, LoaderCircleIcon, Lock, Mail } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toAbsoluteUrl } from '@/lib/helpers';
@@ -19,17 +19,27 @@ import {
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/common/icons';
 import { getSigninSchema, SigninSchemaType } from '../forms/signin-schema';
+import { Alert, AlertDescription, AlertIcon } from '@/components/ui/alert';
+import { toast } from 'sonner';
 
 export function SignInPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, auth } = useAuth();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [isMicrosoftLoading, setIsMicrosoftLoading] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (auth?.access_token) {
+      const nextPath = searchParams.get('next') || '/';
+      navigate(nextPath, { replace: true });
+    }
+  }, [auth, navigate, searchParams]);
 
   // Check for success message from password reset or error messages
   useEffect(() => {
@@ -80,6 +90,15 @@ export function SignInPage() {
     },
   });
 
+  const onInvalid = (errors: any) => {
+    const firstError = Object.values(errors)[0] as any;
+    if (firstError?.message) {
+      toast.error(firstError.message);
+    } else {
+      toast.error('Please correct the errors in the form.');
+    }
+  };
+
   async function onSubmit(values: SigninSchemaType) {
     try {
       setIsProcessing(true);
@@ -89,25 +108,22 @@ export function SignInPage() {
 
       // Simple validation
       if (!values.email.trim() || !values.password) {
-        setError('Email and password are required');
+        const msg = 'Email and password are required';
+        setError(msg);
+        toast.error(msg);
         return;
       }
 
       // Sign in using the auth context
       await login(values.email, values.password);
-
-      // Get the 'next' parameter from URL if it exists
-      const nextPath = searchParams.get('next') || '/';
-
-      // Use navigate for navigation
-      navigate(nextPath);
+      toast.success('Signed in successfully!');
     } catch (err) {
       console.error('Unexpected sign-in error:', err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'An unexpected error occurred. Please try again.',
-      );
+      const errMsg = err instanceof Error
+        ? err.message
+        : 'An unexpected error occurred. Please try again.';
+      setError(errMsg);
+      toast.error(errMsg);
     } finally {
       setIsProcessing(false);
     }
@@ -181,14 +197,14 @@ export function SignInPage() {
         onSubmit={async (e) => {
           e.preventDefault();
           try {
-            await form.handleSubmit(onSubmit)(e);
+            await form.handleSubmit(onSubmit, onInvalid)(e);
           } catch (err) {
             console.error('Sign In form resolver error:', err);
-            setError(
-              err instanceof Error
-                ? err.message
-                : 'An unexpected validation error occurred. Please try again.',
-            );
+            const errMsg = err instanceof Error
+              ? err.message
+              : 'An unexpected validation error occurred. Please try again.';
+            setError(errMsg);
+            toast.error(errMsg);
           }
         }}
         className="block w-full space-y-4"
@@ -214,9 +230,14 @@ export function SignInPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-4 rounded-xl bg-destructive/10 text-destructive text-sm border border-destructive/20 text-center">
-            {error}
-          </div>
+          <Alert variant="destructive" appearance="light" className="mb-4 animate-fade-in">
+            <AlertIcon>
+              <AlertCircle className="w-4.5 h-4.5" />
+            </AlertIcon>
+            <AlertDescription className="font-semibold text-sm">
+              {error}
+            </AlertDescription>
+          </Alert>
         )}
 
         {successMessage && (
