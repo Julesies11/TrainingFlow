@@ -20,6 +20,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
     // 1. Define internal state sync function
     const syncState = async (session: Session | null) => {
+      console.log(
+        'AuthProvider syncState session:',
+        session ? 'exists' : 'null',
+      );
       if (session) {
         setAuth({
           access_token: session.access_token,
@@ -28,6 +32,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
 
         try {
           const user = await SupabaseAdapter.getUserProfile(session.user);
+          console.log('AuthProvider syncState user profile:', user);
           setCurrentUser(user || undefined);
           // Background ensure profile exists
           SupabaseAdapter._ensureProfileExists(session.user);
@@ -49,6 +54,10 @@ export function AuthProvider({ children }: PropsWithChildren) {
         const {
           data: { session },
         } = await supabase.auth.getSession();
+        console.log(
+          'AuthProvider initAuth session:',
+          session ? 'exists' : 'null',
+        );
         await syncState(session);
       } catch (error) {
         console.error('AuthProvider: Initialization error:', error);
@@ -63,6 +72,12 @@ export function AuthProvider({ children }: PropsWithChildren) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log(
+        'AuthProvider onAuthStateChange event:',
+        event,
+        'session:',
+        session ? 'exists' : 'null',
+      );
       // INITIAL_SESSION redundant with initAuth, but safe
       await syncState(session);
       setLoading(false);
@@ -93,12 +108,35 @@ export function AuthProvider({ children }: PropsWithChildren) {
     }
   };
 
-  const saveAuth = (auth: AuthModel | undefined) => {
-    setAuth(auth);
+  const saveAuth = async (authData: AuthModel | undefined) => {
+    setAuth(authData);
+    if (authData?.access_token) {
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user) {
+          const profile = await SupabaseAdapter.getUserProfile(user);
+          setCurrentUser(profile || undefined);
+          // Background ensure profile exists
+          SupabaseAdapter._ensureProfileExists(user);
+        }
+      } catch (err) {
+        console.error('saveAuth sync profile error:', err);
+      }
+    } else {
+      setCurrentUser(undefined);
+    }
   };
 
   const login = async (email: string, password: string) => {
-    await SupabaseAdapter.login(email, password);
+    setLoading(true);
+    try {
+      const authData = await SupabaseAdapter.login(email, password);
+      await saveAuth(authData);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const register = async (

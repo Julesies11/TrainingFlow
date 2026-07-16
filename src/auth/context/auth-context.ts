@@ -6,7 +6,7 @@ export const AuthContext = createContext<{
   loading: boolean;
   setLoading: React.Dispatch<React.SetStateAction<boolean>>;
   auth?: AuthModel;
-  saveAuth: (auth: AuthModel | undefined) => void;
+  saveAuth: (auth: AuthModel | undefined) => void | Promise<void>;
   user?: UserModel;
   setUser: React.Dispatch<React.SetStateAction<UserModel | undefined>>;
   login: (email: string, password: string) => Promise<void>;

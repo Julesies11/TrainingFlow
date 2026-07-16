@@ -15,6 +15,8 @@ export function CallbackPage() {
   const verificationAttempted = useRef(false);
 
   useEffect(() => {
+    let timerId: NodeJS.Timeout;
+
     // Get error parameters
     const errorParam = searchParams.get('error');
     const errorDescription = searchParams.get('error_description');
@@ -22,12 +24,14 @@ export function CallbackPage() {
     if (errorParam) {
       setError(errorDescription || 'Authentication failed');
       // After a delay, redirect to signin page with error params
-      setTimeout(() => {
+      timerId = setTimeout(() => {
         navigate(
           `/auth/signin?error=${errorParam}&error_description=${encodeURIComponent(errorDescription || 'Authentication failed')}`,
         );
       }, 1500);
-      return;
+      return () => {
+        if (timerId) clearTimeout(timerId);
+      };
     }
 
     // The supabase client will automatically handle setting up the session
@@ -83,8 +87,8 @@ export function CallbackPage() {
         saveAuth(authModel);
         console.log('Auth data saved to context');
 
-        // Get the next URL - either from query param or default to root
-        const nextPath = searchParams.get('next') || '/';
+        // Get the next URL - either from query param or default to dashboard
+        const nextPath = searchParams.get('next') || '/dashboard';
 
         // Navigate to the target page
         console.log('Redirecting to:', nextPath);
@@ -94,7 +98,7 @@ export function CallbackPage() {
         setError('An unexpected error occurred during authentication');
 
         // Redirect to login page after showing error
-        setTimeout(() => {
+        timerId = setTimeout(() => {
           navigate(
             '/auth/signin?error=auth_callback_error&error_description=Failed to complete authentication',
           );
@@ -103,6 +107,10 @@ export function CallbackPage() {
     };
 
     handleCallback();
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
   }, [navigate, searchParams, saveAuth, setCurrentUser]);
 
   return (

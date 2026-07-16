@@ -1,0 +1,100 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { supabase } from '@/lib/supabase';
+import { fireEvent, render, screen, waitFor } from '../../../test/test-utils';
+import { SignInPage } from '../signin-page';
+
+describe('SignInPage - OIDC Login Integration Tests', () => {
+  let mockLoginPopup: any;
+  let mockPublicClientApplication: any;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    // Mock window.crypto.subtle.digest for secure nonce pairing
+    Object.defineProperty(window, 'crypto', {
+      value: {
+        getRandomValues: (arr: Uint8Array) => arr.fill(1),
+        subtle: {
+          digest: vi.fn().mockResolvedValue(new Uint8Array([1, 2, 3]).buffer),
+        },
+      },
+      writable: true,
+      configurable: true,
+    });
+
+    // Mock window.msal
+    mockLoginPopup = vi.fn().mockResolvedValue({
+      idToken: 'mock-id-token',
+      idTokenClaims: { nonce: 'mocked-hashed-nonce' },
+    });
+
+    mockPublicClientApplication = vi.fn().mockImplementation(function (
+      this: any,
+    ) {
+      this.loginPopup = mockLoginPopup;
+      return this;
+    });
+
+    (window as any).msal = {
+      PublicClientApplication: mockPublicClientApplication,
+    };
+
+    // Configure spy on Supabase auth
+    vi.spyOn(supabase.auth, 'signInWithIdToken').mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'mock-access-token',
+          refresh_token: 'mock-refresh-token',
+        },
+      },
+      error: null,
+    } as any);
+
+    // Define environment variables
+    import.meta.env.VITE_MICROSOFT_CLIENT_ID = 'mock-microsoft-client-id';
+  });
+
+  it('initializes MSAL client with consumers authority when Microsoft login is triggered', async () => {
+    render(<SignInPage />);
+
+    const microsoftButton = screen.getByRole('button', { name: /microsoft/i });
+    expect(microsoftButton).toBeDefined();
+
+    fireEvent.click(microsoftButton);
+
+    await waitFor(() => {
+      expect(mockPublicClientApplication).toHaveBeenCalledWith({
+        auth: {
+          clientId: 'mock-microsoft-client-id',
+          authority: 'https://login.microsoftonline.com/consumers',
+          redirectUri: expect.any(String),
+        },
+        cache: {
+          cacheLocation: 'sessionStorage',
+          storeAuthStateInCookie: false,
+        },
+      });
+    });
+
+    expect(mockLoginPopup).toHaveBeenCalledWith({
+      scopes: ['openid', 'profile', 'email', 'User.Read'],
+      nonce: expect.any(String),
+    });
+  });
+
+  it('exchanges ID token with Supabase using the raw nonce', async () => {
+    render(<SignInPage />);
+
+    const microsoftButton = screen.getByRole('button', { name: /microsoft/i });
+    fireEvent.click(microsoftButton);
+
+    await waitFor(() => {
+      expect(supabase.auth.signInWithIdToken).toHaveBeenCalledWith({
+        provider: 'azure',
+        token: 'mock-id-token',
+        nonce: '01010101010101010101010101010101', // random values mocked with 1s
+      });
+    });
+  });
+});

@@ -1,11 +1,21 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react';
-import { SupabaseAdapter } from '@/auth/adapters/supabase-adapter';
 import { useAuth } from '@/auth/context/auth-context';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Eye, EyeOff, LoaderCircleIcon, Lock, Mail } from 'lucide-react';
+import {
+  AlertCircle,
+  Eye,
+  EyeOff,
+  LoaderCircleIcon,
+  Lock,
+  Mail,
+} from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
 import { toAbsoluteUrl } from '@/lib/helpers';
+import { supabase } from '@/lib/supabase';
+import { Alert, AlertDescription, AlertIcon } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -19,13 +29,20 @@ import {
 import { Input } from '@/components/ui/input';
 import { Icons } from '@/components/common/icons';
 import { getSigninSchema, SigninSchemaType } from '../forms/signin-schema';
-import { Alert, AlertDescription, AlertIcon } from '@/components/ui/alert';
-import { toast } from 'sonner';
+
+declare global {
+  interface Window {
+    google?: any;
+    msal?: any;
+  }
+}
+
+let isGoogleInitialized = false;
 
 export function SignInPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { login, auth } = useAuth();
+  const { login, auth, saveAuth } = useAuth();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,7 +53,7 @@ export function SignInPage() {
   // Redirect if already authenticated
   useEffect(() => {
     if (auth?.access_token) {
-      const nextPath = searchParams.get('next') || '/';
+      const nextPath = searchParams.get('next') || '/dashboard';
       navigate(nextPath, { replace: true });
     }
   }, [auth, navigate, searchParams]);
@@ -119,9 +136,10 @@ export function SignInPage() {
       toast.success('Signed in successfully!');
     } catch (err) {
       console.error('Unexpected sign-in error:', err);
-      const errMsg = err instanceof Error
-        ? err.message
-        : 'An unexpected error occurred. Please try again.';
+      const errMsg =
+        err instanceof Error
+          ? err.message
+          : 'An unexpected error occurred. Please try again.';
       setError(errMsg);
       toast.error(errMsg);
     } finally {
@@ -129,64 +147,193 @@ export function SignInPage() {
     }
   }
 
-  // Handle Google Sign In with Supabase OAuth
-  const handleGoogleSignIn = async () => {
+  // Handle Google OIDC ID Token credential response
+  const handleGoogleCredentialResponse = async (response: any) => {
     try {
       setIsGoogleLoading(true);
       setError(null);
 
-      // Get the next path if available
-      const nextPath = searchParams.get('next');
+      const idToken = response.credential;
+      if (!idToken) {
+        throw new Error('No credential returned from Google');
+      }
 
-      // Calculate the redirect URL
-      const redirectTo = nextPath
-        ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
-        : `${window.location.origin}/auth/callback`;
+      console.log(
+        'Received ID token from Google OIDC, signing in to Supabase...',
+      );
+      const { data, error: signInError } =
+        await supabase.auth.signInWithIdToken({
+          provider: 'google',
+          token: idToken,
+        });
 
-      console.log('Initiating Google sign-in with redirect:', redirectTo);
+      console.log('signInWithIdToken response:', { data, signInError });
 
-      // Use our adapter to initiate the OAuth flow
-      await SupabaseAdapter.signInWithOAuth('google', { redirectTo });
+      if (signInError) throw signInError;
 
-      // The browser will be redirected automatically
+      // Manually sync session and profile details to trigger the state update
+      if (data.session) {
+        await saveAuth({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+
+      toast.success('Signed in successfully!');
     } catch (err) {
       console.error('Google sign-in error:', err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to sign in with Google. Please try again.',
-      );
+      setError(err instanceof Error ? err.message : 'Google sign-in failed');
+      toast.error(err instanceof Error ? err.message : 'Google sign-in failed');
+    } finally {
       setIsGoogleLoading(false);
     }
   };
 
-  // Handle Microsoft Sign In with Supabase OAuth
+  useEffect(() => {
+    let checkInterval: ReturnType<typeof setInterval>;
+
+    const initGoogleGSI = () => {
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+      if (!clientId) {
+        console.warn('VITE_GOOGLE_CLIENT_ID is not configured');
+        return false;
+      }
+
+      if (window.google?.accounts?.id) {
+        if (!isGoogleInitialized) {
+          window.google.accounts.id.initialize({
+            client_id: clientId,
+            callback: handleGoogleCredentialResponse,
+          });
+          isGoogleInitialized = true;
+        }
+
+        const btnEl = document.getElementById('google-signin-button');
+        if (btnEl) {
+          window.google.accounts.id.renderButton(btnEl, {
+            theme: document.documentElement.classList.contains('dark')
+              ? 'filled_black'
+              : 'outline',
+            size: 'large',
+            shape: 'rectangular',
+            text: 'signin_with',
+            logo_alignment: 'left',
+            width: btnEl.parentElement?.clientWidth || 180,
+          });
+        }
+        return true;
+      }
+      return false;
+    };
+
+    const success = initGoogleGSI();
+    if (!success) {
+      let elapsed = 0;
+      checkInterval = setInterval(() => {
+        elapsed += 100;
+        if (initGoogleGSI() || elapsed >= 5000) {
+          clearInterval(checkInterval);
+        }
+      }, 100);
+    }
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+    };
+  }, []);
+
+  // Helper to generate a raw random nonce and its SHA-256 hex hash for OIDC verification
+  const generateNoncePair = async () => {
+    const raw = Array.from(window.crypto.getRandomValues(new Uint8Array(16)))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    const msgBuffer = new TextEncoder().encode(raw);
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashed = hashArray
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
+
+    return { raw, hashed };
+  };
+
+  // Handle Microsoft Sign In with MSAL.js OIDC
   const handleMicrosoftSignIn = async () => {
     try {
       setIsMicrosoftLoading(true);
       setError(null);
 
-      // Get the next path if available
-      const nextPath = searchParams.get('next');
+      const clientId = import.meta.env.VITE_MICROSOFT_CLIENT_ID;
+      if (!clientId || clientId === 'your-microsoft-client-id-here') {
+        throw new Error(
+          'Microsoft Client ID is not configured. Please add it to your environment variables.',
+        );
+      }
 
-      // Calculate the redirect URL
-      const redirectTo = nextPath
-        ? `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
-        : `${window.location.origin}/auth/callback`;
+      if (!window.msal) {
+        throw new Error(
+          'Microsoft Authentication Library (MSAL.js) failed to load. Please refresh and try again.',
+        );
+      }
 
-      console.log('Initiating Microsoft sign-in with redirect:', redirectTo);
+      const msalConfig = {
+        auth: {
+          clientId: clientId,
+          authority: 'https://login.microsoftonline.com/consumers',
+          redirectUri: window.location.origin,
+        },
+        cache: {
+          cacheLocation: 'sessionStorage',
+          storeAuthStateInCookie: false,
+        },
+      };
 
-      // Use our adapter to initiate the OAuth flow
-      await SupabaseAdapter.signInWithOAuth('azure', { redirectTo });
+      console.log('Initializing client-side MSAL instance...');
+      const msalInstance = new window.msal.PublicClientApplication(msalConfig);
 
-      // The browser will be redirected automatically
+      console.log('Generating secure OIDC nonce pair...');
+      const { raw: rawNonce, hashed: hashedNonce } = await generateNoncePair();
+
+      const loginRequest = {
+        scopes: ['openid', 'profile', 'email', 'User.Read'],
+        nonce: hashedNonce,
+      };
+
+      console.log('Initiating Microsoft popup auth...');
+      const loginResponse = await msalInstance.loginPopup(loginRequest);
+      const idToken = loginResponse.idToken;
+
+      if (!idToken) {
+        throw new Error('No identity token returned from Microsoft.');
+      }
+
+      console.log('Exchanging Microsoft OIDC token with Supabase...');
+      const { data, error: signInError } =
+        await supabase.auth.signInWithIdToken({
+          provider: 'azure',
+          token: idToken,
+          nonce: rawNonce,
+        });
+
+      if (signInError) throw signInError;
+
+      // Manually sync session and profile details to trigger the state update
+      if (data.session) {
+        await saveAuth({
+          access_token: data.session.access_token,
+          refresh_token: data.session.refresh_token,
+        });
+      }
+
+      toast.success('Signed in successfully with Microsoft!');
     } catch (err) {
       console.error('Microsoft sign-in error:', err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Failed to sign in with Microsoft. Please try again.',
-      );
+      const errMsg =
+        err instanceof Error ? err.message : 'Microsoft sign-in failed.';
+      setError(errMsg);
+      toast.error(errMsg);
+    } finally {
       setIsMicrosoftLoading(false);
     }
   };
@@ -200,9 +347,10 @@ export function SignInPage() {
             await form.handleSubmit(onSubmit, onInvalid)(e);
           } catch (err) {
             console.error('Sign In form resolver error:', err);
-            const errMsg = err instanceof Error
-              ? err.message
-              : 'An unexpected validation error occurred. Please try again.';
+            const errMsg =
+              err instanceof Error
+                ? err.message
+                : 'An unexpected validation error occurred. Please try again.';
             setError(errMsg);
             toast.error(errMsg);
           }
@@ -230,7 +378,11 @@ export function SignInPage() {
         </div>
 
         {error && (
-          <Alert variant="destructive" appearance="light" className="mb-4 animate-fade-in">
+          <Alert
+            variant="destructive"
+            appearance="light"
+            className="mb-4 animate-fade-in"
+          >
             <AlertIcon>
               <AlertCircle className="w-4.5 h-4.5" />
             </AlertIcon>
@@ -365,21 +517,19 @@ export function SignInPage() {
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Button
-            variant="outline"
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={isGoogleLoading || isMicrosoftLoading}
-            className="w-full py-2.5 rounded-xl border border-border bg-input hover:bg-border/20 text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 select-none"
-          >
-            {isGoogleLoading ? (
-              <LoaderCircleIcon className="size-4 animate-spin" />
-            ) : (
-              <>
-                <Icons.googleColorful className="size-5!" /> Google
-              </>
+          <div className="relative w-full h-[40px] flex items-center justify-center">
+            {isGoogleLoading && (
+              <div className="absolute inset-0 bg-background/50 flex items-center justify-center z-10 rounded-xl">
+                <LoaderCircleIcon className="size-4 animate-spin text-primary" />
+              </div>
             )}
-          </Button>
+            <div
+              id="google-signin-button"
+              className="w-full flex justify-center"
+            >
+              <span className="sr-only">Google</span>
+            </div>
+          </div>
           <Button
             variant="outline"
             type="button"

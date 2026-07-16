@@ -21,6 +21,8 @@ export function VerifyEmailPage() {
   const verificationAttempted = useRef(false);
 
   useEffect(() => {
+    let timerId: NodeJS.Timeout;
+
     const verifyToken = async () => {
       const tokenHash =
         searchParams.get('token_hash') || searchParams.get('token');
@@ -44,9 +46,9 @@ export function VerifyEmailPage() {
             console.log('[VerifyEmail] verifyOtp success! Account confirmed.');
             setSuccess(true);
 
-            // Redirect to home/dashboard after 3 seconds
-            setTimeout(() => {
-              navigate('/');
+            // Redirect to dashboard after 3 seconds
+            timerId = setTimeout(() => {
+              navigate('/dashboard');
             }, 3000);
           }
         } catch (err) {
@@ -65,6 +67,10 @@ export function VerifyEmailPage() {
     };
 
     verifyToken();
+
+    return () => {
+      if (timerId) clearTimeout(timerId);
+    };
   }, [searchParams, navigate]);
 
   return (
@@ -113,7 +119,7 @@ export function VerifyEmailPage() {
               </p>
             </div>
             <Button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/dashboard')}
               className="w-full py-2.5 rounded-xl bg-primary text-primary-foreground font-bold shadow-md shadow-primary/20 hover:opacity-90 transition-all cursor-pointer mt-2"
             >
               Go to Dashboard

@@ -36,6 +36,10 @@
         } catch (e) {}
       })();
     </script>
+    <!-- Google Identity Services client script for OIDC Auth -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <!-- Microsoft Authentication Library (MSAL.js) for client-side OIDC -->
+    <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.2/lib/msal-browser.min.js" async defer></script>
   </head>
   <body class="text-foreground bg-background flex h-full text-base antialiased">
     <div class="flex grow" id="root"></div>

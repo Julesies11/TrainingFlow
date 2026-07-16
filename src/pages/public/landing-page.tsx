@@ -18,8 +18,7 @@ import {
   Download,
   Watch,
   CalendarPlus,
-  Star,
-  Plus
+  Star
 } from 'lucide-react';
 import { toAbsoluteUrl } from '@/lib/helpers';
 
@@ -173,16 +172,17 @@ export function LandingPage() {
         {/* Dashboard Preview Container (Glassmorphic Mockup) */}
         <div className="relative pt-12 max-w-5xl mx-auto animate-fade-in delay-150">
           <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent z-10 h-1/4 top-3/4"></div>
-          <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/40 dark:bg-slate-900/40 p-3 shadow-2xl backdrop-blur-md overflow-hidden aspect-[16/10]">
-            <div className="h-6 flex items-center gap-2 px-2 border-b border-slate-200/50 dark:border-slate-800/50 pb-2">
-              <span className="w-3 h-3 rounded-full bg-red-400"></span>
-              <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
-              <span className="w-3 h-3 rounded-full bg-green-400"></span>
-              <span className="text-2xs text-muted-foreground ml-2 select-none">trainingflow.app/dashboard</span>
-            </div>
-            
-            {/* Simulated Calendar UI inside browser frame */}
-            <div className="p-4 flex flex-col h-full bg-slate-100/50 dark:bg-slate-950/50 overflow-y-auto text-left">
+          <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/40 dark:bg-slate-900/40 p-3 shadow-2xl backdrop-blur-md overflow-x-auto aspect-[16/10]">
+            <div className="min-w-[900px] flex flex-col h-full">
+              <div className="h-6 flex items-center gap-2 px-2 border-b border-slate-200/50 dark:border-slate-800/50 pb-2 shrink-0">
+                <span className="w-3 h-3 rounded-full bg-red-400"></span>
+                <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
+                <span className="w-3 h-3 rounded-full bg-green-400"></span>
+                <span className="text-2xs text-muted-foreground ml-2 select-none">trainingflow.app/dashboard</span>
+              </div>
+              
+              {/* Simulated Calendar UI inside browser frame */}
+              <div className="p-4 flex flex-col grow bg-slate-100/50 dark:bg-slate-950/50 overflow-y-auto text-left min-h-0">
               {/* Calendar Header inside app */}
               <div className="flex items-center justify-between border-b border-slate-200/50 dark:border-slate-800/50 pb-3 mb-4 shrink-0">
                 <div className="flex items-center gap-4">
@@ -463,6 +463,7 @@ export function LandingPage() {
                     </div>
                   </div>
                 </div>
+            </div>
             </div>
           </div>
         </div>

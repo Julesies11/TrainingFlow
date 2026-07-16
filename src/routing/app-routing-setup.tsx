@@ -13,12 +13,12 @@ import { EventTypesAdminPage } from '@/pages/admin/event-types';
 import { GarminMappingsAdminPage } from '@/pages/admin/garmin-mappings';
 import { SportTypesAdminPage } from '@/pages/admin/sport-types';
 import { DashboardPage } from '@/pages/dashboard';
+import { LandingPage } from '@/pages/public/landing-page';
 import { CalendarView } from '@/pages/training/calendar';
 import { EventsPage } from '@/pages/training/events';
 import { GoalsPage } from '@/pages/training/goals';
 import { LibraryPage } from '@/pages/training/library';
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { LandingPage } from '@/pages/public/landing-page';
 
 function PlaceholderPage({ title }: { title: string }) {
   return (
