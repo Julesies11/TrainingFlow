@@ -1,9 +1,15 @@
 import { Fragment } from 'react/jsx-runtime';
+import { AlertCircle } from 'lucide-react';
 import { toAbsoluteUrl } from '@/lib/helpers';
+import {
+  Alert,
+  AlertContent,
+  AlertDescription,
+  AlertIcon,
+  AlertTitle,
+} from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertContent, AlertDescription, AlertTitle, AlertIcon } from '@/components/ui/alert';
-import { AlertCircle } from 'lucide-react';
 
 interface Error500Props {
   error?: Error | null;
@@ -56,13 +62,16 @@ export function Error500({ error }: Error500Props = {}) {
               </AlertTitle>
               <AlertDescription className="text-xs mt-1">
                 <p className="font-medium mb-2 leading-relaxed lowercase text-muted-foreground">
-                  We encountered an error that might be caused by incorrect format or bad structure in the loaded data:
+                  We encountered an error that might be caused by incorrect
+                  format or bad structure in the loaded data:
                 </p>
                 <div className="bg-destructive/5 dark:bg-destructive/10 border border-destructive/20 rounded-md p-3 font-mono break-words text-[11px] text-destructive whitespace-pre-wrap">
                   {error.message || String(error)}
                 </div>
                 <p className="mt-2 text-[10px] text-muted-foreground leading-relaxed lowercase">
-                  tip: if you recently imported/pasted text (such as AI plans or CSV files), verify the formatting, columns, and data types, and try again.
+                  tip: if you recently imported/pasted text (such as AI plans or
+                  CSV files), verify the formatting, columns, and data types,
+                  and try again.
                 </p>
               </AlertDescription>
             </AlertContent>

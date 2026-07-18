@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
 import { Note } from '@/types/training';
 import { formatDateToLocalISO } from '@/services/training/calendar.utils';
 import { Button } from '@/components/ui/button';
@@ -13,8 +14,6 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { AlertTriangle } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -22,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 interface NoteDialogProps {
   note: Partial<Note>;
@@ -65,7 +65,9 @@ export function NoteDialog({
   const getDateFromCoordinates = (weekNum: number, dayOf: number) => {
     const dummyBase = new Date(2024, 0, 1); // Monday, Jan 1, 2024
     const totalDays = (weekNum - 1) * 7 + (dayOf - 1);
-    const targetDate = new Date(dummyBase.getTime() + totalDays * 24 * 60 * 60 * 1000);
+    const targetDate = new Date(
+      dummyBase.getTime() + totalDays * 24 * 60 * 60 * 1000,
+    );
     return formatDateToLocalISO(targetDate);
   };
 
@@ -82,7 +84,9 @@ export function NoteDialog({
     onSave(note);
   };
 
-  const coords = getCoordinatesFromDate(note.date || formatDateToLocalISO(new Date()));
+  const coords = getCoordinatesFromDate(
+    note.date || formatDateToLocalISO(new Date()),
+  );
   const dialogTitle = isDuplicated
     ? 'duplicate note'
     : isExisting
@@ -125,7 +129,11 @@ export function NoteDialog({
                   <Input
                     type="date"
                     value={note.date}
-                    className={isDuplicated ? 'border-primary ring-primary/20 ring-2' : ''}
+                    className={
+                      isDuplicated
+                        ? 'border-primary ring-primary/20 ring-2'
+                        : ''
+                    }
                     onChange={(e) => setNote({ ...note, date: e.target.value })}
                   />
                 </div>
@@ -145,7 +153,10 @@ export function NoteDialog({
                       className="border-primary ring-primary/20 ring-2"
                       onChange={(e) => {
                         const val = parseInt(e.target.value) || 1;
-                        const newDate = getDateFromCoordinates(val, coords.dayOfWeek);
+                        const newDate = getDateFromCoordinates(
+                          val,
+                          coords.dayOfWeek,
+                        );
                         setNote({ ...note, date: newDate });
                       }}
                     />
@@ -158,7 +169,10 @@ export function NoteDialog({
                       value={coords.dayOfWeek.toString()}
                       onValueChange={(val) => {
                         const dayVal = parseInt(val) || 1;
-                        const newDate = getDateFromCoordinates(coords.weekNumber, dayVal);
+                        const newDate = getDateFromCoordinates(
+                          coords.weekNumber,
+                          dayVal,
+                        );
                         setNote({ ...note, date: newDate });
                       }}
                     >
@@ -166,13 +180,27 @@ export function NoteDialog({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1" className="font-bold lowercase">monday</SelectItem>
-                        <SelectItem value="2" className="font-bold lowercase">tuesday</SelectItem>
-                        <SelectItem value="3" className="font-bold lowercase">wednesday</SelectItem>
-                        <SelectItem value="4" className="font-bold lowercase">thursday</SelectItem>
-                        <SelectItem value="5" className="font-bold lowercase">friday</SelectItem>
-                        <SelectItem value="6" className="font-bold lowercase">saturday</SelectItem>
-                        <SelectItem value="7" className="font-bold lowercase">sunday</SelectItem>
+                        <SelectItem value="1" className="font-bold lowercase">
+                          monday
+                        </SelectItem>
+                        <SelectItem value="2" className="font-bold lowercase">
+                          tuesday
+                        </SelectItem>
+                        <SelectItem value="3" className="font-bold lowercase">
+                          wednesday
+                        </SelectItem>
+                        <SelectItem value="4" className="font-bold lowercase">
+                          thursday
+                        </SelectItem>
+                        <SelectItem value="5" className="font-bold lowercase">
+                          friday
+                        </SelectItem>
+                        <SelectItem value="6" className="font-bold lowercase">
+                          saturday
+                        </SelectItem>
+                        <SelectItem value="7" className="font-bold lowercase">
+                          sunday
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

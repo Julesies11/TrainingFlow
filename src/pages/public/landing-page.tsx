@@ -27,7 +27,7 @@ export function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans selection:bg-success/30 select-none">
+    <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans selection:bg-success/30 select-none overflow-x-hidden w-full relative">
       
       {/* Background decoration elements */}
       <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-success/10 blur-[120px] rounded-full pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
@@ -172,7 +172,7 @@ export function LandingPage() {
         {/* Dashboard Preview Container (Glassmorphic Mockup) */}
         <div className="relative pt-12 max-w-5xl mx-auto animate-fade-in delay-150">
           <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent z-10 h-1/4 top-3/4"></div>
-          <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/40 dark:bg-slate-900/40 p-3 shadow-2xl backdrop-blur-md overflow-x-auto aspect-[16/10]">
+          <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/40 dark:bg-slate-900/40 p-3 shadow-2xl backdrop-blur-md overflow-x-auto h-[380px] md:h-auto md:aspect-[16/10]">
             <div className="min-w-[900px] flex flex-col h-full">
               <div className="h-6 flex items-center gap-2 px-2 border-b border-slate-200/50 dark:border-slate-800/50 pb-2 shrink-0">
                 <span className="w-3 h-3 rounded-full bg-red-400"></span>

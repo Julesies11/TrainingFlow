@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
@@ -24,6 +25,40 @@ vi.mock('@/hooks/use-training-data', () => ({
 
 vi.mock('@/hooks/use-supabase-user', () => ({
   useSupabaseUserId: () => 'test-user-id',
+}));
+
+vi.mock('@/pages/training/calendar/components/import-dialog', () => ({
+  ImportDialog: ({
+    open,
+    onOpenChange,
+    onImport,
+  }: {
+    open: boolean;
+    onOpenChange?: (open: boolean) => void;
+    onImport?: (workouts: unknown[]) => void;
+  }) => {
+    const hasImported = useRef(false);
+    useEffect(() => {
+      if (open && onImport && !hasImported.current) {
+        hasImported.current = true;
+        onImport([
+          {
+            weekNumber: 12,
+            dayOfWeek: 2,
+            sportTypeId: 'run-id',
+            title: 'Imported run',
+            plannedDurationMinutes: 60,
+          },
+        ]);
+        if (onOpenChange) {
+          onOpenChange(false);
+        }
+      } else if (!open) {
+        hasImported.current = false;
+      }
+    }, [open, onImport, onOpenChange]);
+    return <div data-testid="mock-import-dialog" />;
+  },
 }));
 
 // Mock ResizeObserver
@@ -158,5 +193,30 @@ describe('TemplateBuilderDialog', () => {
       },
       { timeout: 2000 },
     );
+  });
+
+  it('updates totalWeeks to the maximum week number of imported workouts', async () => {
+    renderComponent({
+      template: {
+        id: 't1',
+        name: 'Test Plan',
+        workouts: [],
+        totalWeeks: 4,
+      },
+    });
+
+    expect(screen.getByText(/4 weeks/i)).toBeInTheDocument();
+
+    const moreBtn = screen.getByLabelText(/more actions/i);
+    fireEvent.pointerDown(moreBtn, { button: 0 });
+    fireEvent.pointerUp(moreBtn, { button: 0 });
+    fireEvent.click(moreBtn);
+
+    const importAiBtn = await screen.findByText(/import ai/i);
+    fireEvent.click(importAiBtn);
+
+    await waitFor(() => {
+      expect(screen.getByText(/12 weeks/i)).toBeInTheDocument();
+    });
   });
 });

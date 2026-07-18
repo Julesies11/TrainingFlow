@@ -70,7 +70,8 @@ describe('WorkoutDialog', () => {
         title: 'Old Workout',
         weekNumber: 3,
         dayOfWeek: 5,
-        id: undefined, // Should be undefined for new duplicate
+        id: undefined,
+        date: '2024-01-19',
       }),
     );
   });

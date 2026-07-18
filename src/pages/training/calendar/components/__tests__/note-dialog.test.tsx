@@ -64,4 +64,44 @@ describe('NoteDialog', () => {
 
     expect(onCancel).toHaveBeenCalled();
   });
+
+  it('enters duplicate mode when duplicate is clicked', () => {
+    const onSave = vi.fn();
+    render(<NoteDialog {...defaultProps} note={mockNote} onSave={onSave} />);
+
+    const duplicateButton = screen.getByText(/duplicate/i);
+    fireEvent.click(duplicateButton);
+
+    expect(screen.getByText(/duplicate note/i)).toBeDefined();
+    expect(screen.getByText(/this is a duplicated note/i)).toBeInTheDocument();
+
+    const saveButton = screen.getByText(/save note/i);
+    fireEvent.click(saveButton);
+
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: undefined,
+        content: 'Existing note content',
+      }),
+    );
+  });
+
+  it('renders week and day fields in template mode when duplicating', () => {
+    const onSave = vi.fn();
+    render(
+      <NoteDialog
+        {...defaultProps}
+        note={mockNote}
+        hideDate={true}
+        totalWeeks={8}
+        onSave={onSave}
+      />,
+    );
+
+    const duplicateButton = screen.getByText(/duplicate/i);
+    fireEvent.click(duplicateButton);
+
+    expect(screen.getByText(/week number/i)).toBeInTheDocument();
+    expect(screen.getByText(/day of week/i)).toBeInTheDocument();
+  });
 });
