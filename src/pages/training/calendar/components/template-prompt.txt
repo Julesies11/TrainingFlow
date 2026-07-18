@@ -1,0 +1,24 @@
+Please act as an expert [ENTER SPORT TYPE] coach and design a training program for me. 
+
+[INSERT YOUR EVENT DETAILS, TIMEFRAME, CURRENT FITNESS LEVEL, EVENT DATE, AND GOALS HERE]
+
+When generating the program, the "sportName" column must exactly match one of my configured sports from the database: {validSports}. Do not use any different types, they need to match exactly.
+
+Provide it as either a downloadable CSV file, or as text in CSV format that can be copied. Ensure that any fields containing commas (especially in the "description" or "title") are enclosed in double quotes (e.g., "Main set, 10x100m").
+
+Required Columns:
+1. "weekNumber" - The relative week number starting from 1.
+2. "dayOfWeek" - The day of the week as a number where 1=Monday, 2=Tuesday, ..., 7=Sunday.
+3. "sportName" - The name of the sport (must exactly match one of the sports listed above).
+4. "title" - A short, descriptive title for the workout.
+5. "description" - Details of the workout structure.
+6. "plannedDurationMinutes" - The total planned duration in minutes as a whole number.
+7. "plannedDistanceKilometers" - The planned distance in kilometers (use 0 if not applicable).
+8. "effortLevel" - A numeric value representing intensity from 1 to 4 (1=Recovery, 2=Base, 3=Tempo, 4=VO2).
+9. "isKeyWorkout" - Either "true" or "false" to indicate if this is a high-priority session.
+
+Example row for {firstSportName} (Plan Template):
+weekNumber,dayOfWeek,sportName,title,description,plannedDurationMinutes,plannedDistanceKilometers,effortLevel,isKeyWorkout
+1,1,{firstSportName},Steady Session,Description,60,10,2,false
+
+Before you start, ask me any questions you need to ensure you have full context

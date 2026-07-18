@@ -234,6 +234,21 @@ export function TemplateBuilderDialog({
 
   const handleImportToTemplate = (imported: Partial<Workout>[]) => {
     setFormData((prev) => {
+      let maxWeek = prev.totalWeeks || 4;
+      imported.forEach((w) => {
+        let weekNum = w.weekNumber;
+        if (weekNum === undefined) {
+          if (!w.date) return;
+          const coords = getCoordinatesFromDate(w.date);
+          weekNum = coords.weekNumber;
+        }
+        if (weekNum !== undefined && weekNum > maxWeek) {
+          maxWeek = weekNum;
+        }
+      });
+
+      maxWeek = Math.min(52, maxWeek);
+
       const newWorkouts = [...(prev.workouts || [])];
       imported.forEach((w) => {
         let weekNum = w.weekNumber;
@@ -246,8 +261,8 @@ export function TemplateBuilderDialog({
           day = coords.dayOfWeek;
         }
 
-        // Only import if it falls within template weeks
-        if (weekNum >= 1 && weekNum <= (prev.totalWeeks || 0)) {
+        // Only import if it falls within the updated total weeks range
+        if (weekNum >= 1 && weekNum <= maxWeek) {
           newWorkouts.push({
             id: crypto.randomUUID(),
             templateId: prev.id || '',
@@ -264,7 +279,7 @@ export function TemplateBuilderDialog({
           });
         }
       });
-      return { ...prev, workouts: newWorkouts };
+      return { ...prev, totalWeeks: maxWeek, workouts: newWorkouts };
     });
   };
 
@@ -886,6 +901,7 @@ export function TemplateBuilderDialog({
             onDelete={(id) => handleDeleteNote(id)}
             onCancel={() => setNoteToEdit(null)}
             hideDate={true}
+            totalWeeks={formData.totalWeeks}
           />
         )}
 

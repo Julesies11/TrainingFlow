@@ -47,7 +47,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-background text-center">
-          <Error500 />
+          <Error500 error={this.state.error} />
 
           {process.env.NODE_ENV === 'development' && this.state.error && (
             <div className="mt-12 w-full max-w-4xl p-4 bg-muted rounded-lg text-left overflow-auto max-h-[400px]">

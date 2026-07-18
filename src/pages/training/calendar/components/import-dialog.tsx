@@ -45,7 +45,10 @@ import {
 } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { getImportPrompt } from '../constants/import-prompt';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import calendarPrompt from './calendar-prompt.txt?raw';
+import templatePrompt from './template-prompt.txt?raw';
 
 interface ImportDialogProps {
   open: boolean;
@@ -175,8 +178,21 @@ export function ImportDialog({
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const getPromptText = () => {
+    const rawTemplate = templateMode ? templatePrompt : calendarPrompt;
+    const validSports =
+      sportTypes.map((st) => st.name).join(', ') || 'Run, Bike, Swim';
+    const firstSportName = sportTypes[0]?.name || 'Sport';
+    const currentDate = new Date().toISOString().split('T')[0];
+
+    return rawTemplate
+      .replace(/{validSports}/g, validSports)
+      .replace(/{firstSportName}/g, firstSportName)
+      .replace(/{currentDate}/g, currentDate);
+  };
+
   const handleCopyPrompt = () => {
-    copyToClipboard(getImportPrompt(sportTypes));
+    copyToClipboard(getPromptText());
     toast.success('AI prompt copied to clipboard');
   };
 
@@ -304,7 +320,7 @@ export function ImportDialog({
                     </span>
                     <Textarea
                       readOnly
-                      value={getImportPrompt(sportTypes)}
+                      value={getPromptText()}
                       className="min-h-[120px] md:min-h-[160px] text-[11px] font-mono bg-background/50 border-primary/10 resize-none overflow-y-auto leading-relaxed"
                     />
                   </div>
