@@ -40,4 +40,4 @@ function Kbd({
   );
 }
 
-export { Kbd, kbdVariants };
+export { Kbd };

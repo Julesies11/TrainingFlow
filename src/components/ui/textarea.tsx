@@ -40,4 +40,4 @@ function Textarea({
   );
 }
 
-export { Textarea, textareaVariants };
+export { Textarea };

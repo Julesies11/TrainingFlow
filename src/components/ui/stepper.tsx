@@ -460,8 +460,6 @@ function StepperContent({
 }
 
 export {
-  useStepper,
-  useStepItem,
   Stepper,
   StepperItem,
   StepperTrigger,
