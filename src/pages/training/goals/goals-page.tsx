@@ -10,7 +10,6 @@ import {
 } from '@/hooks/use-training-data';
 import { formatMinsShort } from '@/services/training/calendar.utils';
 import { Button } from '@/components/ui/button';
-import { GoalDialog } from './components/goal-dialog';
 import {
   Table,
   TableBody,
@@ -19,6 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { GoalDialog } from './components/goal-dialog';
 
 export function GoalsPage() {
   const { data: goals = [], isLoading: loadingGoals } = useGoals();

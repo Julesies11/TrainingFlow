@@ -25,7 +25,7 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 - **Zod** is used for runtime validation and type inference.
 - **TanStack Query**: Used for all server-side data fetching and caching. Implements $O(N+M)$ Map-based aggregation for performance.
 
-## 🚀 Navigation & State Management
+## Navigation & State Management
 - **Single Source of Truth (URL)**: For pages requiring deep-linking (like the Calendar and Training Plan detail), the URL is the primary source of truth. Component state for month/year or plan IDs is derived directly from `useParams()` and `useLocation()`. This prevents "state-flicker" bugs where local state and URL parameters compete for control during navigation.
 - **Controlled Navigation**: User actions (button clicks, dropdown selections) should update the URL via React Router's `navigate()` function, allowing the routing system to drive the component re-render.
 
@@ -38,7 +38,25 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 - **Advanced Training Plans**: The plan builder supports full drag-and-drop reordering, repeating session recurrence, and series extensions. Sub-dialogs are rendered at the component root level (outside the main `DialogContent`) to prevent Radix UI focus-trap loops and ensure stable runtime performance.
 - **Dialog Stability**: All bulk actions and import wizards utilize stable state initialization to prevent infinite rendering cycles, particularly when interacting with global sport type data.
 - **Lazy Profile Creation**: On first login, the `SupabaseAdapter` ensures a relational record exists in `tf_profiles` for the authenticated user, synchronizing essential metadata.
-- **Custom Transactional Email System**: To prevent branding collisions and bypass built-in SMTP constraints on shared multi-app Supabase instances, all transactional emails (signups, password resets, magic links) are routed through app-specific Edge Functions and Resend. Client-side routers (e.g. `/auth/verify-email`, `/auth/callback`, or `/login`) verify OTP hashes directly in-app using `supabase.auth.verifyOtp`, which prevents external redirects and keeps users inside the app domain.
+
+## UI Layering (Z-Index Hierarchy)
+Consistent layering is critical to prevent modals, drawers, and dropdowns from fighting for visibility:
+- `Sheet` (Drawers): `z-[110]`, overlay `bg-black/10`, `blur(1px)`
+- `DialogOverlay`: `z-[145]`, `bg-black/20`, `blur(2px)`
+- `Dialog` (Modals): `z-[150]`
+- `Select`, `DropdownMenu`, `Popover`: `z-[160]` (must pop out of dialogs)
+- `Tooltip`: `z-[200]`
+
+## Container Layout
+- `.container-fixed` uses `0.5rem` horizontal padding on mobile (<1024px) and `1.5rem` on desktop (≥1024px), with `max-width: 1320px`.
+
+## Custom Transactional Email Architecture
+To prevent branding collisions and bypass built-in SMTP constraints on the shared multi-app Supabase instance, all transactional emails (signups, password resets, magic links) are routed through app-specific **Supabase Edge Functions** and **Resend**:
+1. Client calls `supabase.functions.invoke("register-user")` instead of `supabase.auth.signUp()`.
+2. Edge Function uses `admin.createUser({ email_confirm: false })` then `admin.generateLink()` to get a hashed token.
+3. Edge Function constructs a domain-aligned client link (e.g., `https://trainingflow.app/login?token_hash=...&type=signup`) and sends it via the Resend API with app-specific branding.
+4. Client-side route (`/login` or `/auth/verify-email`) verifies the OTP using `supabase.auth.verifyOtp({ token_hash, type })`.
+- **Critical: `useRef` Guard** — Because `verifyOtp` tokens are single-use, and React Strict Mode double-renders effects, all verification routes must use a `useRef` flag (`verificationAttempted`) to guarantee the token is consumed exactly once. Without this, the second render consumes an expired token and errors.
 
 ## Security & RBAC
 - **Role-Based Access Control**: Managed via the `role` column in `tf_profiles`. 
@@ -56,6 +74,29 @@ This project is a React 19 application built on the **Metronic 9** template, opt
 - **Graceful Recovery**: When a crash occurs, the boundary renders the standard Metronic `Error500` component. To ensure reliable recovery, the `Error500` page uses native `<a>` tags for navigation, forcing a full page reload to clear any corrupted application state.
 - **Error Logging**: All uncaught errors are automatically logged to the `tf_error_logs` table in Supabase via `errorLogsApi.capture()`, including stack traces and component context.
 - **Developer Experience**: In development environments, the boundary displays the raw stack trace below the polished error UI for immediate diagnosis.
+
+## Development Setup
+- **Install**: `npm install --force` (force flag needed for React 19 compatibility).
+- **Dev Server**: `npm run dev`
+- **Type Check**: `npm run type-check`
+- **Lint**: `npm run lint`
+- **Test**: `npm run test` (Vitest)
+- **Format**: `npm run format` (Prettier)
+- **Environment**: Requires `.env` with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_SERVICE_ROLE_KEY`.
+
+## Database Migrations
+- **Baseline**: `supabase/migrations/2026042701_baseline_v3.sql` — consolidated current schema.
+- **New Migrations**: Create timestamped SQL files in `supabase/migrations/` (format: `YYYYMMDDHH_description.sql`).
+- **Archive**: Older consolidated migrations live in `supabase/migrations/archive/`.
+
+## Styling & Components
+- **Config**: `src/css/config.reui.css` contains the ReUI theme configuration.
+- **Components**: Always prefer **ReUI components** from `@/components/ui/` over custom Tailwind implementations.
+- **Icons**: Use **KeenIcons** via the `KeenIcon` component, supplemented by Lucide and Remix Icon.
+
+## Smoke Testing
+- Smoke tests in `src/test/smoke/` verify core pages render without crashing. They mock heavy dependencies (ApexCharts, Supabase).
+- When adding new pages, add a basic smoke test in `src/test/smoke/pages.test.tsx`.
 
 ## Important Constraints
 - **React 19**: Ensure compatibility with React 19 features (e.g., `use` hook, improved `ref` handling).

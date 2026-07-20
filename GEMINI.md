@@ -27,7 +27,7 @@
 For detailed information on the project architecture, database, and features, refer to:
 - [Architecture Overview](./docs/gemini/ARCHITECTURE.md) - Patterns, State Management, Saving logic.
 - [Database Schema](./docs/gemini/DATABASE.md) - Tables, Relationships, and Data rules.
-- [Features & Modules](./docs/gemini/FEATURES.md) - Overview of Participant, Staff, House, and Roster modules.
+- [Features & Modules](./docs/gemini/FEATURES.md) - Overview of Training, Dashboard, and Plan Builder modules.
 
 # ===============================
 # 4. PROJECT-SPECIFIC MEMORIES

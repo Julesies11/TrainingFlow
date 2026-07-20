@@ -186,17 +186,12 @@ export function GarminMappingsPage() {
             </div>
           </div>
 
-          <div className="overflow-x-auto w-full">
-            <div className="min-w-[800px]">
-              {/* Shared Table */}
-              <GarminMappingsTable
-                mappings={mappings}
-                sportTypes={sportTypes}
-                isLoading={isLoading}
-                allowSystemEdit={false}
-              />
-            </div>
-          </div>
+          <GarminMappingsTable
+            mappings={mappings}
+            sportTypes={sportTypes}
+            isLoading={isLoading}
+            allowSystemEdit={false}
+          />
         </div>
       </div>
     </div>

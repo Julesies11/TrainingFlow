@@ -2,6 +2,9 @@
 
 TrainingFlow utilizes the default `public` PostgreSQL schema to manage its entities, with Supabase handling authentication. All table names are prefixed with `tf_`.
 
+## Baseline Migration
+The current database schema is consolidated in `supabase/migrations/2026042701_baseline_v3.sql`. This file includes all table definitions, RLS policies, indexes, storage buckets, and initial seed data.
+
 ## User Profiles
 User profiles are stored in the `public.tf_profiles` table, which is linked to Supabase's `auth.users` via a foreign key on the `id` column.
 
@@ -17,6 +20,8 @@ User profiles are stored in the `public.tf_profiles` table, which is linked to S
 - `tf_notes`: Simple text notes displayed on the training calendar. Columns: `id`, `user_id`, `date`, `content`, `created_at`.
 - `tf_daily_metrics`: Daily tracking of training stress (TSS, CTL, ATL, TSB).
 - `tf_training_goals`: Periodized training targets. Columns: `id`, `user_id`, `sport_type_id`, `metric` (duration/distance), `target_value`, `period` (weekly/monthly), `start_date`, `end_date`, `event_id` (optional).
+- `tf_garmin_sport_mapping`: Maps Garmin activity types to internal sport types. Supports system-wide defaults (`is_system = true`) and user-specific overrides.
+- `tf_error_logs`: Application error logging. Captures stack traces, component context, and user IDs for all uncaught errors.
 
 ## Authentication
 Authentication is managed via Supabase Auth (`auth.users`).
@@ -37,4 +42,3 @@ Authentication is managed via Supabase Auth (`auth.users`).
   - `tf_check_profile_role_security`: A `BEFORE INSERT OR UPDATE` trigger function on `tf_profiles` that blocks client-side role modifications. It forces new inserts to `role = 'user'` unless the caller is already an admin/developer, and throws an exception on updates to `role` attempted by standard users.
 - **Foreign Keys**: All user-specific tables must include a foreign key back to `auth.users` (usually `user_id` or `id`) with `on delete CASCADE`.
 - **Day of Week Mapping**: Notes and template workouts use a 1-indexed `day_of_week` column (**1=Monday, 7=Sunday**), strictly enforced by database `CHECK` constraints to ensure consistency with ISO standards and athlete expectations.
-
