@@ -85,7 +85,7 @@ To prevent branding collisions and bypass built-in SMTP constraints on the share
 - **Environment**: Requires `.env` with `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_SUPABASE_SERVICE_ROLE_KEY`.
 
 ## Database Migrations
-- **Baseline**: `supabase/migrations/2026042701_baseline_v3.sql` — consolidated current schema.
+- **Baseline**: `supabase/migrations/2026072001_baseline_v4.sql` — consolidated current schema.
 - **New Migrations**: Create timestamped SQL files in `supabase/migrations/` (format: `YYYYMMDDHH_description.sql`).
 - **Archive**: Older consolidated migrations live in `supabase/migrations/archive/`.
 

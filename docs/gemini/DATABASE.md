@@ -3,7 +3,7 @@
 TrainingFlow utilizes the default `public` PostgreSQL schema to manage its entities, with Supabase handling authentication. All table names are prefixed with `tf_`.
 
 ## Baseline Migration
-The current database schema is consolidated in `supabase/migrations/2026042701_baseline_v3.sql`. This file includes all table definitions, RLS policies, indexes, storage buckets, and initial seed data.
+The current database schema is consolidated in `supabase/migrations/2026072001_baseline_v4.sql`. This file includes all table definitions, RLS policies, indexes, storage buckets, and initial seed data.
 
 ## User Profiles
 User profiles are stored in the `public.tf_profiles` table, which is linked to Supabase's `auth.users` via a foreign key on the `id` column.
