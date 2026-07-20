@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/auth/context/auth-context';
 import { Link } from 'react-router-dom';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   Calendar, 
   Activity, 
@@ -25,13 +26,36 @@ import { toAbsoluteUrl } from '@/lib/helpers';
 export function LandingPage() {
   const { auth } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const mockupContainerRef = useRef<HTMLDivElement>(null);
+  const [mockupScale, setMockupScale] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const padding = window.innerWidth < 640 ? 32 : window.innerWidth < 768 ? 48 : 64;
+      const width = Math.min(window.innerWidth - padding, 960);
+      return width / 960;
+    }
+    return 1;
+  });
+
+  useEffect(() => {
+    const updateScale = () => {
+      if (!mockupContainerRef.current) return;
+      const width = mockupContainerRef.current.getBoundingClientRect().width;
+      // Design width is 960px
+      const designWidth = 960;
+      setMockupScale(Math.min(width / designWidth, 1));
+    };
+
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans selection:bg-success/30 select-none overflow-x-hidden w-full relative">
       
       {/* Background decoration elements */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-success/10 blur-[120px] rounded-full pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
-      <div className="absolute top-[20%] right-1/4 w-[400px] h-[400px] bg-blue-500/5 blur-[100px] rounded-full pointer-events-none -z-10 animate-pulse duration-[10000ms]"></div>
+      <div className="hidden sm:block absolute top-0 left-1/4 w-[500px] h-[500px] bg-success/10 blur-[120px] rounded-full pointer-events-none -z-10 animate-pulse duration-[8000ms]"></div>
+      <div className="hidden sm:block absolute top-[20%] right-1/4 w-[400px] h-[400px] bg-blue-500/5 blur-[100px] rounded-full pointer-events-none -z-10 animate-pulse duration-[10000ms]"></div>
 
       {/* Header Navigation */}
       <header className="sticky top-0 z-50 backdrop-blur-md bg-white/70 dark:bg-slate-950/70 border-b border-slate-200/50 dark:border-slate-800/50 transition-colors">
@@ -52,7 +76,15 @@ export function LandingPage() {
             </span>
           </div>
 
-
+          {/* Desktop Navigation Links */}
+          <div className="hidden md:flex items-center gap-8">
+            <a 
+              href="#features" 
+              className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-success dark:hover:text-success transition-colors cursor-pointer"
+            >
+              Features
+            </a>
+          </div>
 
           <div className="hidden md:flex items-center gap-4">
             {auth?.access_token ? (
@@ -94,7 +126,16 @@ export function LandingPage() {
         {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-slate-200/50 dark:border-slate-800/50 bg-white dark:bg-slate-950 px-4 py-6 space-y-4 animate-fade-in">
-
+            {/* Mobile Navigation Links */}
+            <div className="flex flex-col gap-2">
+              <a 
+                href="#features" 
+                onClick={() => setMobileMenuOpen(false)}
+                className="text-sm font-semibold text-slate-600 dark:text-slate-400 hover:text-success dark:hover:text-success py-2 transition-colors cursor-pointer"
+              >
+                Features
+              </a>
+            </div>
 
             <div className="pt-4 border-t border-slate-200/50 dark:border-slate-800/50 flex flex-col gap-3">
               {auth?.access_token ? (
@@ -131,8 +172,8 @@ export function LandingPage() {
           <Sparkles className="w-3.5 h-3.5" /> Free Workout Planner
         </div>
         
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-black tracking-tight text-slate-950 dark:text-white max-w-4xl mx-auto leading-[1.1]">
-          Structure Your Training.<br/>
+        <h1 className="text-3xl sm:text-5xl md:text-7xl font-black tracking-tight text-slate-950 dark:text-white max-w-4xl mx-auto leading-[1.1]">
+          Structure Your Training. <br className="hidden md:block" />
           Build Your <span className="text-success relative inline-block">
             Plan
             <span className="absolute bottom-1.5 left-0 w-full h-[6px] bg-success/20 rounded"></span>
@@ -171,9 +212,21 @@ export function LandingPage() {
 
         {/* Dashboard Preview Container (Glassmorphic Mockup) */}
         <div className="relative pt-12 max-w-5xl mx-auto animate-fade-in delay-150">
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent z-10 h-1/4 top-3/4"></div>
-          <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/40 dark:bg-slate-900/40 p-3 shadow-2xl backdrop-blur-md overflow-x-auto h-[380px] md:h-auto md:aspect-[16/10]">
-            <div className="min-w-[900px] flex flex-col h-full">
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 dark:from-slate-950 to-transparent z-10 h-1/4 top-3/4 pointer-events-none"></div>
+          <div 
+            ref={mockupContainerRef}
+            className="relative w-full rounded-2xl border border-slate-200/60 dark:border-slate-800/60 bg-white/40 dark:bg-slate-900/40 p-3 shadow-2xl backdrop-blur-md overflow-hidden transition-all duration-300"
+            style={{ height: `${580 * mockupScale}px` }}
+          >
+            <div 
+              className="absolute top-0 left-1/2 origin-top flex flex-col transition-all duration-300"
+              style={{ 
+                width: '960px', 
+                height: '580px', 
+                transform: `translate(-50%, 0) scale(${mockupScale})`,
+                transformOrigin: 'top center'
+              }}
+            >
               <div className="h-6 flex items-center gap-2 px-2 border-b border-slate-200/50 dark:border-slate-800/50 pb-2 shrink-0">
                 <span className="w-3 h-3 rounded-full bg-red-400"></span>
                 <span className="w-3 h-3 rounded-full bg-yellow-400"></span>
@@ -482,70 +535,82 @@ export function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 space-y-4 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Calendar className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold">Drag-and-Drop Calendar</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Easily structure workouts, reorder daily sessions, and copy/paste tasks across your week with instant stats recalculations.
-              </p>
-            </div>
+            <Card className="group border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
+              <CardContent className="p-6 space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Calendar className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold">Drag-and-Drop Calendar</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Easily structure workouts, reorder daily sessions, and copy/paste tasks across your week with instant stats recalculations.
+                </p>
+              </CardContent>
+            </Card>
 
             {/* Feature 2 */}
-            <div className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 space-y-4 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Watch className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold">Garmin CSV Import</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Import training logs directly from Garmin Connect CSV exports. Set custom activity mappings to align smartwatch data with your internal sports.
-              </p>
-            </div>
+            <Card className="group border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
+              <CardContent className="p-6 space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Watch className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold">Garmin CSV Import</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Import training logs directly from Garmin Connect CSV exports. Set custom activity mappings to align smartwatch data with your internal sports.
+                </p>
+              </CardContent>
+            </Card>
 
             {/* Feature 3 */}
-            <div className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 space-y-4 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
-                <Target className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold">Periodized Goals</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Define weekly or monthly distance/duration targets. Track active completion rates via visual loading bars right on your calendar.
-              </p>
-            </div>
+            <Card className="group border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
+              <CardContent className="p-6 space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Target className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold">Periodized Goals</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Define weekly or monthly distance/duration targets. Track active completion rates via visual loading bars right on your calendar.
+                </p>
+              </CardContent>
+            </Card>
 
             {/* Feature 4 */}
-            <div className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 space-y-4 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
-                <LineChart className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold">Progression Tracking</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Monitor training volume and effort distributions over a customizable rolling timeframe. Highlight target event dates automatically.
-              </p>
-            </div>
+            <Card className="group border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
+              <CardContent className="p-6 space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <LineChart className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold">Progression Tracking</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Monitor training volume and effort distributions over a customizable rolling timeframe. Highlight target event dates automatically.
+                </p>
+              </CardContent>
+            </Card>
 
             {/* Feature 5 */}
-            <div className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 space-y-4 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
-                <CalendarPlus className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold">Periodized Plan Builder</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Generate structured taper schedules or base-building phases using a rule-based periodization engine. Map blocks forward from start dates or backward from target race dates.
-              </p>
-            </div>
+            <Card className="group border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
+              <CardContent className="p-6 space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <CalendarPlus className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold">Periodized Plan Builder</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Generate structured taper schedules or base-building phases using a rule-based periodization engine. Map blocks forward from start dates or backward from target race dates.
+                </p>
+              </CardContent>
+            </Card>
 
             {/* Feature 6 */}
-            <div className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 p-6 space-y-4 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
-              <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
-                <BookOpen className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-bold">Workout Library</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                Save your favorite interval workouts or strength sessions. Drag templates onto the grid to schedule them in one click.
-              </p>
-            </div>
+            <Card className="group border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 hover:shadow-xl hover:border-success/30 dark:hover:border-success/30 transition-all duration-300">
+              <CardContent className="p-6 space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-success/10 text-success flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold">Workout Library</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Save your favorite interval workouts or strength sessions. Drag templates onto the grid to schedule them in one click.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>

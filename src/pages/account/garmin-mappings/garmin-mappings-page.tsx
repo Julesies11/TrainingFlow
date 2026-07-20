@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { GarminMappingsTable } from '@/pages/training/_shared/components/garmin-mappings-table';
-import { ArrowRight, Info, Plus, Settings2 } from 'lucide-react';
+import { Info, Plus, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   useGarminMappings,
@@ -101,91 +101,93 @@ export function GarminMappingsPage() {
             </div>
           </div>
 
-          <div className="overflow-auto">
-            <div className="min-w-[800px]">
-              {/* Manual Add Row (Always visible) */}
-              <div className="grid grid-cols-12 gap-3 p-4 bg-muted/20 border-b-2 items-end">
-                <div className="col-span-3 space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                    garmin activity type
-                  </label>
-                  <Input
-                    placeholder="e.g. Hiking"
-                    value={newGarminType}
-                    onChange={(e) => setNewGarminType(e.target.value)}
-                    className="lowercase text-sm h-10 border-primary/20 bg-background"
-                  />
-                </div>
-                <div className="col-span-2 space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                    garmin unit
-                  </label>
-                  <Select
-                    value={newGarminUnit}
-                    onValueChange={(val: 'km' | 'm') => setNewGarminUnit(val)}
-                  >
-                    <SelectTrigger className="lowercase text-sm h-10 bg-background border-primary/20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="km" className="lowercase text-sm">
-                        km
-                      </SelectItem>
-                      <SelectItem value="m" className="lowercase text-sm">
-                        m
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="col-span-1 flex justify-center pb-3">
-                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-30" />
-                </div>
-                <div className="col-span-3 space-y-1.5">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
-                    mapped sport
-                  </label>
-                  <Select
-                    value={newSportTypeId}
-                    onValueChange={setNewSportTypeId}
-                  >
-                    <SelectTrigger className="lowercase text-sm h-10 bg-background border-primary/20">
-                      <SelectValue placeholder="select sport" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem
-                        value="ignore"
-                        className="font-bold uppercase text-xs"
-                      >
-                        IGNORE
-                      </SelectItem>
-                      {sportTypes.map((st) => (
-                        <SelectItem
-                          key={st.id}
-                          value={st.id}
-                          className="lowercase text-sm"
-                        >
-                          {st.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="col-span-3">
-                  <Button
-                    onClick={handleAddMapping}
-                    disabled={
-                      upsertMapping.isPending ||
-                      !newGarminType.trim() ||
-                      !newSportTypeId
-                    }
-                    className="w-full font-bold lowercase gap-2 h-10"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Mapping
-                  </Button>
-                </div>
+          {/* Manual Add Form (Responsive, outside the scroll box) */}
+          <div className="p-4 bg-muted/20 border-b flex flex-col md:flex-row md:items-end gap-4 shrink-0">
+            <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  garmin activity type
+                </label>
+                <Input
+                  placeholder="e.g. Hiking"
+                  value={newGarminType}
+                  onChange={(e) => setNewGarminType(e.target.value)}
+                  className="lowercase text-sm h-10 border-primary/20 bg-background"
+                />
               </div>
 
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  garmin unit
+                </label>
+                <Select
+                  value={newGarminUnit}
+                  onValueChange={(val: 'km' | 'm') => setNewGarminUnit(val)}
+                >
+                  <SelectTrigger className="lowercase text-sm h-10 bg-background border-primary/20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="km" className="lowercase text-sm">
+                      km
+                    </SelectItem>
+                    <SelectItem value="m" className="lowercase text-sm">
+                      m
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">
+                  mapped sport
+                </label>
+                <Select
+                  value={newSportTypeId}
+                  onValueChange={setNewSportTypeId}
+                >
+                  <SelectTrigger className="lowercase text-sm h-10 bg-background border-primary/20">
+                    <SelectValue placeholder="select sport" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem
+                      value="ignore"
+                      className="font-bold uppercase text-xs"
+                    >
+                      IGNORE
+                    </SelectItem>
+                    {sportTypes.map((st) => (
+                      <SelectItem
+                        key={st.id}
+                        value={st.id}
+                        className="lowercase text-sm"
+                      >
+                        {st.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="shrink-0">
+              <Button
+                onClick={handleAddMapping}
+                disabled={
+                  upsertMapping.isPending ||
+                  !newGarminType.trim() ||
+                  !newSportTypeId
+                }
+                className="w-full md:w-auto font-bold lowercase gap-2 h-10 px-6"
+              >
+                <Plus className="h-4 w-4" />
+                Add Mapping
+              </Button>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto w-full">
+            <div className="min-w-[800px]">
               {/* Shared Table */}
               <GarminMappingsTable
                 mappings={mappings}

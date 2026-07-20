@@ -11,6 +11,14 @@ import {
 import { formatMinsShort } from '@/services/training/calendar.utils';
 import { Button } from '@/components/ui/button';
 import { GoalDialog } from './components/goal-dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 
 export function GoalsPage() {
   const { data: goals = [], isLoading: loadingGoals } = useGoals();
@@ -109,59 +117,59 @@ export function GoalsPage() {
               </Button>
             </div>
           ) : (
-            <div className="bg-card overflow-hidden rounded-2xl border shadow-sm">
-              <table className="w-full text-left">
-                <thead className="bg-muted/30 border-b">
-                  <tr>
-                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            <div className="bg-card overflow-hidden rounded-2xl border shadow-sm w-full">
+              <Table>
+                <TableHeader className="bg-muted/30">
+                  <TableRow>
+                    <TableHead className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       sport
-                    </th>
-                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    </TableHead>
+                    <TableHead className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       target
-                    </th>
-                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    </TableHead>
+                    <TableHead className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       period
-                    </th>
-                    <th className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    </TableHead>
+                    <TableHead className="px-5 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       dates
-                    </th>
-                    <th className="px-5 py-3 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                    </TableHead>
+                    <TableHead className="px-5 py-3 text-right text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                       actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {sortedGoals.map((goal) => {
                     const st = sportMap.get(goal.sportTypeId);
                     return (
-                      <tr
+                      <TableRow
                         key={goal.id}
                         className="hover:bg-muted/20 transition-colors"
                       >
-                        <td className="px-5 py-4">
+                        <TableCell className="px-5 py-4">
                           <span className="text-sm font-bold lowercase">
                             {st?.name || 'Unknown'}
                           </span>
-                        </td>
-                        <td className="px-5 py-4">
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
                           <span className="text-sm font-black text-primary">
                             {goal.metric === 'duration'
                               ? formatMinsShort(goal.targetValue)
                               : `${goal.targetValue}${st?.distanceUnit || 'km'}`}
                           </span>
-                        </td>
-                        <td className="px-5 py-4">
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
                           <span className="text-xs font-bold lowercase text-muted-foreground">
                             {goal.period}
                           </span>
-                        </td>
-                        <td className="px-5 py-4">
+                        </TableCell>
+                        <TableCell className="px-5 py-4">
                           <span className="text-xs font-medium lowercase">
                             {new Date(goal.startDate).toLocaleDateString()} -{' '}
                             {new Date(goal.endDate).toLocaleDateString()}
                           </span>
-                        </td>
-                        <td className="px-5 py-4 text-right">
+                        </TableCell>
+                        <TableCell className="px-5 py-4 text-right">
                           <div className="flex justify-end gap-1">
                             <Button
                               variant="ghost"
@@ -184,12 +192,12 @@ export function GoalsPage() {
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           )}
         </div>
