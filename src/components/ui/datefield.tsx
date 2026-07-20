@@ -100,5 +100,5 @@ function DateInput({
   );
 }
 
-export { DateField, DateInput, DateSegment, TimeField, dateInputStyles };
+export { DateField, DateInput, DateSegment, TimeField };
 export type { DateInputProps };

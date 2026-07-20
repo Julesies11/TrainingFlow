@@ -325,5 +325,5 @@ function GithubButton({
   );
 }
 
-export { GithubButton, githubButtonVariants };
+export { GithubButton };
 export type { GithubButtonProps };

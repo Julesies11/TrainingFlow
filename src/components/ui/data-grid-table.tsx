@@ -11,7 +11,7 @@ import {
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useDataGrid } from '@/components/ui/data-grid';
+import { useDataGrid } from '@/components/ui/data-grid-context';
 
 const headerCellSpacingVariants = cva('', {
   variants: {

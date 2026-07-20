@@ -20,7 +20,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Cell, flexRender, HeaderGroup, Row } from '@tanstack/react-table';
 import { GripHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDataGrid } from '@/components/ui/data-grid';
+import { useDataGrid } from '@/components/ui/data-grid-context';
 import {
   DataGridTableBase,
   DataGridTableBody,

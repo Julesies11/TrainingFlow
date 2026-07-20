@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/auth/context/auth-context';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
@@ -148,46 +148,51 @@ export function SignInPage() {
   }
 
   // Handle Google OIDC ID Token credential response
-  const handleGoogleCredentialResponse = async (response: any) => {
-    try {
-      setIsGoogleLoading(true);
-      setError(null);
+  const handleGoogleCredentialResponse = useCallback(
+    async (response: any) => {
+      try {
+        setIsGoogleLoading(true);
+        setError(null);
 
-      const idToken = response.credential;
-      if (!idToken) {
-        throw new Error('No credential returned from Google');
+        const idToken = response.credential;
+        if (!idToken) {
+          throw new Error('No credential returned from Google');
+        }
+
+        console.log(
+          'Received ID token from Google OIDC, signing in to Supabase...',
+        );
+        const { data, error: signInError } =
+          await supabase.auth.signInWithIdToken({
+            provider: 'google',
+            token: idToken,
+          });
+
+        console.log('signInWithIdToken response:', { data, signInError });
+
+        if (signInError) throw signInError;
+
+        // Manually sync session and profile details to trigger the state update
+        if (data.session) {
+          await saveAuth({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
+        }
+
+        toast.success('Signed in successfully!');
+      } catch (err) {
+        console.error('Google sign-in error:', err);
+        setError(err instanceof Error ? err.message : 'Google sign-in failed');
+        toast.error(
+          err instanceof Error ? err.message : 'Google sign-in failed',
+        );
+      } finally {
+        setIsGoogleLoading(false);
       }
-
-      console.log(
-        'Received ID token from Google OIDC, signing in to Supabase...',
-      );
-      const { data, error: signInError } =
-        await supabase.auth.signInWithIdToken({
-          provider: 'google',
-          token: idToken,
-        });
-
-      console.log('signInWithIdToken response:', { data, signInError });
-
-      if (signInError) throw signInError;
-
-      // Manually sync session and profile details to trigger the state update
-      if (data.session) {
-        await saveAuth({
-          access_token: data.session.access_token,
-          refresh_token: data.session.refresh_token,
-        });
-      }
-
-      toast.success('Signed in successfully!');
-    } catch (err) {
-      console.error('Google sign-in error:', err);
-      setError(err instanceof Error ? err.message : 'Google sign-in failed');
-      toast.error(err instanceof Error ? err.message : 'Google sign-in failed');
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  };
+    },
+    [saveAuth],
+  );
 
   useEffect(() => {
     let checkInterval: ReturnType<typeof setInterval>;
@@ -240,7 +245,7 @@ export function SignInPage() {
     return () => {
       if (checkInterval) clearInterval(checkInterval);
     };
-  }, []);
+  }, [handleGoogleCredentialResponse]);
 
   // Helper to generate a raw random nonce and its SHA-256 hex hash for OIDC verification
   const generateNoncePair = async () => {

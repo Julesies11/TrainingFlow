@@ -25,7 +25,7 @@ import {
 } from '@tanstack/react-table';
 import { GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useDataGrid } from '@/components/ui/data-grid';
+import { useDataGrid } from '@/components/ui/data-grid-context';
 import {
   DataGridTableBase,
   DataGridTableBody,

@@ -115,7 +115,9 @@ export function WorkoutDialog({
   const getDateFromCoordinates = (weekNum: number, dayOf: number) => {
     const dummyBase = new Date(2024, 0, 1); // Monday, Jan 1, 2024
     const totalDays = (weekNum - 1) * 7 + (dayOf - 1);
-    const targetDate = new Date(dummyBase.getTime() + totalDays * 24 * 60 * 60 * 1000);
+    const targetDate = new Date(
+      dummyBase.getTime() + totalDays * 24 * 60 * 60 * 1000,
+    );
     return formatDateToLocalISO(targetDate);
   };
 
@@ -290,7 +292,10 @@ export function WorkoutDialog({
                         }
                         onChange={(e) => {
                           const val = parseInt(e.target.value) || 1;
-                          const newDate = getDateFromCoordinates(val, workout.dayOfWeek || 1);
+                          const newDate = getDateFromCoordinates(
+                            val,
+                            workout.dayOfWeek || 1,
+                          );
                           setWorkout({
                             ...workout,
                             weekNumber: val,
@@ -310,7 +315,10 @@ export function WorkoutDialog({
                         value={workout.dayOfWeek?.toString()}
                         onValueChange={(val) => {
                           const dayVal = parseInt(val) || 1;
-                          const newDate = getDateFromCoordinates(workout.weekNumber || 1, dayVal);
+                          const newDate = getDateFromCoordinates(
+                            workout.weekNumber || 1,
+                            dayVal,
+                          );
                           setWorkout({
                             ...workout,
                             dayOfWeek: dayVal,
