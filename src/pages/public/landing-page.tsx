@@ -2,7 +2,6 @@ import { useAuth } from '@/auth/context/auth-context';
 import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
-  Calendar, 
   Activity, 
   Target, 
   LineChart, 
@@ -13,9 +12,7 @@ import {
   ChevronRight,
   Watch,
   Star,
-  Layers,
   Plus,
-  Search,
   CheckCircle2,
   ShieldCheck,
   BarChart3

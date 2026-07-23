@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { ReactNode } from 'react';
 import { AuthProvider } from '@/auth/providers/supabase-provider';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

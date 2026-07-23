@@ -1,1 +1,1 @@
-export * from './goals-page';
+export { GoalsPage } from './goals-page';

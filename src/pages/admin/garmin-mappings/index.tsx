@@ -1,1 +1,1 @@
-export * from './garmin-mappings-admin-page';
+export { GarminMappingsAdminPage } from './garmin-mappings-admin-page';

@@ -35,9 +35,15 @@ describe('Smoke Test: Responsive Layout Pages', () => {
       expect(screen.queryByText(/loading mappings/i)).toBeNull();
     });
     // "garmin activity type" appears in both the subtitle and the form label
-    expect(screen.getAllByText(/garmin activity type/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/garmin unit/i).length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText(/mapped sport/i).length).toBeGreaterThanOrEqual(1);
+    expect(
+      screen.getAllByText(/garmin activity type/i).length,
+    ).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/garmin unit/i).length).toBeGreaterThanOrEqual(
+      1,
+    );
+    expect(screen.getAllByText(/mapped sport/i).length).toBeGreaterThanOrEqual(
+      1,
+    );
   });
 
   it('renders GarminMappingsPage Add Mapping button disabled when no input', async () => {
@@ -64,17 +70,17 @@ describe('Smoke Test: Responsive Layout Pages', () => {
     render(<LandingPage />);
     await waitFor(() => {
       expect(
-        screen.getByText(/engineered for structured planning/i),
+        screen.getByText(/plan every session with precision/i),
       ).toBeDefined();
     });
-    expect(screen.getByText(/drag-and-drop calendar/i)).toBeDefined();
-    expect(screen.getByText(/garmin csv import/i)).toBeDefined();
+    expect(screen.getByText(/interactive calendar/i)).toBeDefined();
+    expect(screen.getAllByText(/garmin csv import/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders LandingPage navigation header', async () => {
     render(<LandingPage />);
-    expect(screen.getByText(/sign in/i)).toBeDefined();
-    expect(screen.getByText(/get started/i)).toBeDefined();
+    expect(screen.getAllByText(/sign in/i).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/register for free/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders LandingPage footer copyright', async () => {

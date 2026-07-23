@@ -154,9 +154,4 @@ function InputWrapper({
   );
 }
 
-export {
-  Input,
-  InputAddon,
-  InputGroup,
-  InputWrapper,
-};
+export { Input, InputAddon, InputGroup, InputWrapper };
